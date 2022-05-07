@@ -1,0 +1,10 @@
+#ifndef SECURE_FILE_TRANSFER_SERVER_H
+#define SECURE_FILE_TRANSFER_SERVER_H
+
+
+class server {
+
+};
+
+
+#endif //SECURE_FILE_TRANSFER_SERVER_H
