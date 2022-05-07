@@ -1,3 +1,0 @@
-/Users/andredim/CLionProjects/Secure-File-Transfer/cmake-build-debug/CMakeFiles/Secure_File_Transfer.dir
-/Users/andredim/CLionProjects/Secure-File-Transfer/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/andredim/CLionProjects/Secure-File-Transfer/cmake-build-debug/CMakeFiles/rebuild_cache.dir

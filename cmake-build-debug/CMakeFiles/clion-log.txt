@@ -1,1 +1,0 @@
-CMakeLists.txt not found in /Users/andredim/CLionProjects/Secure-File-Transfer Select CMakeLists.txt

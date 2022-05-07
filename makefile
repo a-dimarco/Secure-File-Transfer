@@ -1,5 +1,11 @@
-client: ./Client/client.cpp
-	gcc -Wall -o client ./Client/client.cpp
+all: clean client server
 
-server: ./Server/server.cpp
-	gcc -Wall -o server ./Server/server.cpp
+clean:
+	rm client
+	rm server
+
+client: client.cpp
+	g++ -Wall -o client client.cpp
+
+server: server.cpp
+	g++ -Wall -o server server.cpp
