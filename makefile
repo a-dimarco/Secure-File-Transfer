@@ -5,7 +5,7 @@ clean:
 	rm server
 
 client: client.cpp
-	g++ -Wall -o client client.cpp
+	g++ -Wall -o client main_client.cpp -lcrypto
 
 server: server.cpp
-	g++ -Wall -o server server.cpp
+	g++ -Wall -o server main_server.cpp -lcrypto
