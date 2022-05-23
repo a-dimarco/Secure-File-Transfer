@@ -1,11 +1,11 @@
 all: clean client server
 
 clean:
-	rm client
-	rm server
+	rm client_app
+	rm server_app
 
-client: client.cpp
-	g++ -Wall -o client main_client.cpp -lcrypto
+client:
+	g++ -Wall -o client_app Client/main_client.cpp -lcrypto
 
-server: server.cpp
-	g++ -Wall -o server main_server.cpp -lcrypto
+server:
+	g++ -Wall -o server_app Server/main_server.cpp -lcrypto
