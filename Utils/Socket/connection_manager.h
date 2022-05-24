@@ -12,9 +12,25 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <dirent.h>
-
+#include <string>
+#include <string.h>
+#include <winsock.h>
+using namespace std;
 class connection_manager {
+public:
+    void send_packet(char* packet);
+    void listening(int queue_size);
+    int accepting();
+    void close_socket();
+    void close_socket(int sock);
+    connection_manager(string addr,int port);
+    connection_manager(int sock);
+    void connection(string addr, long port);
+    char* receive_packet();
+    ~connection_manager();
 
+private:
+    int socket;
 };
 
 
