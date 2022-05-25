@@ -4,6 +4,7 @@
 
 class client {
 public:
+    client();
     client(char* usernmame);
 
     void auth(char* pkt);
@@ -21,7 +22,7 @@ public:
     ~client();
 private:
     char* user;
-    connection_manager* cm;
+    connection_manager cm;
 
     char * crt_pkt_hello(unsigned char* nonce);
 

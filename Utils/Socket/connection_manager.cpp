@@ -2,7 +2,7 @@
 #include <iostream>
 
 using namespace std;
-
+connection_manager::connection_manager() {}
 connection_manager::connection_manager(int sock) {
     this->sckt = sock;
 }

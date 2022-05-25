@@ -4,8 +4,8 @@ clean:
 	rm client_app
 	rm server_app
 
-client:
+client: Client/main_client.cpp
 	g++ -Wall -o client_app Client/main_client.cpp Client/client.cpp Utils/Socket/connection_manager.cpp -lcrypto
 
-server:
+server: Server/main_server.cpp
 	g++ -Wall -o server_app Server/main_server.cpp Server/server.cpp Utils/Socket/connection_manager.cpp -lcrypto

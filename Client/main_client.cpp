@@ -30,11 +30,9 @@ int main() {
     printf("test\n");
     printf("%s\n", typeid(username).name());
     printf("dopo test\n");
-    client *cl=new client(username);
-    char* pkt= cl->send_clienthello();
-    cl->auth( pkt);
-
-
+    client cl=client(username);
+    char* pkt= cl.send_clienthello();
+    cl.auth( pkt);
 
 
 }

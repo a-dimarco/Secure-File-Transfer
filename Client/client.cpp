@@ -5,7 +5,7 @@
 
 #define chello_opcode 0
 #define shello_opcode 1
-
+client::client(){};
 client::client(char* username) {
     char addr[]="127.0.0.1";
     long dest_port=49151;
@@ -19,8 +19,8 @@ client::client(char* username) {
     srand(seed);
     long std_port=rand()%6000+43151;
     this->cm=new connection_manager(addr,std_port);*/
-    this->cm=new connection_manager(addr,8000);
-    this->cm->connection(addr,dest_port);
+    this->cm=connection_manager(addr,8000);
+    this->cm.connection(addr,dest_port);
 
 }
 
@@ -29,8 +29,8 @@ char* client::send_clienthello() {
     unsigned char nonce[8];
     RAND_bytes(nonce, 8);
     char* pkt=this->crt_pkt_hello(nonce);
-    this->cm->send_packet(pkt);
-    return this->cm->receive_packet();
+    this->cm.send_packet(pkt);
+    return this->cm.receive_packet();
 
 }
 

@@ -16,6 +16,7 @@ using namespace std;
 
 class connection_manager {
 public:
+    connection_manager();
     void send_packet(char* packet);
     void listening(int queue_size);
     int accepting();
