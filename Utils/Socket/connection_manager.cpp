@@ -75,9 +75,7 @@ char *connection_manager::receive_packet() {
 
     // Ricevo dimensione dei dati in ingresso
     ret=recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
-    printf("%d\n",pkt_len_n);
     if (ret < 0) {
-        printf("0 \n");
         cerr << "Error in receiving the packet";
         exit(1);
     }
@@ -94,7 +92,6 @@ char *connection_manager::receive_packet() {
     // Alloco il buffer per i dati in ingresso
     pkt = new char[pkt_len];
     if (pkt == NULL) {
-        printf("1 \n");
         cerr << "Error in receiving the packet";
         exit(1);
     }
@@ -103,14 +100,11 @@ char *connection_manager::receive_packet() {
     while (received < pkt_len) {
         ret = recv(this->sckt, pkt + received, pkt_len - received, 0);
         if (ret < 0) {
-            printf("2 \n");
             cerr << "Error in receiving the packet";
             exit(1);
         }
         received += ret;
     }
-    printf("sono qui");
-    printf("%s",pkt);
     return pkt;
 }
 
@@ -118,11 +112,7 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
     size_t sent = 0;
     ssize_t ret;
     uint32_t pkt_len_n = htonl(pkt_len);
-    printf("prima della sedn\n");
-    printf("%d",pkt_len);
     ret=send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
-    printf("sonoqui");
-    printf("%d",ret);
     while (sent < pkt_len) {
         ret = send(this->sckt, packet + sent, pkt_len - sent, 0);
         if (ret < 0) {

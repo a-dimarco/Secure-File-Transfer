@@ -14,7 +14,6 @@ void signal_callback_handler() {
 void handle_req(int sock){
     connection_manager *cm=new connection_manager(sock);
     char* pkt=cm->receive_packet();
-    printf("%s",pkt);
 }
 
 int main() {

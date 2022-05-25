@@ -9,12 +9,9 @@ client::client(){};
 client::client(char* username) {
     char addr[]="127.0.0.1";
     long dest_port=49151;
-    
-    printf("prima di memcpy");
     this->user = new char[10];
     //this->username = username;
     memcpy((void*)this->user, (void*)username, sizeof(username));
-    printf("prima di costruttore");
     /*int seed=atoi(username);
     srand(seed);
     long std_port=rand()%6000+43151;
@@ -35,22 +32,20 @@ char* client::send_clienthello() {
 }
 
 char* client::crt_pkt_hello(unsigned char* nonce) {
-    printf("hello\n");
     int pos=0;
     uint16_t us_size=htons(sizeof(user));
     uint16_t nonce_size=htons(sizeof(nonce));
     uint8_t opcode = htons(chello_opcode);
-    static char pkt[17];
-    memcpy(pkt, &opcode, 1);
-    pos+=1;
-    memcpy(pkt+pos,&us_size,2);
-    pos+=2;
-    memcpy(pkt+pos,&nonce_size,2);
-    pos+=2;
+    static char pkt[23];
+    memcpy(pkt, &opcode, sizeof(uint8_t));
+    pos+=sizeof(uint8_t);
+    memcpy(pkt+pos,&us_size,sizeof(uint16_t));
+    pos+=sizeof(uint16_t));
+    memcpy(pkt+pos,&nonce_size,sizeof(uint16_t)));
+    pos+=sizeof(uint16_t));
     memcpy(pkt+pos,&this->user,10);
     pos+=10;
-    memcpy(pkt+pos,&nonce,2);
-    printf("%d\n",sizeof(pkt));
+    memcpy(pkt+pos,&nonce,8);
     return pkt;
 }
 

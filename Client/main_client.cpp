@@ -26,10 +26,6 @@ int main() {
     cout << "Please, type your username: ";
     char username[10];
     fgets(username,10,stdin);
-
-    printf("test\n");
-    printf("%s\n", typeid(username).name());
-    printf("dopo test\n");
     client *cl=new client(username);
     char* pkt= cl->send_clienthello();
     cl->auth( pkt);
