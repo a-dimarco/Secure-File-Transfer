@@ -1,19 +1,25 @@
 #include "client.h"
 #include <openssl/rand.h>
-#include "../Utils/Crypto/crypto.h"
+//#include "../Utils/Crypto/crypto.h"
 #include "../Utils/Socket/connection_manager.h"
 
 #define chello_opcode 0
 #define shello_opcode 1
 
-client::client( char* username) {
-    string addr="127.0.0.1";
+client::client(char* username) {
+    char addr[]="127.0.0.1";
     long dest_port=49151;
-    this->username=username;
-    int seed=atoi(username);
+    
+    printf("prima di memcpy");
+    this->user = new char[10];
+    //this->username = username;
+    memcpy((void*)this->user, (void*)username, sizeof(username));
+    printf("prima di costruttore");
+    /*int seed=atoi(username);
     srand(seed);
     long std_port=rand()%6000+43151;
-    this->cm=new connection_manager(addr,std_port);
+    this->cm=new connection_manager(addr,std_port);*/
+    this->cm=new connection_manager(addr,8000);
     this->cm->connection(addr,dest_port);
 
 }
@@ -40,7 +46,7 @@ char* client::crt_pkt_hello(unsigned char* nonce) {
     pos+=sizeof(uint16_t);
     memcpy(pkt+pos,&nonce_size,sizeof(uint16_t));
     pos+=sizeof(uint16_t);
-    memcpy(pkt+pos,&this->username,10);
+    memcpy(pkt+pos,&this->user,10);
     pos+=sizeof(10);
     memcpy(pkt+pos,&nonce,10);
     return pkt;

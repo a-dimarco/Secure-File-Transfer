@@ -18,11 +18,11 @@ void handle_req(int sock){
 }
 
 int main() {
-    string addr="127.0.0.1";
+    char addr[]="127.0.0.1";
     long std_port=49151;
     connection_manager *cm=new connection_manager(addr,std_port);
     cm->listening(10);
-    signal(SIGINT, signal_callback_handler);
+    //signal(SIGINT, signal_callback_handler);
     int sock;
     while(true){
         sock=cm->accepting();

@@ -4,7 +4,7 @@
 
 class client {
 public:
-    client( char* usernmame);
+    client(char* usernmame);
 
     void auth(char* pkt);
     void receive_list();
@@ -14,13 +14,13 @@ public:
 
     //packet
     char * crt_pkt_listreq();
-    char * crt_pkt_req(string namefile, string ext);
-    char * crt_pkt_rename(string namefile, string ext,string new_name, string new_ext);
+    char * crt_pkt_req(char* namefile, char* ext);
+    char * crt_pkt_rename(char* namefile, char* ext,char* new_name, char* new_ext);
     char * crt_pkt_upload(char* file);
 
     ~client();
 private:
-    char* username;
+    char* user;
     connection_manager* cm;
 
     char * crt_pkt_hello(unsigned char* nonce);
