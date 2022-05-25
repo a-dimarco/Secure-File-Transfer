@@ -2,7 +2,7 @@
 //#include "../Utils/Crypto/crypto.h"
 #include "../Utils/Socket/connection_manager.h"
 
-server::server(){
+server::server() {
 
     /*char* addr="127.0.0.1";
     long dest_port=49151;
