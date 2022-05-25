@@ -21,8 +21,9 @@ public:
 
     ~client();
 private:
+    
     char* user;
-    connection_manager cm;
+    connection_manager* cm;
 
     char * crt_pkt_hello(unsigned char* nonce);
 

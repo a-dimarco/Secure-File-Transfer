@@ -18,11 +18,13 @@ connection_manager::connection_manager(char* my_addr, long port) {
     ret = bind(this->sckt, (struct sockaddr *) &addr, sizeof(addr));
     if (ret < 0) {
         cerr << "Binding Error";
+    
         exit(1);
     }
 }
 
 void connection_manager::connection(char* addr, long dest_port) {
+    
     int ret;
     struct sockaddr_in dst_addr;
     memset(&dst_addr, 0, sizeof(dst_addr));
@@ -72,7 +74,10 @@ char *connection_manager::receive_packet() {
     ssize_t ret = 0;
 
     // Ricevo dimensione dei dati in ingresso
-    if (recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0) <= 0) {
+    ret=recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
+    printf("%d\n",pkt_len_n);
+    if (ret < 0) {
+        printf("0 \n");
         cerr << "Error in receiving the packet";
         exit(1);
     }
@@ -89,6 +94,7 @@ char *connection_manager::receive_packet() {
     // Alloco il buffer per i dati in ingresso
     pkt = new char[pkt_len];
     if (pkt == NULL) {
+        printf("1 \n");
         cerr << "Error in receiving the packet";
         exit(1);
     }
@@ -97,24 +103,26 @@ char *connection_manager::receive_packet() {
     while (received < pkt_len) {
         ret = recv(this->sckt, pkt + received, pkt_len - received, 0);
         if (ret < 0) {
-            cerr << "Error in receiving the packet";
-            exit(1);
-        }
-        if (ret == 0) {
+            printf("2 \n");
             cerr << "Error in receiving the packet";
             exit(1);
         }
         received += ret;
     }
-    return 0;
+    printf("sono qui");
+    printf("%s",pkt);
+    return pkt;
 }
 
-void connection_manager::send_packet(char *packet) {
+void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
     size_t sent = 0;
     ssize_t ret;
-    int pkt_len = sizeof(packet);
     uint32_t pkt_len_n = htonl(pkt_len);
-    send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
+    printf("prima della sedn\n");
+    printf("%d",pkt_len);
+    ret=send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
+    printf("sonoqui");
+    printf("%d",ret);
     while (sent < pkt_len) {
         ret = send(this->sckt, packet + sent, pkt_len - sent, 0);
         if (ret < 0) {
@@ -124,3 +132,7 @@ void connection_manager::send_packet(char *packet) {
         sent += ret;
     }
 }
+
+connection_manager::~connection_manager(){}
+
+

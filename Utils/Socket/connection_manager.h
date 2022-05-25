@@ -17,7 +17,7 @@ using namespace std;
 class connection_manager {
 public:
     connection_manager();
-    void send_packet(char* packet);
+    void send_packet(char* packet, uint32_t pkt_len);
     void listening(int queue_size);
     int accepting();
     void close_socket();
@@ -29,6 +29,7 @@ public:
     ~connection_manager();
 
 private:
+    
     int sckt;
 };
 
