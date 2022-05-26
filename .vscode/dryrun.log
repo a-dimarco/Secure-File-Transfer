@@ -1,9 +1,6 @@
-make --dry-run --keep-going --print-directory
+make --dry-run --always-make --keep-going --print-directory
 make: Entering directory '/home/studenti/Documents/GitHub/Secure-File-Transfer'
- 
 g++ -Wall -o client_app Client/main_client.cpp Client/client.cpp Utils/Socket/connection_manager.cpp -lcrypto
- 
 g++ -Wall -o server_app Server/main_server.cpp Server/server.cpp Utils/Socket/connection_manager.cpp -lcrypto
- 
 make: Leaving directory '/home/studenti/Documents/GitHub/Secure-File-Transfer'
  

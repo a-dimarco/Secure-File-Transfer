@@ -71,6 +71,7 @@ char *connection_manager::receive_packet() {
 
     // Ricevo dimensione dei dati in ingresso
     ret=recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
+    printf("ret size: %d\n",ret);//TEST
     if (ret < 0) {
         cerr << "Error in receiving the size of the packet";
         exit(1);
@@ -104,7 +105,36 @@ char *connection_manager::receive_packet() {
         printf("ho ricevuto %d bytes\n",received);
     }
     printf("ho ricevuto tutto il pacchetto\n");
-    printf("pacchetto %s",pkt);
+
+    //Deserializzazione
+    int pos = 0;
+    uint16_t us_size;
+    uint16_t nonce_size;
+    uint8_t opcode;
+
+    
+    memcpy(&opcode, pkt, sizeof(opcode));//prelevo opcode
+    opcode = ntohs(opcode);
+    pos+=sizeof(opcode);
+
+    memcpy(&us_size, pkt+pos, sizeof(us_size)); //prelevo us_size inizializzo la variabile che dovrà contenerlo
+    pos+=sizeof(us_size);
+    us_size = ntohs(us_size);
+    char username[us_size];
+
+    memcpy(&nonce_size, pkt+pos, sizeof(nonce_size)); //prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
+    pos+=sizeof(nonce_size);
+    nonce_size = ntohs(nonce_size);
+    unsigned char nonce[nonce_size];
+
+    memcpy(&username, pkt+pos, us_size);//prelevo l'username
+    pos+=us_size;
+
+    memcpy(&nonce, pkt+pos, nonce_size);//prelevo il nonce
+
+    //Fine Deserializzazione
+
+    printf("pacchetto: \n opcode: %d\n us_size: %d\n nonce_size: %d\n, username: %s\n nonce: %s\n" ,opcode,us_size, nonce_size, username, nonce);
     return pkt;
 }
 
@@ -114,6 +144,10 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
     ssize_t ret;
     uint32_t pkt_len_n = htonl(pkt_len);
     ret=send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
+    if (ret < 0) {
+            cerr << "Error in sending the packet";
+            exit(1);
+    }
     printf("size inviata %d or %d \n",pkt_len,pkt_len_n);
     while (sent < pkt_len) {
         printf("appena entrato nel ciclo sending\n");

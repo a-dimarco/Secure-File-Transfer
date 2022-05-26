@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Wed May 25 11:55:56 2022
+# Make data base, printed on Thu May 26 04:03:56 2022
 
 # Variables
 
@@ -73,7 +73,7 @@ PATH = /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/ubuntu:@/tmp/.ICE-unix/1390,unix/ubuntu:/tmp/.ICE-unix/1390
+SESSION_MANAGER = local/ubuntu:@/tmp/.ICE-unix/1411,unix/ubuntu:/tmp/.ICE-unix/1411
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -93,7 +93,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 1998
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2009
 # automatic
 %F = $(notdir $%)
 # environment
@@ -107,7 +107,7 @@ PWD = /home/studenti/Documents/GitHub/Secure-File-Transfer
 # environment
 XDG_SEAT = seat0
 # environment
-SSH_AGENT_PID = 1467
+SSH_AGENT_PID = 1488
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -147,7 +147,7 @@ SHLVL = 1
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-d155f849-f1a7-4a74-8506-ab12a6bc912c.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-2a668cb4-f746-4ae0-bc6b-209fa85c8b5b.sock
 # environment
 XDG_SESSION_ID = 2
 # environment
@@ -209,7 +209,7 @@ GJS_DEBUG_OUTPUT = stderr
 # environment
 LANG = C
 # environment
-VSCODE_PID = 1998
+VSCODE_PID = 2009
 # variable set hash-table stats:
 # Load=100/1024=10%, Rehash=0, Collisions=14/128=11%
 
@@ -268,7 +268,7 @@ client: Client/main_client.cpp
 # Not a target:
 Client/main_client.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-25 10:52:39.280450246
+#  Last modified 2022-05-26 01:01:19.752569908
 #  File has been updated.
 #  Successfully updated.
 
@@ -315,11 +315,10 @@ Server/main_server.cpp:
 
 # strcache buffers: 1 (0) / strings = 20 / storage = 195 B / avg = 9 B
 # current buf: size = 8162 B / used = 195 B / count = 20 / avg = 9 B
- 
 
 # strcache performance: lookups = 31 / hit rate = 35%
 # hash-table stats:
 # Load=20/8192=0%, Rehash=0, Collisions=4/31=13%
-# Finished Make data base on Wed May 25 11:55:56 2022
+# Finished Make data base on Thu May 26 04:03:56 2022
 
  

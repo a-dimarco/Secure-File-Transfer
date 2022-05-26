@@ -30,8 +30,12 @@ char *client::send_clienthello() {
     char *pkt = this->crt_pkt_hello(nonce);
     printf("%s\n",pkt);
     this->cm->send_packet(pkt, 23);
-    return this->cm->receive_packet();
 
+    char * test = new char[10];//TEST -> messa per non far andare il loop il client
+    cm->close_socket();//TEST
+    return test;//TEST -> messa per non far andare il loop il client
+
+    return this->cm->receive_packet();
 }
 
 char *client::crt_pkt_hello(unsigned char *nonce) {
@@ -47,10 +51,12 @@ char *client::crt_pkt_hello(unsigned char *nonce) {
     pos += sizeof(uint16_t);
     memcpy(pkt + pos, &nonce_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-    memcpy(pkt + pos, &this->user, 10);
-    pos += 10;
-    memcpy(pkt + pos, &nonce, 8);
+    //memcpy(pkt + pos, &this->user, 10);
+    memcpy(pkt + pos, user, sizeof(user));
+    pos += sizeof(user);
+    memcpy(pkt + pos, nonce, 8);
     printf("Ho appena finito create packet hello\n");
+    printf("pacchetto client hello: \n opcode: %d\n us_size: %d\n nonce_size: %d\n username: %s\n nonce: %s\n" ,opcode,sizeof(user), sizeof(nonce), this->user, nonce);
     return pkt;
 }
 
