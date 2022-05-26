@@ -12,26 +12,26 @@ using namespace std;
 
 class crypto {
 public:
-    unsigned char *encrypt_message();
+    unsigned char *encrypt_message();//edo
 
-    unsigned char *key_derivation(unsigned char *shared_secret);
+    unsigned char *key_derivation(unsigned char *shared_secret);//edo
 
-    EVP_PKEY *dh_params_gen();
+    EVP_PKEY *dh_params_gen();//edo
 
-    unsigned char *dh_pubkey(EVP_PKEY *dh_params);
+    unsigned char *dh_pubkey(EVP_PKEY *dh_params);//genera public key - edo
 
-    unsigned char *dh_sharedkey(EVP_PKEY *dh_params, EVP_PKEY *public_key, EVP_PKEY *private_key);
+    unsigned char *dh_sharedkey(EVP_PKEY *dh_params, EVP_PKEY *public_key, EVP_PKEY *private_key);//edo
 
-    unsigned char *sign(unsigned char *msg, file private_key, string psw);
+    unsigned char *sign(unsigned char *msg, FILE private_key, char* psw);//lore
 
-    bool verify_sign(unsigned char *signature, EVP_PKEY *key);
+    bool verify_sign(unsigned char *signature, EVP_PKEY *key);//lore
 
-    bool verify_cert(X509_STORE *cert);
+    bool verify_cert(X509_STORE *cert);//lore
 
-    EVP_PKEY *extract_pubkey(X509_STORE *cert);
+    EVP_PKEY *extract_pubkey(X509_STORE *cert);//lore
 
 private:
-    void handleError(string s);
+    void handleError(char* s);//lore
 };
 
 

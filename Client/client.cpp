@@ -41,7 +41,7 @@ char *client::send_clienthello() {
 char *client::crt_pkt_hello(unsigned char *nonce) {
     printf("Sono appena entrato in create packet hello\n");
     int pos = 0;
-    uint16_t us_size = htons(sizeof(user));
+    uint16_t us_size = htons(strlen(user));
     uint16_t nonce_size = htons(sizeof(nonce));
     uint8_t opcode = htons(chello_opcode);
     static char pkt[23];

@@ -25,11 +25,10 @@ using namespace std;
 int main() {
 
     cout << "Please, type your username: ";
-    char username[10];
-    fgets(username, 10, stdin);
+    char username[11];
+    fgets(username, 11, stdin);
     client *cl = new client(username);
     char *pkt = cl->send_clienthello();
     cl->auth(pkt);
-
 
 }
