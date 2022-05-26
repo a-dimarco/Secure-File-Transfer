@@ -24,6 +24,7 @@ using namespace std;
 
 int main() {
 
+    cout<<"Ducange culo\n";
     cout << "Please, type your username: ";
     char username[11];
     fgets(username, 11, stdin);
