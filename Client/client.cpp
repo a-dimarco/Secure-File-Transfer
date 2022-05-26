@@ -28,12 +28,14 @@ char *client::send_clienthello() {
     unsigned char nonce[8];
     RAND_bytes(nonce, 8);
     char *pkt = this->crt_pkt_hello(nonce);
-    this->cm->send_packet(pkt, 17);
+    printf("%s\n",pkt);
+    this->cm->send_packet(pkt, 23);
     return this->cm->receive_packet();
 
 }
 
 char *client::crt_pkt_hello(unsigned char *nonce) {
+    printf("Sono appena entrato in create packet hello\n");
     int pos = 0;
     uint16_t us_size = htons(sizeof(user));
     uint16_t nonce_size = htons(sizeof(nonce));
@@ -42,12 +44,13 @@ char *client::crt_pkt_hello(unsigned char *nonce) {
     memcpy(pkt, &opcode, sizeof(uint8_t));
     pos += sizeof(uint8_t);
     memcpy(pkt + pos, &us_size, sizeof(uint16_t));
-    pos += sizeof(uint16_t));
-    memcpy(pkt + pos, &nonce_size, sizeof(uint16_t)));
-    pos += sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    memcpy(pkt + pos, &nonce_size, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
     memcpy(pkt + pos, &this->user, 10);
     pos += 10;
     memcpy(pkt + pos, &nonce, 8);
+    printf("Ho appena finito create packet hello\n");
     return pkt;
 }
 
