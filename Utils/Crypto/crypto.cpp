@@ -79,8 +79,8 @@ unsigned char* crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, long* size) {
 	
 	*size = file_size;
 	printf("%s", pem_pubkey);
-	return pem_pubkey;
-	/*
+//	return pem_pubkey;
+	
 	int pkeyLen;
 	unsigned char* ucBuf, *ucTempBuf;
 	pkeyLen = i2d_PublicKey(dh_key, NULL);
@@ -92,7 +92,7 @@ unsigned char* crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, long* size) {
 	int ii;
 	for (ii = 0; ii < pkeyLen; ii++)
 		printf("%02x\n", (unsigned char)ucBuf[ii]);
-	return ucBuf;	*/
+	return ucBuf;	
 }
 
 EVP_PKEY* crypto::deserialize_dh_pubkey(unsigned char *dh_key, long size) {
@@ -213,6 +213,7 @@ unsigned char* crypto::key_derivation(unsigned char *shared_secret, size_t size)
 	#pragma optimize("", off);
 	memset(digest, 0, EVP_MD_size(hash_type));
 	#pragma optimize("", on);
+	
 	return session_key;		
 }
 
@@ -301,10 +302,21 @@ int crypto::encrypt_message(const char* filename, int plaintext_len,
 int main(){
 	crypto c = crypto();	
 	EVP_PKEY* dh_params = c.dh_params_gen();
-	EVP_PKEY* key = c.dh_keygen(dh_params);
-	printf("ciao");
+	EVP_PKEY* my_key = c.dh_keygen(dh_params);
 	long size;
-	//(unsigned char* pubkey = c.serialize_dh_pubkey(dh_keys, &size);
+	unsigned char* pubkey = c.serialize_dh_pubkey(my_key, &size);
+	printf("%d\n", size);
+	EVP_PKEY* my_pubkey = c.deserialize_dh_pubkey(pubkey, size);
+	
+	EVP_PKEY* other_key = c.dh_keygen(dh_params);
+	pubkey = c.serialize_dh_pubkey(other_key, &size);
+	EVP_PKEY* other_pubkey = c.deserialize_dh_pubkey(pubkey, size);
+	
+	size_t s;
+	unsigned char* secret = c.dh_sharedkey(my_key, other_pubkey, &s);
+	
+	unsigned char* session_key = c.key_derivation(secret, s);
+	
 	return 0;
 }
 
