@@ -1,39 +1,23 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # GNU Make 4.1
- 
 # Built for x86_64-pc-linux-gnu
- 
 # Copyright (C) 1988-2014 Free Software Foundation, Inc.
- 
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
- 
 # This is free software: you are free to change and redistribute it.
- 
 # There is NO WARRANTY, to the extent permitted by law.
- 
 
- 
-# Make data base, printed on Thu May 26 08:21:15 2022
- 
+# Make data base, printed on Fri May 27 09:31:47 2022
 
 # Variables
- 
 
- 
 # 'override' directive
- 
 GNUMAKEFLAGS := 
- 
 # automatic
- 
 <D = $(patsubst %/,%,$(dir $<))
- 
 # automatic
- 
 ?F = $(notdir $?)
 # environment
 DESKTOP_SESSION = ubuntu
- 
 # default
 .SHELLFLAGS := -c
 # environment
@@ -89,7 +73,7 @@ PATH = /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/ubuntu:@/tmp/.ICE-unix/1433,unix/ubuntu:/tmp/.ICE-unix/1433
+SESSION_MANAGER = local/ubuntu:@/tmp/.ICE-unix/1414,unix/ubuntu:/tmp/.ICE-unix/1414
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -109,7 +93,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 1862
+GIO_LAUNCHED_DESKTOP_FILE_PID = 1849
 # automatic
 %F = $(notdir $%)
 # environment
@@ -123,7 +107,7 @@ PWD = /home/studenti/Documents/GitHub/Secure-File-Transfer
 # environment
 XDG_SEAT = seat0
 # environment
-SSH_AGENT_PID = 1510
+SSH_AGENT_PID = 1491
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -163,7 +147,7 @@ SHLVL = 1
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-1ac8ca9c-bc1c-4be5-8b4f-36fbe926f36a.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-29eaa0ef-4a0e-4350-b869-d175ae0bee72.sock
 # environment
 XDG_SESSION_ID = 2
 # environment
@@ -225,7 +209,7 @@ GJS_DEBUG_OUTPUT = stderr
 # environment
 LANG = C
 # environment
-VSCODE_PID = 1862
+VSCODE_PID = 1849
 # variable set hash-table stats:
 # Load=100/1024=10%, Rehash=0, Collisions=14/128=11%
 
@@ -284,7 +268,7 @@ client: Client/main_client.cpp
 # Not a target:
 Client/main_client.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-26 01:01:19.752569908
+#  Last modified 2022-05-27 08:22:53.364304151
 #  File has been updated.
 #  Successfully updated.
 
@@ -295,6 +279,7 @@ Client/main_client.cpp:
 #  File has not been updated.
 
 server: Server/main_server.cpp
+ 
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -304,7 +289,7 @@ server: Server/main_server.cpp
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-25 11:55:25.179224987
+#  Last modified 2022-05-27 09:00:01.140951633
 #  File has been updated.
 #  Successfully updated.
 
@@ -313,15 +298,10 @@ Server/main_server.cpp:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
- 
 
- 
 # Not a target:
- 
 .DEFAULT:
- 
 #  Implicit rule search has not been done.
- 
 #  Modification time never checked.
 #  File has not been updated.
 
@@ -339,6 +319,6 @@ Server/main_server.cpp:
 # strcache performance: lookups = 31 / hit rate = 35%
 # hash-table stats:
 # Load=20/8192=0%, Rehash=0, Collisions=4/31=13%
-# Finished Make data base on Thu May 26 08:21:15 2022
+# Finished Make data base on Fri May 27 09:31:47 2022
 
  

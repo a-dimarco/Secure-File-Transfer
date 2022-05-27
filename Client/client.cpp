@@ -3,9 +3,6 @@
 //#include "../Utils/Crypto/crypto.h"
 #include "../Utils/Socket/connection_manager.h"
 
-#define chello_opcode 0
-#define shello_opcode 1
-
 client::client() {};
 
 client::client(char *username) {
@@ -31,32 +28,55 @@ char *client::send_clienthello() {
     printf("%s\n",pkt);
     this->cm->send_packet(pkt, 23);
 
-    char * test = new char[10];//TEST -> messa per non far andare il loop il client
-    cm->close_socket();//TEST
-    return test;//TEST -> messa per non far andare il loop il client
+    /*if(this->cm->receive_ack()){
+        char * test = new char[10];//TEST -> messa per non far andare il loop il client
+        //cm->close_socket();//TEST
+        return test;//TEST -> messa per non far andare il loop il client
+    }*/
 
+    uint8_t received_code = this->cm->receive_opcode();
+    if(received_code == ACK){
+        printf("ACK - OK\n");
+        char * test = new char[10];//TEST -> messa per non far andare il loop il client
+        return test;//TEST -> messa per non far andare il loop il client
+    }
+
+    printf("ACK - ERROR\n");//TEST handshake ridotto
+    cm->close_socket();//TEST
+    exit(-1);//TEST handshake ridotto
     return this->cm->receive_packet();
 }
 
-char *client::crt_pkt_hello(unsigned char *nonce) {
+char *client::crt_pkt_hello(unsigned char *nonce) {//Creates first handshake packet
+    //PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
     printf("Sono appena entrato in create packet hello\n");
-    int pos = 0;
+
     uint16_t us_size = htons(strlen(user));
     uint16_t nonce_size = htons(sizeof(nonce));
-    uint8_t opcode = htons(chello_opcode);
-    static char pkt[23];
+    uint8_t opcode = htons(CHELLO_OPCODE);
+    int pos = 0;
+    static char pkt[CLIENT_HELLO_SIZE];
+
     memcpy(pkt, &opcode, sizeof(uint8_t));
     pos += sizeof(uint8_t);
     memcpy(pkt + pos, &us_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     memcpy(pkt + pos, &nonce_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-    //memcpy(pkt + pos, &this->user, 10);
     memcpy(pkt + pos, user, sizeof(user));
     pos += sizeof(user);
     memcpy(pkt + pos, nonce, 8);
-    printf("Ho appena finito create packet hello\n");
-    printf("pacchetto client hello: \n opcode: %d\n us_size: %d\n nonce_size: %d\n username: %s\n nonce: %s\n" ,opcode,sizeof(user), sizeof(nonce), this->user, nonce);
+
+    /*printf("Ho appena finito create packet hello\n");
+    printf("pacchetto client hello: \n opcode: %d\n us_size: %d\n nonce_size: %d\n username: %s\n nonce: %s\n" ,opcode,sizeof(user), sizeof(nonce), this->user, nonce);*/
+    return pkt;
+}
+
+char* client::crt_pkt_upload(char *file){
+    static char pkt[23];
+    int pos = 0;
+
+
     return pkt;
 }
 
@@ -66,4 +86,83 @@ void client::auth(char *pkt) {
 
 client::~client() {}
 
+// Andrea Test
 
+void client::print_commands(){
+    printf("\nPlease select a command\n");
+    printf("!help --> Show all available actions\n");
+    printf("!list --> Show all files uploaded to the server\n");
+    printf("!download --> Download a file from the server\n");
+    printf("!upload --> Upload a file to the server\n");
+    printf("!rename --> Rename a file stored into the server\n");
+    printf("!delete --> Delete a file stored into the server\n");
+    printf("!logout --> Disconnect from the server and close the application\n");
+}
+
+bool nameChecker(char* name, int mode){//Checks if file (code = FILENAME) or command (code = COMMAND) is formatted correctly - utility
+
+    bool ret;
+    size_t len = strlen(name)-1;
+    char * filename = (char*)malloc(len);
+    memcpy(filename, name, len);
+    //printf("Test: %s\n", test);
+    if(mode == FILENAME){
+        ret = regex_match(filename, regex("^[A-Za-z0-9]*\\.[A-Za-z0-9]+$"));
+    }
+    else if (mode == COMMAND){
+        ret = regex_match(filename, regex("^\\![A-Za-z]+$"));
+    }
+    else{
+        ret = false;
+    }
+    free(filename);
+    return ret;
+
+}
+
+void client::show_menu(){
+
+    print_commands();
+
+    char command[30];
+    fgets(command, 30, stdin);
+
+    printf("command : %s \n" , command);
+
+    if(nameChecker(command, COMMAND)){
+        if(strcmp(command, "!help\n")==0){
+            show_menu();
+        }
+        else if(strcmp(command, "!help\n")==0){
+            show_menu();
+        }
+        else if(strcmp(command, "!list\n")==0){
+            this->cm->send_opcode(LIST);
+            receive_list();//IMPLEMENT
+        }
+        else if(strcmp(command, "!download\n")==0){//IMPLEMENT
+            show_menu();
+        }
+        else if(strcmp(command, "!upload\n")==0){//IMPLEMENT
+            show_menu();
+        }
+        else if(strcmp(command, "!rename\n")==0){//IMPLEMENT
+            show_menu();
+        }
+        else if(strcmp(command, "!delete\n")==0){//IMPLEMENT
+            show_menu();
+        }
+        else if(strcmp(command, "!logout\n")==0){//IMPLEMENT
+            printf("Bye!\n");
+            exit(0);
+        }
+        else{
+            printf("Command %s not found, please retry\n", command);
+            show_menu();
+        }
+    }
+    else{
+        printf("Command format not valid, please use the format !command\n");
+        show_menu();
+    }
+}

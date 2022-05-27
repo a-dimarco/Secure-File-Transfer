@@ -3,6 +3,7 @@
 
 #include "../Utils/Socket/connection_manager.h"
 
+
 class client {
 public:
     client();
@@ -29,6 +30,12 @@ public:
     char *crt_pkt_upload(char *file);
 
     ~client();
+
+    //andrea
+
+    void show_menu();
+
+    void print_commands();
 
 private:
 

@@ -17,7 +17,7 @@ connection_manager::connection_manager(char* my_addr, long port) {
     inet_pton(AF_INET, my_addr, &addr.sin_addr);
     ret = bind(this->sckt, (struct sockaddr *) &addr, sizeof(addr));
     if (ret < 0) {
-        cerr << "Binding Error";
+        cerr << "Binding Error\n";
     
         exit(1);
     }
@@ -73,7 +73,7 @@ char *connection_manager::receive_packet() {
     ret=recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
     printf("ret size: %d\n",ret);//TEST
     if (ret < 0) {
-        cerr << "Error in receiving the size of the packet";
+        cerr << "Error in receiving the size of the packet\n";
         exit(1);
     }
     
@@ -98,7 +98,7 @@ char *connection_manager::receive_packet() {
         printf("appena entrato nel ciclo receiving\n");
         ret = recv(this->sckt, pkt + received, pkt_len - received, 0);
         if (ret < 0) {
-            cerr << "Error in receiving the packet";
+            cerr << "Error in receiving the packet\n";
             exit(1);
         }
         received += ret;
@@ -106,6 +106,7 @@ char *connection_manager::receive_packet() {
     }
     printf("ho ricevuto tutto il pacchetto\n");
 
+/*
     //Deserializzazione
     int pos = 0;
     uint16_t us_size;
@@ -135,6 +136,11 @@ char *connection_manager::receive_packet() {
     //Fine Deserializzazione
 
     printf("pacchetto: \n opcode: %d\n us_size: %d\n nonce_size: %d\n, username: %s\n nonce: %s\n" ,opcode,us_size, nonce_size, username, nonce);
+
+    //test andrea
+    return username;
+    //test andrea
+*/
     return pkt;
 }
 
@@ -164,4 +170,77 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
 
 connection_manager::~connection_manager(){}
 
+
+//---Andrea TEST---
+
+/*bool connection_manager::receive_ack() {
+
+    uint8_t opcode;
+    ssize_t ret = 0;
+
+    // Ricevo ACK
+    ret=recv(this->sckt, &opcode, sizeof(opcode), 0);
+    printf("ret size: %d\n",ret);//TEST
+    if (ret < 0) {
+        cerr << "Error in receiving the ACK packet\n";
+        close_socket();
+        exit(1);
+    }
+    //opcode = ntohl(opcode); uint8 non ha bisogno di conversioni perché troppo piccolo
+    
+    if(opcode == ACK){
+        printf("ACK - OK\n");
+        return true;
+    }
+    
+    return false;
+}*/
+
+/*void connection_manager::send_ack() {
+
+    uint8_t opcode = ACK;
+    ssize_t ret = 0;
+    ret=send(this->sckt, &opcode, sizeof(opcode), 0);
+    if (ret < 0) {
+            cerr << "ACK Send - Error\n";
+            exit(1);
+    }
+    printf("ACK sent\n");
+
+}*/
+
+uint8_t connection_manager::receive_opcode() {
+
+    uint8_t opcode;
+    ssize_t ret = 0;
+
+    // Ricevo ACK
+    ret=recv(this->sckt, &opcode, sizeof(opcode), 0);
+    printf("ret size: %d\n",ret);//TEST
+    if (ret < 0) {
+        cerr << "Error in receiving the ACK packet\n";
+        close_socket();
+        exit(1);
+    }
+    //opcode = ntohl(opcode); uint8 non ha bisogno di conversioni perché troppo piccolo
+    
+    if(opcode == ACK){
+        printf("ACK - OK\n");
+        return true;
+    }
+    
+    return false;
+}
+
+void connection_manager::send_opcode(uint8_t opcode) {
+
+    ssize_t ret = 0;
+    ret=send(this->sckt, &opcode, sizeof(opcode), 0);
+    if (ret < 0) {
+            cerr << "Opcode Send - Error\n";
+            exit(1);
+    }
+    printf("OpCode sent\n");
+
+}
 
