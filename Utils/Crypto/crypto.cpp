@@ -1,20 +1,33 @@
 #include "crypto.h"
 
 EVP_PKEY* crypto::dh_params_gen() {
-	
+	/*
 	EVP_PKEY* dh_params;
 	dh_params = EVP_PKEY_new();
 	EVP_PKEY_set1_DH(dh_params, DH_get_2048_224());
+	*/
 	
-	/*
 	EVP_PKEY* dh_params = NULL;
 	EVP_PKEY_CTX* pctx;
 	pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
-	EVP_PKEY_paramgen_init(pctx);
-	EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, NID_X9_62_prime256v1);
-	EVP_PKEY_paramgen(pctx, &dh_params);
+	if (pctx == NULL) {
+		printf("Errore nella dh_params_gen");
+		exit(-1);
+	}
+	if (1 != EVP_PKEY_paramgen_init(pctx)) {
+		printf("Errore nella dh_params_gen");
+		exit(-1);
+	}
+	if (1 != EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, NID_X9_62_prime256v1)) {
+		printf("Errore nella dh_params_gen");
+		exit(-1);
+	}
+	if (1 != EVP_PKEY_paramgen(pctx, &dh_params)) {
+		printf("Errore nella dh_params_gen");
+		exit(-1);
+	}
 	EVP_PKEY_CTX_free(pctx);
-	*/
+	
 	return dh_params;
 }
 
@@ -79,8 +92,8 @@ unsigned char* crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, long* size) {
 	
 	*size = file_size;
 	printf("%s", pem_pubkey);
-//	return pem_pubkey;
-	
+	return pem_pubkey;
+	/*
 	int pkeyLen;
 	unsigned char* ucBuf, *ucTempBuf;
 	pkeyLen = i2d_PublicKey(dh_key, NULL);
@@ -91,8 +104,8 @@ unsigned char* crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, long* size) {
 	
 	int ii;
 	for (ii = 0; ii < pkeyLen; ii++)
-		printf("%02x\n", (unsigned char)ucBuf[ii]);
-	return ucBuf;	
+		printf("%c\n", (unsigned char)ucBuf[ii]);
+	return ucBuf;	*/
 }
 
 EVP_PKEY* crypto::deserialize_dh_pubkey(unsigned char *dh_key, long size) {
