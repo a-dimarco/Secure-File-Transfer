@@ -6,6 +6,15 @@ EVP_PKEY* crypto::dh_params_gen() {
 	dh_params = EVP_PKEY_new();
 	EVP_PKEY_set1_DH(dh_params, DH_get_2048_224());
 	
+	/*
+	EVP_PKEY* dh_params = NULL;
+	EVP_PKEY_CTX* pctx;
+	pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
+	EVP_PKEY_paramgen_init(pctx);
+	EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, NID_X9_62_prime256v1);
+	EVP_PKEY_paramgen(pctx, &dh_params);
+	EVP_PKEY_CTX_free(pctx);
+	*/
 	return dh_params;
 }
 
@@ -26,6 +35,7 @@ EVP_PKEY* crypto::dh_keygen(EVP_PKEY *dh_params) {
 }
 
 unsigned char* crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, long* size) {
+	
 	FILE* file = fopen("dh_pubkey", "w");
 	if (file == NULL) {
 		printf("fopen non riuscita - dh_pubkey\n");
@@ -68,7 +78,21 @@ unsigned char* crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, long* size) {
 	}
 	
 	*size = file_size;
-	return pem_pubkey;	
+	printf("%s", pem_pubkey);
+	return pem_pubkey;
+	/*
+	int pkeyLen;
+	unsigned char* ucBuf, *ucTempBuf;
+	pkeyLen = i2d_PublicKey(dh_key, NULL);
+	printf("%d\n", pkeyLen);
+	ucBuf = (unsigned char*)malloc(pkeyLen+1);
+	
+	i2d_PublicKey(dh_key, &ucBuf);
+	
+	int ii;
+	for (ii = 0; ii < pkeyLen; ii++)
+		printf("%02x\n", (unsigned char)ucBuf[ii]);
+	return ucBuf;	*/
 }
 
 EVP_PKEY* crypto::deserialize_dh_pubkey(unsigned char *dh_key, long size) {
@@ -143,6 +167,7 @@ unsigned char* crypto::dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, si
 	
 	EVP_PKEY_free(my_key);
 	*size = secretlen;
+	return secret;
 }
 
 unsigned char* crypto::key_derivation(unsigned char *shared_secret, size_t size) {
@@ -191,8 +216,95 @@ unsigned char* crypto::key_derivation(unsigned char *shared_secret, size_t size)
 	return session_key;		
 }
 
+int crypto::encrypt_message(const char* filename, int plaintext_len,
+                unsigned char *aad, int aad_len,
+                unsigned char *key,
+                unsigned char *iv, int iv_len,
+                unsigned char *ciphertext,
+                unsigned char *tag)
+{
+    EVP_CIPHER_CTX *ctx;
+    FILE* file;
+    int len=0;
+    int ciphertext_len=0;
+    int encrypted_len=0;
+    int fragment_size=1024;
+    int current_len, ret;
+    unsigned char* fragment;
+    
+    // Create and initialise the context
+    if(!(ctx = EVP_CIPHER_CTX_new())) {
+    	printf("Errore nella encrypt_msg\n");
+    	exit(-1);
+    }
+    // Initialise the encryption operation.
+    if(1 != EVP_EncryptInit(ctx, EVP_aes_128_gcm(), key, iv)) {
+    	printf("Errore nella encrypt_msg\n");
+    	exit(-1);
+    }
+
+    //Provide any AAD data. This can be called zero or more times as required
+    if(1 != EVP_EncryptUpdate(ctx, NULL, &len, aad, aad_len)) {
+    	printf("Errore nella encrypt_msg\n");
+    	exit(-1);
+    }
+
+    while (encrypted_len < plaintext_len) {
+    
+    	file = fopen(filename, "rb");
+    	if (file == NULL) {
+    		printf("Errore nella encrypt_msg\n");
+    		exit(-1);
+    	}
+    	current_len = (plaintext_len-encrypted_len < fragment_size) ? plaintext_len-encrypted_len : fragment_size;
+    
+    	fragment = (unsigned char*)malloc(current_len);
+    
+    	ret = fread(fragment, sizeof(unsigned char), current_len, file);
+	if (ret < current_len) {
+		printf("Error fread\n");
+		exit(1);
+	}
+    	
+    	ret = fclose(file);
+	if (ret != 0) {
+		printf("Errore nella encrypt_msg\n");
+		exit(1);
+	}
+    	
+    	if(1 != EVP_EncryptUpdate(ctx, ciphertext+ciphertext_len, &len, fragment, current_len))  {
+    		printf("Errore nella encrypt_msg\n");
+    		exit(-1);
+    	}	
+    	ciphertext_len += len;
+    	
+    	free(fragment);
+    	encrypted_len += current_len;
+    };
+	//Finalize Encryption
+    if(1 != EVP_EncryptFinal(ctx, ciphertext + ciphertext_len, &len)) {
+    		printf("Errore nella encrypt_msg\n");
+    		exit(-1);
+    	}	
+    ciphertext_len += len;
+    /* Get the tag */
+    if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, 16, tag)) {
+    		printf("Errore nella encrypt_msg\n");
+    		exit(-1);
+    	}	
+        
+    /* Clean up */
+    EVP_CIPHER_CTX_free(ctx);
+    return ciphertext_len;
+}
+
 int main(){
 	crypto c = crypto();	
+	EVP_PKEY* dh_params = c.dh_params_gen();
+	EVP_PKEY* key = c.dh_keygen(dh_params);
+	printf("ciao");
+	long size;
+	//(unsigned char* pubkey = c.serialize_dh_pubkey(dh_keys, &size);
 	return 0;
 }
 

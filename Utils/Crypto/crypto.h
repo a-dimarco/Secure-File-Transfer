@@ -1,7 +1,8 @@
 #ifndef SECURE_FILE_TRANSFER_CRYPTO_H
 #define SECURE_FILE_TRANSFER_CRYPTO_H
 
-#include <string.h>
+#include <string>
+#include <cstring>
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -12,7 +13,14 @@ using namespace std;
 
 class crypto {
 public:
-    unsigned char *encrypt_message();//edo
+    int encrypt_message(const char* filename, int plaintext_len,
+                unsigned char *aad, int aad_len,
+                unsigned char *key,
+                unsigned char *iv, int iv_len,
+                unsigned char *ciphertext,
+                unsigned char *tag);//edo
+                
+    
 
     unsigned char *key_derivation(unsigned char *shared_secret, size_t size);//edo
 
