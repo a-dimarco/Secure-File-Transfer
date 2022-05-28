@@ -17,7 +17,7 @@
 using namespace std;
 
 //--OPCODES
-#define CHELLO_OPCODE 0 
+#define CHELLO_OPCODE 0
 #define SHELLO_OPCODE 1
 #define ACK           10
 #define LIST          11

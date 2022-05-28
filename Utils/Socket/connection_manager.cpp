@@ -2,12 +2,14 @@
 #include <iostream>
 
 using namespace std;
+
 connection_manager::connection_manager() {}
+
 connection_manager::connection_manager(int sock) {
     this->sckt = sock;
 }
 
-connection_manager::connection_manager(char* my_addr, long port) {
+connection_manager::connection_manager(char *my_addr, long port) {
     int ret;
     struct sockaddr_in addr;
     this->sckt = socket(AF_INET, SOCK_STREAM, 0);
@@ -18,13 +20,13 @@ connection_manager::connection_manager(char* my_addr, long port) {
     ret = bind(this->sckt, (struct sockaddr *) &addr, sizeof(addr));
     if (ret < 0) {
         cerr << "Binding Error\n";
-    
+
         exit(1);
     }
 }
 
-void connection_manager::connection(char* addr, long dest_port) {
-    
+void connection_manager::connection(char *addr, long dest_port) {
+
     int ret;
     struct sockaddr_in dst_addr;
     memset(&dst_addr, 0, sizeof(dst_addr));
@@ -70,15 +72,15 @@ char *connection_manager::receive_packet() {
     ssize_t ret = 0;
 
     // Ricevo dimensione dei dati in ingresso
-    ret=recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
-    printf("ret size: %d\n",ret);//TEST
+    ret = recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
+    printf("ret size: %d\n", ret);//TEST
     if (ret < 0) {
         cerr << "Error in receiving the size of the packet\n";
         exit(1);
     }
-    
+
     pkt_len = ntohl(pkt_len_n);
-    printf("ho ricevuto la size: %d\n",pkt_len);
+    printf("ho ricevuto la size: %d\n", pkt_len);
     /*
     if (pkt_len < 0)
         cerr << "Error";
@@ -102,7 +104,7 @@ char *connection_manager::receive_packet() {
             exit(1);
         }
         received += ret;
-        printf("ho ricevuto %d bytes\n",received);
+        printf("ho ricevuto %d bytes\n", received);
         break;
     }
     printf("ho ricevuto tutto il pacchetto\n");
@@ -150,12 +152,12 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
     printf(packet);
     ssize_t ret;
     uint32_t pkt_len_n = htonl(pkt_len);
-    ret=send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
+    ret = send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
     if (ret < 0) {
-            cerr << "Error in sending the packet";
-            exit(1);
+        cerr << "Error in sending the packet";
+        exit(1);
     }
-    printf("size inviata %d or %d \n",pkt_len,pkt_len_n);
+    printf("size inviata %d or %d \n", pkt_len, pkt_len_n);
     while (sent < pkt_len) {
         printf("appena entrato nel ciclo sending\n");
         ret = send(this->sckt, packet + sent, pkt_len - sent, 0);
@@ -164,12 +166,12 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
             exit(1);
         }
         sent += ret;
-        printf("ho inviato %d bytes\n",sent);
+        printf("ho inviato %d bytes\n", sent);
     }
     printf("ho inviato tutto il pacchetto\n");
 }
 
-connection_manager::~connection_manager(){}
+connection_manager::~connection_manager() {}
 
 
 //---Andrea TEST---
@@ -180,14 +182,14 @@ uint8_t connection_manager::receive_opcode() {
     ssize_t ret = 0;
 
     // Ricevo ACK
-    ret=recv(this->sckt, &opcode, sizeof(opcode), 0);
-    printf("ret size: %d\n",ret);//TEST
+    ret = recv(this->sckt, &opcode, sizeof(opcode), 0);
+    printf("ret size: %d\n", ret);//TEST
     if (ret < 0) {
         cerr << "Error in receiving the ACK packet\n";
         close_socket();
         exit(1);
     }
-    
+
     return opcode;
 }
 

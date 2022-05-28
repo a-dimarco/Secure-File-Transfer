@@ -3,6 +3,7 @@
 
 #include "../Utils/Socket/connection_manager.h"
 
+using namespace std;
 
 class client {
 public:
@@ -33,7 +34,7 @@ public:
 
     //andrea
 
-    void handle_req(char* pkt);
+    void handle_req(char *pkt);
 
     void show_menu();
 

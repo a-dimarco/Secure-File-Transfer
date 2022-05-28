@@ -1,9 +1,6 @@
 #include <iostream>
-#include <string.h>
 #include "server.h"
-#include <signal.h>
 #include <unistd.h>
-#include "../Utils/Socket/connection_manager.h"
 
 using namespace std;
 
@@ -13,8 +10,8 @@ void signal_callback_handler() {
     exit(1);
 }
 
-void start_session(int sock){
-    server* s = new server(sock);
+void start_session(int sock) {
+    server *s = new server(sock);
     s->handle_req();
 }
 

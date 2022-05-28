@@ -1,5 +1,6 @@
 #ifndef SECURE_FILE_TRANSFER_SERVER_H
 #define SECURE_FILE_TRANSFER_SERVER_H
+
 #include "../Utils/Socket/connection_manager.h"
 
 using namespace std;
@@ -41,8 +42,9 @@ private:
     int socket;
     connection_manager *cm;
 
-    void client_hello_handler(char* pkt, int pos);
-    char* prepare_ack_packet(uint32_t * size);
+    void client_hello_handler(char *pkt, int pos);
+
+    char *prepare_ack_packet(uint32_t *size);
 
 };
 

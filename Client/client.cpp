@@ -1,7 +1,7 @@
 #include "client.h"
 #include <openssl/rand.h>
-//#include "../Utils/Crypto/crypto.h"
-#include "../Utils/Socket/connection_manager.h"
+
+using namespace std;
 
 client::client() {};
 
@@ -25,7 +25,7 @@ char *client::send_clienthello() {
     unsigned char nonce[8];
     RAND_bytes(nonce, 8);
     char *pkt = this->crt_pkt_hello(nonce);
-    printf("%s\n",pkt);
+    printf("%s\n", pkt);
     this->cm->send_packet(pkt, 23);
 
     /*if(this->cm->receive_ack()){
@@ -62,7 +62,7 @@ char *client::crt_pkt_hello(unsigned char *nonce) {//Creates first handshake pac
     return pkt;
 }
 
-char* client::crt_pkt_upload(char *file){
+char *client::crt_pkt_upload(char *file) {
     static char pkt[23];
     int pos = 0;
 
@@ -74,11 +74,11 @@ void client::auth(char *pkt) {
 
 }
 
-client::~client() {this->cm->close_socket();}
+client::~client() { this->cm->close_socket(); }
 
 // Andrea Test
 
-void client::print_commands(){
+void client::print_commands() {
     printf("\nPlease select a command\n");
     printf("!help --> Show all available actions\n");
     printf("!list --> Show all files uploaded to the server\n");
@@ -89,20 +89,19 @@ void client::print_commands(){
     printf("!logout --> Disconnect from the server and close the application\n");
 }
 
-bool nameChecker(char* name, int mode){//Checks if file (code = FILENAME) or command (code = COMMAND) is formatted correctly - utility
+bool nameChecker(char *name,
+                 int mode) {//Checks if file (code = FILENAME) or command (code = COMMAND) is formatted correctly - utility
 
     bool ret;
-    size_t len = strlen(name)-1;
-    char * filename = (char*)malloc(len);
+    size_t len = strlen(name) - 1;
+    char *filename = (char *) malloc(len);
     memcpy(filename, name, len);
     //printf("Test: %s\n", test);
-    if(mode == FILENAME){
+    if (mode == FILENAME) {
         ret = regex_match(filename, regex("^[A-Za-z0-9]*\\.[A-Za-z0-9]+$"));
-    }
-    else if (mode == COMMAND){
+    } else if (mode == COMMAND) {
         ret = regex_match(filename, regex("^\\![A-Za-z]+$"));
-    }
-    else{
+    } else {
         ret = false;
     }
     free(filename);
@@ -110,27 +109,25 @@ bool nameChecker(char* name, int mode){//Checks if file (code = FILENAME) or com
 
 }
 
-void client::handle_req(char *pkt){
+void client::handle_req(char *pkt) {
 
     //Andrea test
     //Deserializzazione
     int pos = 0;
     uint8_t opcode;
 
-    
+
     memcpy(&opcode, pkt, sizeof(opcode));//prelevo opcode
     opcode = ntohs(opcode);
-    pos+=sizeof(opcode);
+    pos += sizeof(opcode);
 
-    if (opcode == SHELLO_OPCODE){
+    if (opcode == SHELLO_OPCODE) {
         //server_hello_handler(pkt, pos);
-    }
-    else if(opcode == ACK){//TEST
+    } else if (opcode == ACK) {//TEST
         printf("ACK - OK\n");
         show_menu();
         return;//TEST
-    }
-    else{
+    } else {
         printf("Not a valid opcode\n");
         cm->close_socket();//TEST
         exit(1);//TEST
@@ -141,48 +138,39 @@ void client::handle_req(char *pkt){
 }
 
 
-void client::show_menu(){
+void client::show_menu() {
 
     print_commands();
 
     char command[30];
     fgets(command, 30, stdin);
 
-    printf("command : %s \n" , command);
+    printf("command : %s \n", command);
 
-    if(nameChecker(command, COMMAND)){
-        if(strcmp(command, "!help\n")==0){
+    if (nameChecker(command, COMMAND)) {
+        if (strcmp(command, "!help\n") == 0) {
             show_menu();
-        }
-        else if(strcmp(command, "!help\n")==0){
+        } else if (strcmp(command, "!help\n") == 0) {
             show_menu();
-        }
-        else if(strcmp(command, "!list\n")==0){
+        } else if (strcmp(command, "!list\n") == 0) {
             //this->cm->send_opcode(LIST);
             //receive_list();//IMPLEMENT
-        }
-        else if(strcmp(command, "!download\n")==0){//IMPLEMENT
+        } else if (strcmp(command, "!download\n") == 0) {//IMPLEMENT
             show_menu();
-        }
-        else if(strcmp(command, "!upload\n")==0){//IMPLEMENT
+        } else if (strcmp(command, "!upload\n") == 0) {//IMPLEMENT
             show_menu();
-        }
-        else if(strcmp(command, "!rename\n")==0){//IMPLEMENT
+        } else if (strcmp(command, "!rename\n") == 0) {//IMPLEMENT
             show_menu();
-        }
-        else if(strcmp(command, "!delete\n")==0){//IMPLEMENT
+        } else if (strcmp(command, "!delete\n") == 0) {//IMPLEMENT
             show_menu();
-        }
-        else if(strcmp(command, "!logout\n")==0){//IMPLEMENT
+        } else if (strcmp(command, "!logout\n") == 0) {//IMPLEMENT
             printf("Bye!\n");
             exit(0);
-        }
-        else{
+        } else {
             printf("Command %s not found, please retry\n", command);
             show_menu();
         }
-    }
-    else{
+    } else {
         printf("Command format not valid, please use the format !command\n");
         show_menu();
     }
