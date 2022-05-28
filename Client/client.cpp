@@ -1,5 +1,6 @@
 #include "client.h"
 #include <openssl/rand.h>
+#include "../Utils/Crypto/crypto.h"
 
 using namespace std;
 
@@ -21,9 +22,8 @@ client::client(char *username) {
 }
 
 char *client::send_clienthello() {
-    RAND_poll();
-    unsigned char nonce[8];
-    RAND_bytes(nonce, 8);
+    crypto *c=new crypto();
+    unsigned char* nonce=c->create_nonce();
     char *pkt = this->crt_pkt_hello(nonce);
     printf("%s\n", pkt);
     this->cm->send_packet(pkt, 23);
@@ -62,12 +62,47 @@ char *client::crt_pkt_hello(unsigned char *nonce) {//Creates first handshake pac
     return pkt;
 }
 
-char *client::crt_pkt_upload(char *file) {
-    static char pkt[23];
+char *client::crt_pkt_upload(char *filename) {
+    //static char pkt[23];
+    int pos1 = 0;
+    int ret;
+    crypto *c=new crypto();
+    FILE *file;
+    uint8_t opcode = htons(UPLOAD);
+    int aad_size=sizeof(uint8_t)+sizeof(uint16_t);
+    unsigned char start_packet[aad_size];
+    file = fopen(filename, "rb");
+    if (file == NULL) {
+        printf("Errore nell'apertura del file\n");
+        exit(-1);
+    }
+    fseek(file, 0L, SEEK_END);
+    uint32_t file_size = ftell(file);
+    fseek(file, 0L, SEEK_SET);
+    memcpy(start_packet, &opcode, sizeof(uint8_t));
+    pos1 += sizeof(uint8_t);
+    memcpy(start_packet + pos1, &file_size, sizeof(uint32_t));
+    unsigned char ciphertext[file_size+16];
+    unsigned char tag[16];
+    c->encrypt_message(file,file_size,start_packet,aad_size,c->get_key(),c->create_random_iv(), EVP_CIPHER_iv_length(EVP_aes_128_gcm()),ciphertext,tag);
+    ret = fclose(file);
+    if (ret != 0) {
+        printf("Errore\n");
+        exit(1);
+    }
+    char final_packet[aad_size+file_size+16+16];
     int pos = 0;
+    memcpy(final_packet, start_packet, aad_size);
+    pos += sizeof(aad_size);
+    memcpy(final_packet, ciphertext, file_size+16);
+    pos += sizeof(file_size+16);
+    memcpy(final_packet, tag, 16);
 
+    free(tag);
+    free(ciphertext);
+    free(start_packet);
 
-    return pkt;
+    return final_packet;
 }
 
 void client::auth(char *pkt) {

@@ -9,13 +9,14 @@
 #include <openssl/err.h>
 #include <openssl/hmac.h>
 #include <openssl/x509.h>
+#include <openssl/rand.h>
 #include<iostream>
 
 using namespace std;
 
 class crypto {
 public:
-    int encrypt_message(const char *filename, int plaintext_len,
+    int encrypt_message(FILE* file, int plaintext_len,
                         unsigned char *aad, int aad_len,
                         unsigned char *key,
                         unsigned char *iv, int iv_len,
@@ -47,6 +48,12 @@ public:
                 X509 *cert);//lore
 
     bool verify_cert(X509 *cert);//lore
+
+    unsigned char *get_key();
+
+    unsigned char *create_random_iv();
+
+    unsigned char *create_nonce();
 
     //EVP_PKEY *extract_pubkey(X509_STORE *cert);//lore
 

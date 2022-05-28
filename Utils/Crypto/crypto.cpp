@@ -1,7 +1,21 @@
 #include "crypto.h"
 
 using namespace std;
-
+unsigned char* crypto::get_key() {
+    return this->shared_key;
+}
+unsigned char* crypto::create_random_iv() {
+    RAND_poll();
+    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+    RAND_bytes(iv, EVP_CIPHER_iv_length(EVP_aes_128_gcm()));
+    return iv;
+}
+unsigned char* crypto::create_nonce() {
+    RAND_poll();
+    unsigned char nonce[8];
+    RAND_bytes(nonce, 9);
+    return nonce;
+}
 EVP_PKEY *crypto::dh_params_gen() {
     /*
     EVP_PKEY* dh_params;
@@ -232,14 +246,13 @@ unsigned char *crypto::key_derivation(unsigned char *shared_secret, size_t size)
     return session_key;
 }
 
-int crypto::encrypt_message(const char *filename, int plaintext_len,
+int crypto::encrypt_message(FILE *file, int plaintext_len,
                             unsigned char *aad, int aad_len,
                             unsigned char *key,
                             unsigned char *iv, int iv_len,
                             unsigned char *ciphertext,
                             unsigned char *tag) {
     EVP_CIPHER_CTX *ctx;
-    FILE *file;
     int len = 0;
     int ciphertext_len = 0;
     int encrypted_len = 0;
@@ -260,12 +273,6 @@ int crypto::encrypt_message(const char *filename, int plaintext_len,
 
     //Provide any AAD data. This can be called zero or more times as required
     if (1 != EVP_EncryptUpdate(ctx, NULL, &len, aad, aad_len)) {
-        printf("Errore nella encrypt_msg\n");
-        exit(-1);
-    }
-
-    file = fopen(filename, "rb");
-    if (file == NULL) {
         printf("Errore nella encrypt_msg\n");
         exit(-1);
     }
@@ -291,11 +298,6 @@ int crypto::encrypt_message(const char *filename, int plaintext_len,
         free(fragment);
         encrypted_len += current_len;
     };
-    ret = fclose(file);
-    if (ret != 0) {
-        printf("Errore nella encrypt_msg\n");
-        exit(1);
-    }
 
     //Finalize Encryption
     if (1 != EVP_EncryptFinal(ctx, ciphertext + ciphertext_len, &len)) {
