@@ -53,7 +53,7 @@ char *client::crt_pkt_hello(unsigned char *nonce) {//Creates first handshake pac
     pos += sizeof(uint16_t);
     memcpy(pkt + pos, &nonce_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-    memcpy(pkt + pos, user, sizeof(user));
+    memcpy(pkt + pos, user, 10);
     pos += sizeof(user);
     memcpy(pkt + pos, nonce, 8);
 
