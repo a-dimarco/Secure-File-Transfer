@@ -263,13 +263,14 @@ int crypto::encrypt_message(const char* filename, int plaintext_len,
     	exit(-1);
     }
 
+    file = fopen(filename, "rb");
+    if (file == NULL) {
+    	printf("Errore nella encrypt_msg\n");
+    	exit(-1);
+    }
+
     while (encrypted_len < plaintext_len) {
     
-    	file = fopen(filename, "rb");
-    	if (file == NULL) {
-    		printf("Errore nella encrypt_msg\n");
-    		exit(-1);
-    	}
     	current_len = (plaintext_len-encrypted_len < fragment_size) ? plaintext_len-encrypted_len : fragment_size;
     
     	fragment = (unsigned char*)malloc(current_len);
@@ -277,12 +278,6 @@ int crypto::encrypt_message(const char* filename, int plaintext_len,
     	ret = fread(fragment, sizeof(unsigned char), current_len, file);
 	if (ret < current_len) {
 		printf("Error fread\n");
-		exit(1);
-	}
-    	
-    	ret = fclose(file);
-	if (ret != 0) {
-		printf("Errore nella encrypt_msg\n");
 		exit(1);
 	}
     	
@@ -295,6 +290,12 @@ int crypto::encrypt_message(const char* filename, int plaintext_len,
     	free(fragment);
     	encrypted_len += current_len;
     };
+    ret = fclose(file);
+	if (ret != 0) {
+		printf("Errore nella encrypt_msg\n");
+		exit(1);
+	}
+    	
 	//Finalize Encryption
     if(1 != EVP_EncryptFinal(ctx, ciphertext + ciphertext_len, &len)) {
     		printf("Errore nella encrypt_msg\n");
@@ -310,6 +311,119 @@ int crypto::encrypt_message(const char* filename, int plaintext_len,
     /* Clean up */
     EVP_CIPHER_CTX_free(ctx);
     return ciphertext_len;
+}
+
+int crypto::encrypt_packet(unsigned char *plaintext, int plaintext_len,
+                unsigned char *aad, int aad_len,
+                unsigned char *key,
+                unsigned char *iv, int iv_len,
+                unsigned char *ciphertext,
+                unsigned char *tag)
+{
+    EVP_CIPHER_CTX *ctx;
+    int len=0;
+    int ciphertext_len=0;
+    // Create and initialise the context
+    if(!(ctx = EVP_CIPHER_CTX_new())) {
+    	printf("Errore nella encrypt_packet\n");
+    	exit(-1);
+    }
+    // Initialise the encryption operation.
+    if(1 != EVP_EncryptInit(ctx, EVP_aes_128_gcm(), key, iv)) {
+    	printf("Errore nella encrypt_packet\n");
+    	exit(-1);
+    }
+
+    //Provide any AAD data. This can be called zero or more times as required
+    if(1 != EVP_EncryptUpdate(ctx, NULL, &len, aad, aad_len)) {
+    	printf("Errore nella encrypt_packet\n");
+    	exit(-1);
+    }
+
+    if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len)) {
+    	printf("Errore nella encrypt_packet\n");
+    	exit(-1);
+    }
+    ciphertext_len = len;
+	//Finalize Encryption
+    if(1 != EVP_EncryptFinal(ctx, ciphertext + len, &len)) {
+    	printf("Errore nella encrypt_packet\n");
+    	exit(-1);
+    }
+    ciphertext_len += len;
+    /* Get the tag */
+    if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, 16, tag)) {
+    	printf("Errore nella encrypt_packet\n");
+    	exit(-1);
+    }
+    /* Clean up */
+    EVP_CIPHER_CTX_free(ctx);
+    return ciphertext_len;
+}
+
+int decrypt_message(unsigned char *ciphertext, int ciphertext_len,
+                unsigned char *aad, int aad_len,
+                unsigned char *tag,
+                unsigned char *key,
+                unsigned char *iv, int iv_len,
+                unsigned char *plaintext)
+{
+    EVP_CIPHER_CTX *ctx;
+    int len, current_len;
+    int plaintext_len = 0;
+    int fragment_size = 1024;
+    int decrypted_len = 0;
+    int ret;
+    
+    /* Create and initialise the context */
+    if(!(ctx = EVP_CIPHER_CTX_new())) {
+    	printf("Errore nella decrypt_message\n");
+    	exit(-1);
+    }
+    if(!EVP_DecryptInit(ctx, EVP_aes_128_gcm(), key, iv)) {
+    	printf("Errore nella decrypt_message\n");
+    	exit(-1);
+    }
+	//Provide any AAD data.
+    if(!EVP_DecryptUpdate(ctx, NULL, &len, aad, aad_len)) {
+    	printf("Errore nella decrypt_message\n");
+    	exit(-1);
+    }
+	//Provide the message to be decrypted, and obtain the plaintext output.
+	
+    while (decrypted_len < ciphertext_len) {
+    
+    	current_len = (ciphertext_len-decrypted_len < fragment_size) ? ciphertext_len-decrypted_len : fragment_size;
+    
+    	if(!EVP_DecryptUpdate(ctx, plaintext+plaintext_len, &len, ciphertext + decrypted_len, current_len)) {
+    		printf("Errore nel while della decrypt\n");
+    		exit(-1);
+    	}
+    	plaintext_len += len;
+    	decrypted_len += current_len;
+    }
+    /* Set expected tag value. Works in OpenSSL 1.0.1d and later */
+    if(!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, 16, tag)) {
+    	printf("Errore nella decrypt_message\n");
+    	exit(-1);
+    }
+    /*
+     * Finalise the decryption. A positive return value indicates success,
+     * anything else is a failure - the plaintext is not trustworthy.
+     */
+    ret = EVP_DecryptFinal(ctx, plaintext + plaintext_len, &len);
+
+    /* Clean up */
+    EVP_CIPHER_CTX_cleanup(ctx);
+
+    if(ret > 0) {
+        /* Success */
+        plaintext_len += len;
+        return plaintext_len;
+    } else {
+        /* Verify failed */
+        return -1;
+    }
 }
 
 int main(){

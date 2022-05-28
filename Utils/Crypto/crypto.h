@@ -20,7 +20,12 @@ public:
                 unsigned char *ciphertext,
                 unsigned char *tag);//edo
                 
-    
+    int encrypt_packet(unsigned char *plaintext, int plaintext_len,
+                unsigned char *aad, int aad_len,
+                unsigned char *key,
+                unsigned char *iv, int iv_len,
+                unsigned char *ciphertext,
+                unsigned char *tag);
 
     unsigned char *key_derivation(unsigned char *shared_secret, size_t size);//edo
 
