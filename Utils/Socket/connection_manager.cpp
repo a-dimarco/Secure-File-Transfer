@@ -73,7 +73,7 @@ char *connection_manager::receive_packet() {
 
     // Ricevo dimensione dei dati in ingresso
     ret = recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
-    //printf("ret size: %d\n", ret);//TEST
+    printf("ret size: %zd\n", ret);//TEST
     if (ret < 0) {
         cerr << "Error in receiving the size of the packet\n";
         exit(1);
@@ -104,7 +104,7 @@ char *connection_manager::receive_packet() {
             exit(1);
         }
         received += ret;
-        //printf("ho ricevuto %d bytes\n",received);
+        printf("ho ricevuto %zu bytes\n", received);
     }
     //printf("ho ricevuto tutto il pacchetto\n");
 
@@ -148,7 +148,7 @@ char *connection_manager::receive_packet() {
 
 void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
     size_t sent = 0;
-    //printf(packet);
+    printf("%s", packet);
     ssize_t ret;
     uint32_t pkt_len_n = htonl(pkt_len);
     ret = send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
@@ -165,7 +165,7 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
             exit(1);
         }
         sent += ret;
-        //printf("ho inviato %d bytes\n", sent);
+        printf("ho inviato %zu bytes\n", sent);
     }
     //printf("ho inviato tutto il pacchetto\n");
 }
