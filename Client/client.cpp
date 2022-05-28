@@ -119,7 +119,7 @@ void client::handle_req(char *pkt){
 
     
     memcpy(&opcode, pkt, sizeof(opcode));//prelevo opcode
-    opcode = ntohs(opcode);
+    //opcode = ntohs(opcode);
     pos+=sizeof(opcode);
 
     if (opcode == SHELLO_OPCODE){
@@ -151,6 +151,7 @@ void client::show_menu(){
     printf("command : %s \n" , command);
 
     if(nameChecker(command, COMMAND)){
+        uint32_t size;
         if(strcmp(command, "!help\n")==0){
             show_menu();
         }
@@ -158,7 +159,12 @@ void client::show_menu(){
             show_menu();
         }
         else if(strcmp(command, "!list\n")==0){
-            //this->cm->send_opcode(LIST);
+            //char * packet = prepare_ack_packet(&size);
+            //printf("Test dimensione ack packet: %d\n", size);
+            //cm->send_packet(packet, size);
+            //close(sock);
+            //exit(0);
+            //char *pkt = cm->receive_packet();//waits for a request from the client
             //receive_list();//IMPLEMENT
         }
         else if(strcmp(command, "!download\n")==0){//IMPLEMENT
@@ -174,7 +180,11 @@ void client::show_menu(){
             show_menu();
         }
         else if(strcmp(command, "!logout\n")==0){//IMPLEMENT
+            char * packet = prepare_logout_packet(&size);
+            printf("Test dimensione logout packet: %d\n", size);
+            cm->send_packet(packet, size);
             printf("Bye!\n");
+            cm->close_socket();
             exit(0);
         }
         else{
@@ -186,4 +196,15 @@ void client::show_menu(){
         printf("Command format not valid, please use the format !command\n");
         show_menu();
     }
+}
+
+char* client::prepare_logout_packet(uint32_t *size){
+
+    char * packet;
+    uint8_t opcode= LOGOUT;
+    *size = sizeof(opcode);
+    memcpy(packet, &opcode, sizeof(opcode));
+
+    return packet;
+
 }

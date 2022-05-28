@@ -103,7 +103,6 @@ char *connection_manager::receive_packet() {
         }
         received += ret;
         printf("ho ricevuto %d bytes\n",received);
-        break;
     }
     printf("ho ricevuto tutto il pacchetto\n");
 
@@ -174,20 +173,5 @@ connection_manager::~connection_manager(){}
 
 //---Andrea TEST---
 
-uint8_t connection_manager::receive_opcode() {
 
-    uint8_t opcode;
-    ssize_t ret = 0;
-
-    // Ricevo ACK
-    ret=recv(this->sckt, &opcode, sizeof(opcode), 0);
-    printf("ret size: %d\n",ret);//TEST
-    if (ret < 0) {
-        cerr << "Error in receiving the ACK packet\n";
-        close_socket();
-        exit(1);
-    }
-    
-    return opcode;
-}
 

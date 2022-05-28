@@ -66,9 +66,7 @@ public:
 
     //Andrea
 
-    //bool receive_ack();
-    //void send_ack();
-    uint8_t receive_opcode();
+    //uint8_t receive_opcode();
 
 private:
 

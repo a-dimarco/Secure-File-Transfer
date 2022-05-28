@@ -82,6 +82,8 @@ void server::handle_req(){
     opcode = ntohs(opcode);
     pos+=sizeof(opcode);
 
+    printf("OPCODE ricevuto: %d\n", opcode);
+
     if(opcode == LIST){//IMPLEMENT
         //send_list();
         //handle_req(sock);//devo chiamarla? non sono sicuro
@@ -99,7 +101,9 @@ void server::handle_req(){
     
     }
     else if(opcode == LOGOUT){//IMPLEMENT
-    
+        printf("Received logout request. Closing connections.\n Bye!\n");
+        cm->close_socket();
+        exit(0);
     }
     else if(opcode == ACK){
 
@@ -154,7 +158,7 @@ void server::client_hello_handler(char* pkt, int pos){
         cm->send_packet(packet, size);
         //close(sock);
         //exit(0);
-        char *pkt = cm->receive_packet();//waits for a request from the client
+        handle_req();//waits for a request from the client
         //chiama metodo con while true che si blocca in receive packet fino a che non ha ricevuto opcode logout
     }
     else{
