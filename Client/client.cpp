@@ -25,11 +25,16 @@ client::client(char *username) {
 
 char *client::send_clienthello() {
     crypto *c=new crypto();
-    unsigned char* nonce=c->create_nonce();
+
+    //unsigned char* nonce=c->create_nonce();
+    RAND_poll();
+    unsigned char nonce[8];
+    RAND_bytes(nonce, 8);
+
+    printf("checkpoint\n");
     char *pkt = this->crt_pkt_hello(nonce);
     printf("%s\n", pkt);
     this->cm->send_packet(pkt, 23);
-
     /*if(this->cm->receive_ack()){
         char * test = new char[10];//TEST -> messa per non far andare il loop il client
         //cm->close_socket();//TEST

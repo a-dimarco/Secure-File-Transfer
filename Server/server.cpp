@@ -192,8 +192,9 @@ char *server::crt_pkt_download(char *file, int* size) {
     return pkt;
 }
 
-void send_list() {
-
+void server::send_list() {
+    
+    handle_req();
 }
 /*
 char* print_folder(char* path){//Takes all files and saves them into a variable

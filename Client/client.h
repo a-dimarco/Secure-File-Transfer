@@ -45,6 +45,7 @@ private:
 
     char *user;
     connection_manager *cm;
+    uint16_t counter;
 
     char *crt_pkt_hello(unsigned char *nonce);
     char* prepare_req_packet(uint32_t *size, uint8_t opcode);

@@ -35,7 +35,7 @@ int main() {
 
     char *pkt = cl->send_clienthello();
     cl->handle_req(pkt);
-    
+
     //cl->auth(pkt);
     //cl->show_menu();
 
