@@ -15,6 +15,7 @@ client::client(char *username) {
     srand(seed);
     long std_port=rand()%6000+43151;
     this->cm=new connection_manager(addr,std_port);*/
+    
     this->cm = new connection_manager(addr, 8000);
     this->cm->connection(addr, dest_port);
 
@@ -41,8 +42,8 @@ char *client::crt_pkt_hello(unsigned char *nonce) {//Creates first handshake pac
     //PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
     printf("Sono appena entrato in create packet hello\n");
 
-    uint16_t us_size = htons(strlen(user));
-    uint16_t nonce_size = htons(sizeof(nonce));
+    uint16_t us_size = htons(strlen(user)+1);
+    uint16_t nonce_size = htons(sizeof(nonce)+1);
     uint8_t opcode = htons(CHELLO_OPCODE);
     int pos = 0;
     static char pkt[CLIENT_HELLO_SIZE];
@@ -54,11 +55,12 @@ char *client::crt_pkt_hello(unsigned char *nonce) {//Creates first handshake pac
     memcpy(pkt + pos, &nonce_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     memcpy(pkt + pos, user, sizeof(user));
-    pos += sizeof(user);
+    //pos += sizeof(user);
+    pos+= strlen(user)+1;
     memcpy(pkt + pos, nonce, 8);
 
-    /*printf("Ho appena finito create packet hello\n");
-    printf("pacchetto client hello: \n opcode: %d\n us_size: %d\n nonce_size: %d\n username: %s\n nonce: %s\n" ,opcode,sizeof(user), sizeof(nonce), this->user, nonce);*/
+    //printf("Ho appena finito create packet hello\n");
+    printf("pacchetto client hello: \n opcode: %d\n us_size: %d\n nonce_size: %d\n username: %s\n nonce: %s\n" ,opcode, us_size, nonce_size, this->user, nonce);
     return pkt;
 }
 
@@ -89,8 +91,7 @@ void client::print_commands() {
     printf("!logout --> Disconnect from the server and close the application\n");
 }
 
-bool nameChecker(char *name,
-                 int mode) {//Checks if file (code = FILENAME) or command (code = COMMAND) is formatted correctly - utility
+bool nameChecker(char *name, int mode) {//Checks if file (code = FILENAME) or command (code = COMMAND) is formatted correctly - utility
 
     bool ret;
     size_t len = strlen(name) - 1;
@@ -123,11 +124,18 @@ void client::handle_req(char *pkt) {
 
     if (opcode == SHELLO_OPCODE) {
         //server_hello_handler(pkt, pos);
-    } else if (opcode == ACK) {//TEST
+    }
+    else if (opcode == LIST) {
+        printf("Received List\n");
+        show_list(pkt, pos);
+        show_menu();
+    }
+    else if (opcode == ACK) {//TEST
         printf("ACK - OK\n");
         show_menu();
         return;//TEST
-    } else {
+    } 
+    else {
         printf("Not a valid opcode\n");
         cm->close_socket();//TEST
         exit(1);//TEST
@@ -151,17 +159,13 @@ void client::show_menu() {
         uint32_t size;
         if(strcmp(command, "!help\n")==0){
             show_menu();
-        } else if (strcmp(command, "!help\n") == 0) {
-            show_menu();
         }
         else if(strcmp(command, "!list\n")==0){
-            //char * packet = prepare_ack_packet(&size);
-            //printf("Test dimensione ack packet: %d\n", size);
-            //cm->send_packet(packet, size);
-            //close(sock);
-            //exit(0);
-            //char *pkt = cm->receive_packet();//waits for a request from the client
-            //receive_list();//IMPLEMENT
+            char * packet = prepare_req_packet(&size, LIST);    
+            //printf("Test dimensione list packet: %d\n", size);
+            cm->send_packet(packet, size);
+            char *pkt = cm->receive_packet();//waits for the list packet
+            handle_req(pkt);
         } else if (strcmp(command, "!download\n") == 0) {//IMPLEMENT
             show_menu();
         } else if (strcmp(command, "!upload\n") == 0) {//IMPLEMENT
@@ -172,8 +176,7 @@ void client::show_menu() {
             show_menu();
         }
         else if(strcmp(command, "!logout\n")==0){//IMPLEMENT
-            char * packet = prepare_logout_packet(&size);
-            printf("Test dimensione logout packet: %d\n", size);
+            char* packet = prepare_req_packet(&size, LOGOUT);
             cm->send_packet(packet, size);
             printf("Bye!\n");
             cm->close_socket();
@@ -188,13 +191,35 @@ void client::show_menu() {
     }
 }
 
-char* client::prepare_logout_packet(uint32_t *size){
+char* client::prepare_req_packet(uint32_t *size, uint8_t opcode){
+
+    //opcode = htons(opcode);
 
     char * packet;
-    uint8_t opcode= LOGOUT;
     *size = sizeof(opcode);
-    memcpy(packet, &opcode, sizeof(opcode));
-
+    memcpy(packet, &opcode, sizeof(uint8_t));
+    printf("request packet codice:%d ha size %d", opcode, *size);
     return packet;
 
+}
+
+void client::show_list(char* pkt, int pos){
+    
+    uint16_t list_size;
+
+    //Deserializzazione
+
+    memcpy(&list_size, pkt + pos, sizeof(list_size)); //prelevo list_size inizializzo la variabile che dovrà contenerlo
+    pos += sizeof(list_size);
+    list_size = ntohs(list_size);
+    //char content[us_size];
+    char* content /*= &temp[0]*/;
+
+    memcpy(&content, pkt + pos, list_size);//prelevo l'username
+
+    //Fine Deserializzazione
+
+    printf("Available files:\n%s", content);
+
+    show_menu();
 }

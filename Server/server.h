@@ -9,7 +9,7 @@ class server {
 public:
     server(int sock);
 
-    void show_list();
+    void send_list();
 
     //invia pacchetto generico
     void send_packet(const char *pkt);
@@ -41,6 +41,7 @@ private:
 
     int socket;
     connection_manager *cm;
+    char* logged_user;//TEST
 
     void client_hello_handler(char *pkt, int pos);
 

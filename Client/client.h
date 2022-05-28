@@ -46,7 +46,8 @@ private:
     connection_manager *cm;
 
     char *crt_pkt_hello(unsigned char *nonce);
-    char* prepare_logout_packet(uint32_t *size);
+    char* prepare_req_packet(uint32_t *size, uint8_t opcode);
+    void show_list(char* pkt, int pos);
 
 };
 

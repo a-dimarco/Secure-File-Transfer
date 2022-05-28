@@ -73,14 +73,14 @@ char *connection_manager::receive_packet() {
 
     // Ricevo dimensione dei dati in ingresso
     ret = recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
-    printf("ret size: %d\n", ret);//TEST
+    //printf("ret size: %d\n", ret);//TEST
     if (ret < 0) {
         cerr << "Error in receiving the size of the packet\n";
         exit(1);
     }
 
     pkt_len = ntohl(pkt_len_n);
-    printf("ho ricevuto la size: %d\n", pkt_len);
+    //printf("ho ricevuto la size: %d\n", pkt_len);
     /*
     if (pkt_len < 0)
         cerr << "Error";
@@ -91,22 +91,22 @@ char *connection_manager::receive_packet() {
         exit(1);
     }
     */
-    printf("prima di allocare il buffer\n");
+    //printf("prima di allocare il buffer\n");
     // Alloco il buffer per i dati in ingresso
     pkt = new char[pkt_len];
-    printf("sono qui prima di ricevere i dati\n");
+    //printf("sono qui prima di ricevere i dati\n");
     // Ricevo i dati in ingresso
     while (received < pkt_len) {
-        printf("appena entrato nel ciclo receiving\n");
+        //printf("appena entrato nel ciclo receiving\n");
         ret = recv(this->sckt, pkt + received, pkt_len - received, 0);
         if (ret < 0) {
             cerr << "Error in receiving the packet\n";
             exit(1);
         }
         received += ret;
-        printf("ho ricevuto %d bytes\n",received);
+        //printf("ho ricevuto %d bytes\n",received);
     }
-    printf("ho ricevuto tutto il pacchetto\n");
+    //printf("ho ricevuto tutto il pacchetto\n");
 
 /*
     //Deserializzazione
@@ -137,7 +137,7 @@ char *connection_manager::receive_packet() {
 
     //Fine Deserializzazione
 
-    printf("pacchetto: \n opcode: %d\n us_size: %d\n nonce_size: %d\n, username: %s\n nonce: %s\n" ,opcode,us_size, nonce_size, username, nonce);
+    //printf("pacchetto: \n opcode: %d\n us_size: %d\n nonce_size: %d\n, username: %s\n nonce: %s\n" ,opcode,us_size, nonce_size, username, nonce);
 
     //test andrea
     return username;
@@ -148,7 +148,7 @@ char *connection_manager::receive_packet() {
 
 void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
     size_t sent = 0;
-    printf(packet);
+    //printf(packet);
     ssize_t ret;
     uint32_t pkt_len_n = htonl(pkt_len);
     ret = send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
@@ -156,18 +156,18 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
         cerr << "Error in sending the packet";
         exit(1);
     }
-    printf("size inviata %d or %d \n", pkt_len, pkt_len_n);
+    //printf("size inviata %d or %d \n", pkt_len, pkt_len_n);
     while (sent < pkt_len) {
-        printf("appena entrato nel ciclo sending\n");
+        //printf("appena entrato nel ciclo sending\n");
         ret = send(this->sckt, packet + sent, pkt_len - sent, 0);
         if (ret < 0) {
             cerr << "Error in sending the packet";
             exit(1);
         }
         sent += ret;
-        printf("ho inviato %d bytes\n", sent);
+        //printf("ho inviato %d bytes\n", sent);
     }
-    printf("ho inviato tutto il pacchetto\n");
+    //printf("ho inviato tutto il pacchetto\n");
 }
 
 connection_manager::~connection_manager() {}

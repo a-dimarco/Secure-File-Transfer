@@ -32,8 +32,8 @@ using namespace std;
 #define CHUNK_SIZE 512000 //512 KiB
 
 //--FILE PATHS
-#define SERVER_PATH "../server_files/"
-#define CLIENT_PATH "../client_folders/"
+#define SERVER_PATH "/server_files/Clients/"
+#define CLIENT_PATH "/client_folders/"
 
 //--COMMANDS
 #define FILENAME 1111
