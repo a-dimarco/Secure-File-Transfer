@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri May 27 09:31:47 2022
+# Make data base, printed on Sat May 28 01:18:04 2022
 
 # Variables
 
@@ -73,7 +73,7 @@ PATH = /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/ubuntu:@/tmp/.ICE-unix/1414,unix/ubuntu:/tmp/.ICE-unix/1414
+SESSION_MANAGER = local/ubuntu:@/tmp/.ICE-unix/1386,unix/ubuntu:/tmp/.ICE-unix/1386
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -93,7 +93,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 1849
+GIO_LAUNCHED_DESKTOP_FILE_PID = 1805
 # automatic
 %F = $(notdir $%)
 # environment
@@ -107,7 +107,7 @@ PWD = /home/studenti/Documents/GitHub/Secure-File-Transfer
 # environment
 XDG_SEAT = seat0
 # environment
-SSH_AGENT_PID = 1491
+SSH_AGENT_PID = 1463
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -147,7 +147,7 @@ SHLVL = 1
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-29eaa0ef-4a0e-4350-b869-d175ae0bee72.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-6ab1339c-70d1-46d0-9578-e7d490981359.sock
 # environment
 XDG_SESSION_ID = 2
 # environment
@@ -209,7 +209,7 @@ GJS_DEBUG_OUTPUT = stderr
 # environment
 LANG = C
 # environment
-VSCODE_PID = 1849
+VSCODE_PID = 1805
 # variable set hash-table stats:
 # Load=100/1024=10%, Rehash=0, Collisions=14/128=11%
 
@@ -219,9 +219,9 @@ VSCODE_PID = 1849
 
 # Directories
 
-# . (device 2049, inode 412092): 11 files, no impossibilities.
+# . (device 2049, inode 412092): 13 files, no impossibilities.
 
-# 11 files, no impossibilities in 1 directories.
+# 13 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -268,7 +268,7 @@ client: Client/main_client.cpp
 # Not a target:
 Client/main_client.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-27 08:22:53.364304151
+#  Last modified 2022-05-27 10:18:30.994418394
 #  File has been updated.
 #  Successfully updated.
 
@@ -313,12 +313,12 @@ Server/main_server.cpp:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 20 / storage = 195 B / avg = 9 B
-# current buf: size = 8162 B / used = 195 B / count = 20 / avg = 9 B
+# strcache buffers: 1 (0) / strings = 22 / storage = 223 B / avg = 10 B
+# current buf: size = 8162 B / used = 223 B / count = 22 / avg = 10 B
 
-# strcache performance: lookups = 31 / hit rate = 35%
+# strcache performance: lookups = 33 / hit rate = 33%
 # hash-table stats:
-# Load=20/8192=0%, Rehash=0, Collisions=4/31=13%
-# Finished Make data base on Fri May 27 09:31:47 2022
+# Load=22/8192=0%, Rehash=0, Collisions=4/33=12%
+# Finished Make data base on Sat May 28 01:18:04 2022
 
  

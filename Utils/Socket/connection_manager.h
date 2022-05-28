@@ -69,7 +69,6 @@ public:
     //bool receive_ack();
     //void send_ack();
     uint8_t receive_opcode();
-    void send_opcode(uint8_t opcode);
 
 private:
 

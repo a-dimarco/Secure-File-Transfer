@@ -29,7 +29,8 @@ int main() {
     fgets(username, 11, stdin);
     client *cl = new client(username);
     char *pkt = cl->send_clienthello();
+    cl->handle_req(pkt);
     //cl->auth(pkt);
-    cl->show_menu();
+    //cl->show_menu();
 
 }

@@ -33,6 +33,8 @@ public:
 
     //andrea
 
+    void handle_req(char* pkt);
+
     void show_menu();
 
     void print_commands();

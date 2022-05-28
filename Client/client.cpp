@@ -34,16 +34,6 @@ char *client::send_clienthello() {
         return test;//TEST -> messa per non far andare il loop il client
     }*/
 
-    uint8_t received_code = this->cm->receive_opcode();
-    if(received_code == ACK){
-        printf("ACK - OK\n");
-        char * test = new char[10];//TEST -> messa per non far andare il loop il client
-        return test;//TEST -> messa per non far andare il loop il client
-    }
-
-    printf("ACK - ERROR\n");//TEST handshake ridotto
-    cm->close_socket();//TEST
-    exit(-1);//TEST handshake ridotto
     return this->cm->receive_packet();
 }
 
@@ -84,7 +74,7 @@ void client::auth(char *pkt) {
 
 }
 
-client::~client() {}
+client::~client() {this->cm->close_socket();}
 
 // Andrea Test
 
@@ -120,6 +110,37 @@ bool nameChecker(char* name, int mode){//Checks if file (code = FILENAME) or com
 
 }
 
+void client::handle_req(char *pkt){
+
+    //Andrea test
+    //Deserializzazione
+    int pos = 0;
+    uint8_t opcode;
+
+    
+    memcpy(&opcode, pkt, sizeof(opcode));//prelevo opcode
+    opcode = ntohs(opcode);
+    pos+=sizeof(opcode);
+
+    if (opcode == SHELLO_OPCODE){
+        //server_hello_handler(pkt, pos);
+    }
+    else if(opcode == ACK){//TEST
+        printf("ACK - OK\n");
+        show_menu();
+        return;//TEST
+    }
+    else{
+        printf("Not a valid opcode\n");
+        cm->close_socket();//TEST
+        exit(1);//TEST
+        return;
+    }
+
+    return;
+}
+
+
 void client::show_menu(){
 
     print_commands();
@@ -137,8 +158,8 @@ void client::show_menu(){
             show_menu();
         }
         else if(strcmp(command, "!list\n")==0){
-            this->cm->send_opcode(LIST);
-            receive_list();//IMPLEMENT
+            //this->cm->send_opcode(LIST);
+            //receive_list();//IMPLEMENT
         }
         else if(strcmp(command, "!download\n")==0){//IMPLEMENT
             show_menu();

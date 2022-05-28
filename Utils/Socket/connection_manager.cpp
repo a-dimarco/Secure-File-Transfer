@@ -103,6 +103,7 @@ char *connection_manager::receive_packet() {
         }
         received += ret;
         printf("ho ricevuto %d bytes\n",received);
+        break;
     }
     printf("ho ricevuto tutto il pacchetto\n");
 
@@ -173,42 +174,6 @@ connection_manager::~connection_manager(){}
 
 //---Andrea TEST---
 
-/*bool connection_manager::receive_ack() {
-
-    uint8_t opcode;
-    ssize_t ret = 0;
-
-    // Ricevo ACK
-    ret=recv(this->sckt, &opcode, sizeof(opcode), 0);
-    printf("ret size: %d\n",ret);//TEST
-    if (ret < 0) {
-        cerr << "Error in receiving the ACK packet\n";
-        close_socket();
-        exit(1);
-    }
-    //opcode = ntohl(opcode); uint8 non ha bisogno di conversioni perché troppo piccolo
-    
-    if(opcode == ACK){
-        printf("ACK - OK\n");
-        return true;
-    }
-    
-    return false;
-}*/
-
-/*void connection_manager::send_ack() {
-
-    uint8_t opcode = ACK;
-    ssize_t ret = 0;
-    ret=send(this->sckt, &opcode, sizeof(opcode), 0);
-    if (ret < 0) {
-            cerr << "ACK Send - Error\n";
-            exit(1);
-    }
-    printf("ACK sent\n");
-
-}*/
-
 uint8_t connection_manager::receive_opcode() {
 
     uint8_t opcode;
@@ -222,25 +187,7 @@ uint8_t connection_manager::receive_opcode() {
         close_socket();
         exit(1);
     }
-    //opcode = ntohl(opcode); uint8 non ha bisogno di conversioni perché troppo piccolo
     
-    if(opcode == ACK){
-        printf("ACK - OK\n");
-        return true;
-    }
-    
-    return false;
-}
-
-void connection_manager::send_opcode(uint8_t opcode) {
-
-    ssize_t ret = 0;
-    ret=send(this->sckt, &opcode, sizeof(opcode), 0);
-    if (ret < 0) {
-            cerr << "Opcode Send - Error\n";
-            exit(1);
-    }
-    printf("OpCode sent\n");
-
+    return opcode;
 }
 
