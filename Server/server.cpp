@@ -4,6 +4,7 @@ using namespace std;
 server::server(int sock) {
     this->socket = sock;
     this->cm = new connection_manager(this->socket);
+    this->counter = 0;
 }
 
 /*void server::handle_req() {//TEST deserializza e gestisce il 1° packet dell'handshake con il server
@@ -186,6 +187,13 @@ char *server::prepare_ack_packet(uint32_t *size) {
 
     return packet;
 
+}
+
+char *server::crt_pkt_download(char *file, int* size) {
+
+    char* pkt = crt_file_pkt(file, size, DOWNLOAD, this->counter);
+    this->counter++;
+    return pkt;
 }
 
 void send_list() {

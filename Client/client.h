@@ -2,6 +2,7 @@
 #define SECURE_FILE_TRANSFER_CLIENT_H
 
 #include "../Utils/Socket/connection_manager.h"
+#include "../Utils/Util/util.cpp"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ public:
 
     char *crt_pkt_rename(char *namefile, char *ext, char *new_name, char *new_ext);
 
-    char *crt_pkt_upload(char *file);
+    char *crt_pkt_upload(char *file, int* size);
 
     ~client();
 
@@ -47,6 +48,8 @@ private:
 
     char *crt_pkt_hello(unsigned char *nonce);
     char* prepare_logout_packet(uint32_t *size);
+    
+    uint16_t counter;
 
 };
 
