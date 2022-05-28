@@ -1,9 +1,9 @@
 #include "server.h"
-//#include "../Utils/Crypto/crypto.h"
+using namespace std;
 
 server::server(int sock) {
-     this->socket = sock;
-     this->cm = new connection_manager(this->socket);
+    this->socket = sock;
+    this->cm = new connection_manager(this->socket);
 }
 
 /*void server::handle_req() {//TEST deserializza e gestisce il 1° packet dell'handshake con il server
@@ -62,13 +62,13 @@ server::server(int sock) {
 
 }*/
 
-server::~server(){
+server::~server() {
     cm->close_socket();
 }
 
 //Andrea
 
-void server::handle_req(){
+void server::handle_req() {
 
     char *pkt = cm->receive_packet();
 
@@ -77,10 +77,10 @@ void server::handle_req(){
     int pos = 0;
     uint8_t opcode;
 
-    
+
     memcpy(&opcode, pkt, sizeof(opcode));//prelevo opcode
     opcode = ntohs(opcode);
-    pos+=sizeof(opcode);
+    pos += sizeof(opcode);
 
     printf("OPCODE ricevuto: %d\n", opcode);
 
@@ -107,11 +107,19 @@ void server::handle_req(){
     }
     else if(opcode == ACK){
 
-    }
-    else if (opcode == CHELLO_OPCODE){
+    } else if (opcode == UPLOAD) {//IMPLEMENT
+
+    } else if (opcode == RENAME) {//IMPLEMENT
+
+    } else if (opcode == DELETE) {//IMPLEMENT
+
+    } else if (opcode == LOGOUT) {//IMPLEMENT
+
+    } else if (opcode == ACK) {
+
+    } else if (opcode == CHELLO_OPCODE) {
         client_hello_handler(pkt, pos);
-    }
-    else{
+    } else {
         printf("Not a valid opcode\n");
         return;
     }
@@ -119,59 +127,60 @@ void server::handle_req(){
     return;
 }
 
-void server::client_hello_handler(char* pkt, int pos){
+void server::client_hello_handler(char *pkt, int pos) {
 
     uint16_t us_size;
     uint16_t nonce_size;
 
     //Deserializzazione
 
-    memcpy(&us_size, pkt+pos, sizeof(us_size)); //prelevo us_size inizializzo la variabile che dovrà contenerlo
-    pos+=sizeof(us_size);
+    memcpy(&us_size, pkt + pos, sizeof(us_size)); //prelevo us_size inizializzo la variabile che dovrà contenerlo
+    pos += sizeof(us_size);
     us_size = ntohs(us_size);
     char username[us_size];
 
-    memcpy(&nonce_size, pkt+pos, sizeof(nonce_size)); //prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
-    pos+=sizeof(nonce_size);
+    memcpy(&nonce_size, pkt + pos,
+           sizeof(nonce_size)); //prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
+    pos += sizeof(nonce_size);
     nonce_size = ntohs(nonce_size);
     unsigned char nonce[nonce_size];
 
-    memcpy(&username, pkt+pos, us_size);//prelevo l'username
-    pos+=us_size;
+    memcpy(&username, pkt + pos, us_size);//prelevo l'username
+    pos += us_size;
 
-    memcpy(&nonce, pkt+pos, nonce_size);//prelevo il nonce
+    memcpy(&nonce, pkt + pos, nonce_size);//prelevo il nonce
 
     //Fine Deserializzazione
 
-    printf("pacchetto: \n us_size: %d\n nonce_size: %d\n, username: %s\n nonce: %s\n" ,us_size, nonce_size, username, nonce);
+    printf("pacchetto: \n us_size: %d\n nonce_size: %d\n, username: %s\n nonce: %s\n", us_size, nonce_size, username,
+           nonce);
 
     //test andrea
     printf("username ricevuto %s\n", username);
     char test[us_size];
     strcpy(test, username);
 
-    if (strcmp(username, test) == 0){//username usato per testing metodi
+    if (strcmp(username, test) == 0) {//username usato per testing metodi
         printf("Username - OK\n");
         uint32_t size;
-        char * packet = prepare_ack_packet(&size);
+        char *packet = prepare_ack_packet(&size);
         printf("Test dimensione ack packet: %d\n", size);
         cm->send_packet(packet, size);
         //close(sock);
         //exit(0);
         handle_req();//waits for a request from the client
         //chiama metodo con while true che si blocca in receive packet fino a che non ha ricevuto opcode logout
-    }
-    else{
+    } else {
         printf("Username - Error\n");
         close(this->socket);
         exit(1);
     }
 }
 
-char* server::prepare_ack_packet(uint32_t *size){
+char *server::prepare_ack_packet(uint32_t *size) {
 
-    char * packet;
-    uint8_t opcode= ACK;
+    char *packet;
+    uint8_t opcode = ACK;
     *size = sizeof(opcode);
     memcpy(packet, &opcode, sizeof(opcode));
 
@@ -179,7 +188,7 @@ char* server::prepare_ack_packet(uint32_t *size){
 
 }
 
-void send_list(){
+void send_list() {
 
 }
 
