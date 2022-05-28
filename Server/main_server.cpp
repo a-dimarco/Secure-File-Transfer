@@ -13,9 +13,9 @@ void signal_callback_handler() {
     exit(1);
 }
 
-void handle_req(int sock) {
-    connection_manager *cm = new connection_manager(sock);
-    char *pkt = cm->receive_packet();
+void start_session(int sock){
+    server* s = new server(sock);
+    s->handle_req();
 }
 
 int main() {
@@ -30,7 +30,7 @@ int main() {
         pid_t pid = fork();
         if (pid == 0) {
             cm->close_socket();
-            handle_req(sock);
+            start_session(sock);
             exit(0);
         } else
             cm->close_socket(sock);

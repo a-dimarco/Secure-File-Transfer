@@ -17,7 +17,7 @@ connection_manager::connection_manager(char* my_addr, long port) {
     inet_pton(AF_INET, my_addr, &addr.sin_addr);
     ret = bind(this->sckt, (struct sockaddr *) &addr, sizeof(addr));
     if (ret < 0) {
-        cerr << "Binding Error";
+        cerr << "Binding Error\n";
     
         exit(1);
     }
@@ -73,7 +73,7 @@ char *connection_manager::receive_packet() {
     ret=recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
     printf("ret size: %d\n",ret);//TEST
     if (ret < 0) {
-        cerr << "Error in receiving the size of the packet";
+        cerr << "Error in receiving the size of the packet\n";
         exit(1);
     }
     
@@ -98,14 +98,16 @@ char *connection_manager::receive_packet() {
         printf("appena entrato nel ciclo receiving\n");
         ret = recv(this->sckt, pkt + received, pkt_len - received, 0);
         if (ret < 0) {
-            cerr << "Error in receiving the packet";
+            cerr << "Error in receiving the packet\n";
             exit(1);
         }
         received += ret;
         printf("ho ricevuto %d bytes\n",received);
+        break;
     }
     printf("ho ricevuto tutto il pacchetto\n");
 
+/*
     //Deserializzazione
     int pos = 0;
     uint16_t us_size;
@@ -135,6 +137,11 @@ char *connection_manager::receive_packet() {
     //Fine Deserializzazione
 
     printf("pacchetto: \n opcode: %d\n us_size: %d\n nonce_size: %d\n, username: %s\n nonce: %s\n" ,opcode,us_size, nonce_size, username, nonce);
+
+    //test andrea
+    return username;
+    //test andrea
+*/
     return pkt;
 }
 
@@ -164,4 +171,23 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len) {
 
 connection_manager::~connection_manager(){}
 
+
+//---Andrea TEST---
+
+uint8_t connection_manager::receive_opcode() {
+
+    uint8_t opcode;
+    ssize_t ret = 0;
+
+    // Ricevo ACK
+    ret=recv(this->sckt, &opcode, sizeof(opcode), 0);
+    printf("ret size: %d\n",ret);//TEST
+    if (ret < 0) {
+        cerr << "Error in receiving the ACK packet\n";
+        close_socket();
+        exit(1);
+    }
+    
+    return opcode;
+}
 
