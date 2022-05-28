@@ -46,6 +46,7 @@ private:
     connection_manager *cm;
 
     char *crt_pkt_hello(unsigned char *nonce);
+    char* prepare_logout_packet(uint32_t *size);
 
 };
 
