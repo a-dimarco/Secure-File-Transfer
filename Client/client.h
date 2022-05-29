@@ -32,6 +32,8 @@ public:
 
     char *crt_pkt_upload(char *file, int *size);
 
+    char *crt_pkt_remove(char *namefile, int name_size, uint32_t *size);
+
     ~client();
 
     // andrea
@@ -46,7 +48,7 @@ private:
     char *user;
     connection_manager *cm;
     uint16_t counter;
-
+    unsigned char* shared_key;
     char *crt_pkt_hello(unsigned char *nonce);
     char *prepare_req_packet(uint32_t *size, uint8_t opcode);
     void show_list(char *pkt, int pos);

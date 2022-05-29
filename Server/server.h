@@ -58,7 +58,7 @@ private:
 
     char *crt_pkt_download(char *file, int *size);
 
-    void store_file(char *pkt, uint8_t opcode);
+    void store_file(char *pkt);
 };
 
 #endif // SECURE_FILE_TRANSFER_SERVER_H

@@ -49,31 +49,44 @@ void server::check_file(char *pkt, uint8_t opcode)
         return;
     }
     bool a;
-    a = file_opener((char *)pt, this->logged_user);
-    if (!a)
-    {
+    a = file_opener((char *) pt, this->logged_user);
+    if(opcode==UPLOAD) {
+        if (!a) {
+            uint32_t *size;
+            char msg[] = "File già esistente";
+            char *pkt = prepare_ack_packet(size, msg, sizeof(msg));
+            this->cm->send_packet(pkt, *size);
+            return;
+        }
+        this->file_name = (char *) malloc(name_size - 16);
+        memcpy(file_name, pt, name_size - 17);
+        memcpy(file_name, "\0", 1);
         uint32_t *size;
-        char msg[] = "File già esistente";
-        char *pkt = prepare_ack_packet(size, msg, sizeof(msg));
-        this->cm->send_packet(pkt, *size);
-        return;
+        char msg[] = "Check eseguito correttamente";
+        char *p = prepare_ack_packet(size, msg, sizeof(msg));
+        this->cm->send_packet(p, *size);
+        char *packt;
+        packt = this->cm->receive_packet();
+        int pos1 = 0;
+        uint8_t opcode2;
+        memcpy(&opcode2, pkt, sizeof(opcode2)); // prelevo opcode
+        // opcode = ntohs(opcode);
+        pos += sizeof(opcode2);
+        printf("OPCODE ricevuto: %d\n", opcode2);
+        store_file(packt);
+    }else if(opcode==DELETE){
+        if(a){
+            uint32_t *size;
+            char msg[] = "File non esistente";
+            char *pkt = prepare_ack_packet(size, msg, sizeof(msg));
+            this->cm->send_packet(pkt, *size);
+            return;
+        }
+        this->file_name = (char *) malloc(name_size - 16);
+        memcpy(file_name, pt, name_size - 17);
+        memcpy(file_name, "\0", 1);
+        delete_file();
     }
-    this->file_name = (char *)malloc(name_size - 16);
-    memcpy(file_name, pt, name_size - 17);
-    memcpy(file_name, "\0", 1);
-    uint32_t *size;
-    char msg[] = "Check eseguito correttamente";
-    char *p = prepare_ack_packet(size, msg, sizeof(msg));
-    this->cm->send_packet(p, *size);
-    char *packt;
-    packt = this->cm->receive_packet();
-    int pos1 = 0;
-    uint8_t opcode2;
-    memcpy(&opcode2, pkt, sizeof(opcode2)); // prelevo opcode
-    // opcode = ntohs(opcode);
-    pos += sizeof(opcode2);
-    printf("OPCODE ricevuto: %d\n", opcode2);
-    store_file(packt, opcode2);
 }
 
 /*void server::handle_req() {//TEST deserializza e gestisce il 1° packet dell'handshake con il server
@@ -166,7 +179,8 @@ void server::handle_req()
     { // IMPLEMENT
     }
     else if (opcode == DELETE)
-    { // IMPLEMENT
+    {
+
     }
     else if (opcode == LOGOUT)
     { // IMPLEMENT
@@ -266,7 +280,7 @@ char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size)
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
     int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t) + msg_size + 16;
     char packet[pkt_len];
-    *size = sizeof(opcode);
+    *size = pkt_len;
     memcpy(packet, &opcode, sizeof(opcode));
     pos += sizeof(opcode);
     this->counter++;
@@ -283,6 +297,9 @@ char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size)
     unsigned char ct[msg_size + 16];
     unsigned char tag[16];
     c->encrypt_packet((unsigned char *)msg, msg_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
+    memcpy(packet+pos,ct,msg_size+16);
+    pos+=msg_size+16;
+    memcpy(packet+pos,tag,16);
     return packet;
 }
 char *server::prepare_ack_packet(uint32_t *size)
@@ -303,7 +320,7 @@ char *server::crt_pkt_download(char *file, int *size)
     return pkt;
 }
 
-void server::store_file(char *pkt, uint8_t opcode)
+void server::store_file(char *pkt)
 {
     int pos = sizeof(uint8_t);
     int count;
@@ -339,11 +356,11 @@ void server::store_file(char *pkt, uint8_t opcode)
     string file_path = path;
     file_path += this->logged_user;
     path = &file_path[0];
-    strcpy(path + strlen(path), reinterpret_cast<const char *>(pt));
+    strcpy(path + strlen(path), this->file_name);
     size_t len = strlen(path) - 1;
     char *filePath = (char *)malloc(len);
     memcpy(filePath, path, len);
-    FILE *file = fopen(this->file_name, "wb");
+    FILE *file = fopen(filePath, "wb");
     ret = fwrite(pt, sizeof(unsigned char), size, file);
     if (ret <= 0)
     {
@@ -355,6 +372,7 @@ void server::store_file(char *pkt, uint8_t opcode)
     char msg[] = "Upload completato";
     char *pac = prepare_ack_packet(siz, msg, sizeof(msg));
     this->cm->send_packet(pac, *siz);
+    free(this->file_name);
 }
 
 void server::send_list()
@@ -434,6 +452,29 @@ string server::print_folder(char *path)
     closedir(dir);
 
     return file_list;
+}
+
+void server::delete_file() {
+    char *path = CLIENT_PATH;
+    string file_path = path;
+    file_path += this->logged_user;
+    path = &file_path[0];
+    strcpy(path + strlen(path), this->file_name);
+    size_t len = strlen(path) - 1;
+    char *filePath = (char *)malloc(len);
+    memcpy(filePath, path, len);
+    int ret;
+    ret = remove(filePath);
+    if (ret != 0)
+    {
+        cerr << "Errore nell'eliminare il file";
+    }
+    free(filePath);
+    uint32_t *siz;
+    char msg[] = "File eliminato";
+    char *pac = prepare_ack_packet(siz, msg, sizeof(msg));
+    this->cm->send_packet(pac, *siz);
+    free(this->file_name);
 }
 
 //~Andrea

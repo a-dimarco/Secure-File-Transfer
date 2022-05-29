@@ -231,7 +231,13 @@ void client::show_menu()
             show_menu();
         }
         else if (strcmp(command, "!delete\n") == 0)
-        { // IMPLEMENT
+        {
+            char namefile[]="a.txt";
+            uint32_t *size;
+            char *pkt= crt_pkt_remove(namefile,sizeof(namefile),size);
+            this->cm->send_packet(pkt,*size);
+            char *packet = cm->receive_packet();
+            handle_req(packet);
             show_menu();
         }
         else if (strcmp(command, "!logout\n") == 0)
@@ -292,4 +298,34 @@ void client::show_list(char *pkt, int pos)
     printf("Available files:\n%s", content);
 
     show_menu();
+}
+
+
+char * client::crt_pkt_remove(char *namefile, int name_size, uint32_t *size){
+    int pos = 0;
+    uint8_t opcode = DELETE;
+    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t) + name_size + 16;
+    char packet[pkt_len];
+    *size = pkt_len;
+    memcpy(packet, &opcode, sizeof(opcode));
+    pos += sizeof(opcode);
+    this->counter++;
+    memcpy(packet + pos, &counter, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    uint16_t size_m = htons(name_size);
+    memcpy(packet + pos, &size_m, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    crypto *c = new crypto();
+    unsigned char *iv = c->create_random_iv();
+    memcpy(packet + pos, iv, iv_size);
+    pos += iv_size;
+    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t);
+    unsigned char ct[name_size + 16];
+    unsigned char tag[16];
+    c->encrypt_packet((unsigned char *)namefile, name_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
+    memcpy(packet+pos,ct,name_size+16);
+    pos+=name_size+16;
+    memcpy(packet+pos,tag,16);
+    return packet;
 }
