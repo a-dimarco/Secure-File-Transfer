@@ -1,5 +1,5 @@
 #include "crypto.h"
-
+#pragma once
 using namespace std;
 unsigned char* crypto::get_key() {
     return this->shared_key;

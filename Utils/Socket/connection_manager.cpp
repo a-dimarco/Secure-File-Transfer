@@ -1,6 +1,6 @@
 #include "connection_manager.h"
 #include <iostream>
-
+#pragma once
 using namespace std;
 
 connection_manager::connection_manager() {}

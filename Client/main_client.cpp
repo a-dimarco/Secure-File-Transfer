@@ -1,7 +1,9 @@
+#pragma once
 #include <iostream>
 #include <stdio.h>
 #include "../Utils/Socket/connection_manager.h"
 #include "client.h"
+
 
 
 using namespace std;

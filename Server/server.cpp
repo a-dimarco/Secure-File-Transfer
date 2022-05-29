@@ -1,6 +1,6 @@
 #include "server.h"
-#include "../Utils/Util/util.cpp"
 
+#pragma once
 using namespace std;
 
 server::server(int sock) {
@@ -36,7 +36,7 @@ void server::check_file(char *pkt, uint8_t opcode) {
     crypto *c = new crypto();
     unsigned char pt[name_size - 16];
     c->decrypt_message(ct, name_size, aad, aad_size, tag, this->shared_key, iv, iv_size, pt);
-    bool b = nameChecker(pt, FILENAME);
+    bool b = nameChecker((char *)pt, FILENAME);
     if (!b) {
         uint32_t *size;
         char msg[]="Inserisci un nome corretto";
@@ -45,7 +45,7 @@ void server::check_file(char *pkt, uint8_t opcode) {
         return;
     }
     bool a;
-    a = file_opener(pt, this->logged_user);
+    a = file_opener((char *)pt, this->logged_user);
     if (!a) {
         uint32_t *size;
         char msg[]="File già esistente";
@@ -58,8 +58,8 @@ void server::check_file(char *pkt, uint8_t opcode) {
     memcpy(file_name,"\0",1);
     uint32_t *size;
     char msg[]="Check eseguito correttamente";
-    char* pkt= prepare_ack_packet(size,msg,sizeof(msg));
-    this->cm->send_packet(pkt,*size);
+    char* p= prepare_ack_packet(size,msg,sizeof(msg));
+    this->cm->send_packet(p,*size);
     char *packt;
     packt = this->cm->receive_packet();
     int pos1 = 0;
@@ -255,6 +255,15 @@ char *server::prepare_ack_packet(uint32_t *size, char* msg, int msg_size) {
     unsigned char ct[msg_size+16];
     unsigned char tag[16];
     c->encrypt_packet((unsigned char*)msg,msg_size,(unsigned char*)packet,aad_size,this->shared_key,iv,iv_size,ct,tag);
+    return packet;
+
+}
+char *server::prepare_ack_packet(uint32_t *size) {
+    char *packet;
+    uint8_t opcode = ACK;
+    *size = sizeof(opcode);
+    memcpy(packet, &opcode, sizeof(opcode));
+
     return packet;
 
 }

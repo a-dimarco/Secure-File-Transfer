@@ -1,7 +1,8 @@
+#pragma once
 #include "client.h"
 #include <openssl/rand.h>
 #include "../Utils/Crypto/crypto.h"
-#include "../Utils/Util/util.cpp"
+
 using namespace std;
 
 client::client() {};

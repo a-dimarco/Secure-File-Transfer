@@ -1,40 +1,7 @@
-#include "../Crypto/crypto.h"
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <string.h>
-#include <regex>
-
+#include "util.h"
 using namespace std;
 
-//--OPCODES
-#define CHELLO_OPCODE 0
-#define SHELLO_OPCODE 1
-#define ACK           10
-#define LIST          11
-#define DOWNLOAD      12
-#define UPLOAD        13
-#define RENAME        14
-#define DELETE        15
-#define LOGOUT        16
-
-//--PACKET SIZES
-#define CLIENT_HELLO_SIZE 23
-#define CHUNK_SIZE 512000 //512 KiB
-
-//--FILE PATHS
-#define SERVER_PATH "server_file/client/"
-#define CLIENT_PATH "client_folders/"
-
-//--COMMANDS
-#define FILENAME 1111
-#define COMMAND  2222
-
-
-using namespace std;
-
-static char* crt_file_pkt(char* filename, int* size, uint8_t opcode, uint16_t counter) {
+char* crt_file_pkt(char* filename, int* size, uint8_t opcode, uint16_t counter) {
 
     int pos1 = 0;
     int ret;

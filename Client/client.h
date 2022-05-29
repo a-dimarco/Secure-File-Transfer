@@ -1,9 +1,9 @@
+#pragma once
 #ifndef SECURE_FILE_TRANSFER_CLIENT_H
 #define SECURE_FILE_TRANSFER_CLIENT_H
 
 #include "../Utils/Socket/connection_manager.h"
-
-
+#include "../Utils/Util/util.h"
 using namespace std;
 
 class client {

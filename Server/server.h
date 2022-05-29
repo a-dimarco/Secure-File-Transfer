@@ -1,8 +1,8 @@
 #ifndef SECURE_FILE_TRANSFER_SERVER_H
 #define SECURE_FILE_TRANSFER_SERVER_H
-
+#pragma once
 #include "../Utils/Socket/connection_manager.h"
-
+#include "../Utils/Util/util.h"
 
 using namespace std;
 
@@ -53,6 +53,7 @@ private:
     void client_hello_handler(char *pkt, int pos);
 
     char *prepare_ack_packet(uint32_t *size, char* msg, int msg_size);
+    char *prepare_ack_packet(uint32_t *size);
     
     char *crt_pkt_download(char *file, int* size);
 
