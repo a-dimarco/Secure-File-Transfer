@@ -38,6 +38,8 @@ public:
     //Andrea
 
     void handle_req();
+    
+    string print_folder(char* path);
 
 private:
 
