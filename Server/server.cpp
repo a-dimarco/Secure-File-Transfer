@@ -275,11 +275,6 @@ char *server::crt_pkt_download(char *file, int *size) {
     return pkt;
 }
 
-void server::send_list() {
-
-    handle_req();
-}
-
 void server::store_file(char *pkt, uint8_t opcode) {
     int pos = sizeof(uint8_t);
     int count;
@@ -330,45 +325,78 @@ void server::store_file(char *pkt, uint8_t opcode) {
     char* pac= prepare_ack_packet(siz,msg,sizeof(msg));
     this->cm->send_packet(pac,*siz);
 }
-/*
-char* print_folder(char* path){//Takes all files and saves them into a variable
+
+void server::send_list() {
+    //prepare packet and send it
+
+    printf("start send list\n");
+
+    uint8_t opcode = LIST;
+    string temp = print_folder(SERVER_PATH);
+    
+    char content[temp.length()+1];
+    strcpy(content, temp.c_str());
+
+
+    printf("List:\n %s\n saved, trying to send it\n", content);//TEST
+
+    uint16_t list_size = htons(sizeof(content)+1);
+    uint32_t packet_size = sizeof(opcode)+sizeof(list_size)+list_size+1;
+    int pos = 0;
+    char pkt[packet_size];
+
+    memcpy(pkt, &opcode, sizeof(uint8_t));
+    pos += sizeof(uint8_t);
+    memcpy(pkt + pos, &list_size, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    memcpy(pkt + pos, content, list_size);
+
+    cm->send_packet(pkt, packet_size);
+
+    printf("list sent: size %d\n %s\n", list_size, content);//TEST
+    handle_req();
+}
+
+string server::print_folder(char* path){//Takes all files and saves them into a variable
     
     DIR *dir;
     struct dirent* ent;
     string file_list;
+    string file_path = path;
+    file_path += logged_user;
+    path = &file_path[0];
 
-    size_t len = strlen(path)-1;
-    char * pathname = (char*)malloc(len);
-    memcpy(pathname, path, len);
+    printf("PATH: %s\n",path);//TEST
 
-    dir = opendir(pathname);
+    int counter = 0;
+
+    dir = opendir(path);
     if(dir){
         printf("Directory - OK\n");
     }
     else{
         printf("Directory NOT found\n");
-        free(pathname);
         exit(-1);
     }
 
-    // print all the files and directories within directory 
+    //print all the files and directories within directory 
     while ((ent = readdir (dir)) != NULL) {
-        if(nameChecker(ent->d_name)){
-            //printf ("%s\n", ent->d_name);
-            char * sel_file = ent->d_name;
-            //printf ("salvo: %s\n", sel_file);
+        char * sel_file = ent->d_name;
+        printf("Examined file: %s\n", sel_file);
+        if(nameChecker(sel_file, FILENAME)){
             string temp = string(sel_file);
             file_list += temp;
             file_list += "\n";
+            counter++;
         }
-        else
-            continue;
     }
-    //printf("Cosa ho salvato?\n %s", file_list.c_str());
-    free(pathname);
+    if(counter == 0){
+        file_list+="There are no files in this folder";
+    }
+    printf("Cosa ho salvato?\n%s", file_list.c_str());//TEST
     closedir(dir);
-    char* content = &file_list[0];
-    return content;
-}*/
+
+    return file_list;
+}
 
 //~Andrea
