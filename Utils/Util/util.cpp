@@ -1,14 +1,7 @@
 #include "../Crypto/crypto.h"
-#include "../../Client/client.h"
-#include <arpa/inet.h>
-#include <errno.h>
 #include <netinet/in.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <dirent.h>
 #include <string.h>
 #include <regex>
@@ -26,9 +19,17 @@ using namespace std;
 #define DELETE        15
 #define LOGOUT        16
 
+//--PACKET SIZES
+#define CLIENT_HELLO_SIZE 23
+#define CHUNK_SIZE 512000 //512 KiB
+
 //--FILE PATHS
 #define SERVER_PATH "server_file/client/"
 #define CLIENT_PATH "client_folders/"
+
+//--COMMANDS
+#define FILENAME 1111
+#define COMMAND  2222
 
 
 using namespace std;
@@ -109,14 +110,13 @@ bool nameChecker(char *name, int mode) {//Checks if file (code = FILENAME) or co
 
 }
 
-int file_opener(char* filename, char* username){
+bool file_opener(char* filename, char* username){
 
-    /*char path[50]; 
-    strcpy(path, "a/");
-    printf("path: %s\n", path);*/
-    string file_path = CLIENT_PATH;
+    char *path=CLIENT_PATH;
+    string file_path = path;
     file_path += username;
     path = &file_path[0];
+    printf("%s",path);
     FILE *source;
 
     //Checks if directory exists
@@ -142,17 +142,18 @@ int file_opener(char* filename, char* username){
     //Open the file
     source = fopen(filePath, "rb");
     if(source == NULL){
+        fclose(source);
+        free(filePath);
         printf("File not found\n");
-        exit(-1);
+        return true;
     }
     else{
         printf("File found\n");
+        fclose(source);
+        free(filePath);
+        return false;
     }
 
-    printf("Selected File Path : %s \n" , path);
-
-    fclose(source);
-    free(filePath);
 }
 
 

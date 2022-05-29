@@ -2,7 +2,7 @@
 #define SECURE_FILE_TRANSFER_CLIENT_H
 
 #include "../Utils/Socket/connection_manager.h"
-#include "../Utils/Util/util.cpp"
+
 
 using namespace std;
 

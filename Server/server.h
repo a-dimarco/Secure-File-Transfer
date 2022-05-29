@@ -2,7 +2,7 @@
 #define SECURE_FILE_TRANSFER_SERVER_H
 
 #include "../Utils/Socket/connection_manager.h"
-#include "../Utils/Util/util.cpp"
+
 
 using namespace std;
 
@@ -45,14 +45,14 @@ private:
     uint16_t counter;
     connection_manager *cm;
     unsigned char * shared_key;
-
-    void check_file(unsigned char* pkt, int pos);
+    char * file_name;
+    void check_file( char* pkt, uint8_t opcode);
 
     char* logged_user;//TEST
 
     void client_hello_handler(char *pkt, int pos);
 
-    char *prepare_ack_packet(uint32_t *size);
+    char *prepare_ack_packet(uint32_t *size, char* msg, int msg_size);
     
     char *crt_pkt_download(char *file, int* size);
 
