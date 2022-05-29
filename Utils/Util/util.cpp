@@ -26,6 +26,10 @@ using namespace std;
 #define DELETE        15
 #define LOGOUT        16
 
+//--FILE PATHS
+#define SERVER_PATH "server_file/client/"
+#define CLIENT_PATH "client_folders/"
+
 
 using namespace std;
 
@@ -105,11 +109,14 @@ bool nameChecker(char *name, int mode) {//Checks if file (code = FILENAME) or co
 
 }
 
-int file_opener(char* filename){
+int file_opener(char* filename, char* username){
 
-    char path[50]; 
+    /*char path[50]; 
     strcpy(path, "a/");
-    printf("path: %s\n", path);
+    printf("path: %s\n", path);*/
+    string file_path = CLIENT_PATH;
+    file_path += username;
+    path = &file_path[0];
     FILE *source;
 
     //Checks if directory exists
