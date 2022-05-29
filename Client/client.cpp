@@ -250,15 +250,20 @@ void client::show_list(char* pkt, int pos){
 
     //Deserializzazione
 
-    memcpy(&list_size, pkt + pos, sizeof(list_size)); //prelevo list_size inizializzo la variabile che dovrà contenerlo
-    pos += sizeof(list_size);
-    list_size = ntohs(list_size);
-    //char content[us_size];
-    char* content /*= &temp[0]*/;
+    printf("Checkpoint1\n");
 
-    memcpy(&content, pkt + pos, list_size);//prelevo l'username
+    memcpy(&list_size, pkt+pos, sizeof(list_size)); //prelevo list_size inizializzo la variabile che dovrà contenerlo
+    pos += sizeof(list_size);
+    printf("Checkpoint2\n");
+    list_size = ntohs(list_size);
+    char content[list_size];
+    //char* content /*= &temp[0]*/;
+
+    //memcpy(&content, pkt+pos, list_size);//prelevo la lista
+    strcpy(content, pkt+pos);
 
     //Fine Deserializzazione
+    printf("Checkpoint3: %d\n", list_size);
 
     printf("Available files:\n%s", content);
 
