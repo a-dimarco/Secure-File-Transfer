@@ -105,5 +105,48 @@ bool nameChecker(char *name, int mode) {//Checks if file (code = FILENAME) or co
 
 }
 
+int file_opener(char* filename){
+
+    char path[50]; 
+    strcpy(path, "a/");
+    printf("path: %s\n", path);
+    FILE *source;
+
+    //Checks if directory exists
+    DIR *dir;
+    dir = opendir(path);
+    if(dir){
+        printf("Directory - OK\n");
+    }
+    else{
+        printf("Directory NOT found\n");
+        exit(-1);
+    }
+
+    closedir(dir);
+    //printf("Selected Directory : %s \n" , path);
+
+    //Add Filename to path
+    strcpy(path+strlen(path), filename);
+    size_t len = strlen(path)-1;
+    char * filePath = (char*)malloc(len);
+    memcpy(filePath, path, len);
+
+    //Open the file
+    source = fopen(filePath, "rb");
+    if(source == NULL){
+        printf("File not found\n");
+        exit(-1);
+    }
+    else{
+        printf("File found\n");
+    }
+
+    printf("Selected File Path : %s \n" , path);
+
+    fclose(source);
+    free(filePath);
+}
+
 
 
