@@ -13,6 +13,10 @@ connection_manager::connection_manager(char *my_addr, long port) {
     int ret;
     struct sockaddr_in addr;
     this->sckt = socket(AF_INET, SOCK_STREAM, 0);
+
+    const int trueFlag = 1;
+    setsockopt(this->sckt, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int));//Tells socket to reuse the connection
+
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);

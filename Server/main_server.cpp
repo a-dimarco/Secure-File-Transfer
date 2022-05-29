@@ -17,7 +17,8 @@ void start_session(int sock) {
 
 int main() {
     char addr[] = "127.0.0.1";
-    long std_port = 49151;
+    //long std_port = 49151;
+    long std_port = 8080;
     connection_manager *cm = new connection_manager(addr, std_port);
     cm->listening(10);
     //signal(SIGINT, signal_callback_handler);
