@@ -5,30 +5,31 @@
 
 using namespace std;
 
-client::client() {};
+client::client(){};
 
-client::client(char *username) {
+client::client(char *username)
+{
     char addr[] = "127.0.0.1";
-    //long dest_port = 49151;
+    // long dest_port = 49151;
     long dest_port = 8080;
     this->user = new char[10];
-    //this->username = username;
-    memcpy((void *) this->user, (void *) username, sizeof(username));
+    // this->username = username;
+    memcpy((void *)this->user, (void *)username, sizeof(username));
     /*int seed=atoi(username);
     srand(seed);
     long std_port=rand()%6000+43151;
     this->cm=new connection_manager(addr,std_port);*/
-    
+
     this->cm = new connection_manager(addr, 8000);
     this->cm->connection(addr, dest_port);
     this->counter = 0;
-
 }
 
-char *client::send_clienthello() {
-    crypto *c=new crypto();
+char *client::send_clienthello()
+{
+    crypto *c = new crypto();
 
-    //unsigned char* nonce=c->create_nonce();
+    // unsigned char* nonce=c->create_nonce();
     RAND_poll();
     unsigned char nonce[8];
     RAND_bytes(nonce, 8);
@@ -46,12 +47,13 @@ char *client::send_clienthello() {
     return this->cm->receive_packet();
 }
 
-char *client::crt_pkt_hello(unsigned char *nonce) {//Creates first handshake packet
-    //PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
+char *client::crt_pkt_hello(unsigned char *nonce)
+{ // Creates first handshake packet
+    // PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
     printf("Sono appena entrato in create packet hello\n");
 
-    uint16_t us_size = htons(strlen(user)+1);
-    uint16_t nonce_size = htons(sizeof(nonce)+1);
+    uint16_t us_size = htons(strlen(user) + 1);
+    uint16_t nonce_size = htons(sizeof(nonce) + 1);
     uint8_t opcode = htons(CHELLO_OPCODE);
     int pos = 0;
     static char pkt[CLIENT_HELLO_SIZE];
@@ -63,83 +65,85 @@ char *client::crt_pkt_hello(unsigned char *nonce) {//Creates first handshake pac
     memcpy(pkt + pos, &nonce_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     memcpy(pkt + pos, user, sizeof(user));
-    //pos += sizeof(user);
-    pos+= strlen(user)+1;
+    // pos += sizeof(user);
+    pos += strlen(user) + 1;
     memcpy(pkt + pos, nonce, 8);
 
-    //printf("Ho appena finito create packet hello\n");
-    printf("pacchetto client hello: \n opcode: %d\n us_size: %d\n nonce_size: %d\n username: %s\n nonce: %s\n" ,opcode, us_size, nonce_size, this->user, nonce);
+    // printf("Ho appena finito create packet hello\n");
+    printf("pacchetto client hello: \n opcode: %d\n us_size: %d\n nonce_size: %d\n username: %s\n nonce: %s\n", opcode, us_size, nonce_size, this->user, nonce);
     return pkt;
 }
 
-char *client::crt_pkt_upload(char *filename, int* size) {
-    
-    char* pkt = crt_file_pkt(filename, size, UPLOAD, this->counter);
+char *client::crt_pkt_upload(char *filename, int *size)
+{
+
+    char *pkt = crt_file_pkt(filename, size, UPLOAD, this->counter);
     this->counter++;
     return pkt;
-    //static char pkt[23];
-   /* int pos1 = 0;
-    int ret;
-    crypto *c=new crypto();
-    FILE *file;
-    uint8_t opcode = htons(UPLOAD);
-    int aad_size=sizeof(uint8_t)+sizeof(uint16_t)+sizeof(uint32_t);
-    unsigned char start_packet[aad_size];
-    
-    file = fopen(filename, "rb");
-    if (file == NULL) {
-        printf("Errore nell'apertura del file\n");
-        exit(-1);
-    }
-    fseek(file, 0L, SEEK_END);
-    uint32_t file_size = ftell(file);
-    fseek(file, 0L, SEEK_SET);
-    memcpy(start_packet, &opcode, sizeof(uint8_t));
-    pos1 += sizeof(uint8_t);
-    memcpy(start_packet + pos1, &this.counter, sizeof(uint16_t));
-    pos1 += sizeof(uint16_t);
-    memcpy(start_packet + pos1, &file_size, sizeof(uint32_t));
-    
-    unsigned char* iv = c->create_random_iv();
-    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    
-    unsigned char ciphertext[file_size+16];
-    unsigned char tag[16];
-    int cipherlen = c->encrypt_message(file,file_size,start_packet,aad_size,c->get_key(), iv, iv_size, ciphertext,tag);
-    ret = fclose(file);
-    if (ret != 0) {
-        printf("Errore\n");
-        exit(1);
-    }
-    char final_packet[aad_size+iv_size+file_size+16+16];
-    int pos = 0;
-    memcpy(final_packet, start_packet, aad_size);
-    pos += aad_size;
-    memcpy(final_packet+pos, iv, iv_size);
-    pos += iv_size;
-    memcpy(final_packet+pos, ciphertext, cipherlen);
-    pos += cipherlen;
-    memcpy(final_packet+pos, tag, 16);
-    pos += 16;
+    // static char pkt[23];
+    /* int pos1 = 0;
+     int ret;
+     crypto *c=new crypto();
+     FILE *file;
+     uint8_t opcode = htons(UPLOAD);
+     int aad_size=sizeof(uint8_t)+sizeof(uint16_t)+sizeof(uint32_t);
+     unsigned char start_packet[aad_size];
 
-    free(tag);
-    free(ciphertext);
-    free(start_packet);
-    free(iv);
+     file = fopen(filename, "rb");
+     if (file == NULL) {
+         printf("Errore nell'apertura del file\n");
+         exit(-1);
+     }
+     fseek(file, 0L, SEEK_END);
+     uint32_t file_size = ftell(file);
+     fseek(file, 0L, SEEK_SET);
+     memcpy(start_packet, &opcode, sizeof(uint8_t));
+     pos1 += sizeof(uint8_t);
+     memcpy(start_packet + pos1, &this.counter, sizeof(uint16_t));
+     pos1 += sizeof(uint16_t);
+     memcpy(start_packet + pos1, &file_size, sizeof(uint32_t));
 
-    *size = pos;
-    return final_packet;*/
+     unsigned char* iv = c->create_random_iv();
+     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+
+     unsigned char ciphertext[file_size+16];
+     unsigned char tag[16];
+     int cipherlen = c->encrypt_message(file,file_size,start_packet,aad_size,c->get_key(), iv, iv_size, ciphertext,tag);
+     ret = fclose(file);
+     if (ret != 0) {
+         printf("Errore\n");
+         exit(1);
+     }
+     char final_packet[aad_size+iv_size+file_size+16+16];
+     int pos = 0;
+     memcpy(final_packet, start_packet, aad_size);
+     pos += aad_size;
+     memcpy(final_packet+pos, iv, iv_size);
+     pos += iv_size;
+     memcpy(final_packet+pos, ciphertext, cipherlen);
+     pos += cipherlen;
+     memcpy(final_packet+pos, tag, 16);
+     pos += 16;
+
+     free(tag);
+     free(ciphertext);
+     free(start_packet);
+     free(iv);
+
+     *size = pos;
+     return final_packet;*/
 }
 
-void client::auth(char *pkt) {
-
+void client::auth(char *pkt)
+{
 }
 
 client::~client() { this->cm->close_socket(); }
 
 // Andrea Test
 
-void client::print_commands() {
+void client::print_commands()
+{
     printf("\nPlease select a command\n");
     printf("!help --> Show all available actions\n");
     printf("!list --> Show all files uploaded to the server\n");
@@ -150,44 +154,47 @@ void client::print_commands() {
     printf("!logout --> Disconnect from the server and close the application\n");
 }
 
+void client::handle_req(char *pkt)
+{
 
-void client::handle_req(char *pkt) {
-
-    //Andrea test
-    //Deserializzazione
+    // Andrea test
+    // Deserializzazione
     int pos = 0;
     uint8_t opcode;
 
+    memcpy(&opcode, pkt, sizeof(opcode)); // prelevo opcode
+    // opcode = ntohs(opcode);
+    pos += sizeof(opcode);
 
-    memcpy(&opcode, pkt, sizeof(opcode));//prelevo opcode
-    //opcode = ntohs(opcode);
-    pos+=sizeof(opcode);
-
-    if (opcode == SHELLO_OPCODE) {
-        //server_hello_handler(pkt, pos);
+    if (opcode == SHELLO_OPCODE)
+    {
+        // server_hello_handler(pkt, pos);
     }
-    else if (opcode == LIST) {
+    else if (opcode == LIST)
+    {
         printf("Received List\n");
         show_list(pkt, pos);
         show_menu();
     }
-    else if (opcode == ACK) {//TEST
+    else if (opcode == ACK)
+    { // TEST
         printf("ACK - OK\n");
         show_menu();
-        return;//TEST
-    } 
-    else {
+        return; // TEST
+    }
+    else
+    {
         printf("Not a valid opcode\n");
-        cm->close_socket();//TEST
-        exit(1);//TEST
+        cm->close_socket(); // TEST
+        exit(1);            // TEST
         return;
     }
 
     return;
 }
 
-
-void client::show_menu() {
+void client::show_menu()
+{
 
     print_commands();
 
@@ -196,73 +203,90 @@ void client::show_menu() {
 
     printf("command : %s \n", command);
 
-    if(nameChecker(command, COMMAND)){
+    if (nameChecker(command, COMMAND))
+    {
         uint32_t size;
-        if(strcmp(command, "!help\n")==0){
+        if (strcmp(command, "!help\n") == 0)
+        {
             show_menu();
         }
-        else if(strcmp(command, "!list\n")==0){
-            char * packet = prepare_req_packet(&size, LIST);    
-            //printf("Test dimensione list packet: %d\n", size);
+        else if (strcmp(command, "!list\n") == 0)
+        {
+            char *packet = prepare_req_packet(&size, LIST);
+            // printf("Test dimensione list packet: %d\n", size);
             cm->send_packet(packet, size);
-            char *pkt = cm->receive_packet();//waits for the list packet
+            char *pkt = cm->receive_packet(); // waits for the list packet
             handle_req(pkt);
-        } else if (strcmp(command, "!download\n") == 0) {//IMPLEMENT
-            show_menu();
-        } else if (strcmp(command, "!upload\n") == 0) {//IMPLEMENT
-            show_menu();
-        } else if (strcmp(command, "!rename\n") == 0) {//IMPLEMENT
-            show_menu();
-        } else if (strcmp(command, "!delete\n") == 0) {//IMPLEMENT
+        }
+        else if (strcmp(command, "!download\n") == 0)
+        { // IMPLEMENT
             show_menu();
         }
-        else if(strcmp(command, "!logout\n")==0){//IMPLEMENT
-            char* packet = prepare_req_packet(&size, LOGOUT);
+        else if (strcmp(command, "!upload\n") == 0)
+        { // IMPLEMENT
+            show_menu();
+        }
+        else if (strcmp(command, "!rename\n") == 0)
+        { // IMPLEMENT
+            show_menu();
+        }
+        else if (strcmp(command, "!delete\n") == 0)
+        { // IMPLEMENT
+            show_menu();
+        }
+        else if (strcmp(command, "!logout\n") == 0)
+        { // IMPLEMENT
+            char *packet = prepare_req_packet(&size, LOGOUT);
             cm->send_packet(packet, size);
             printf("Bye!\n");
             cm->close_socket();
             exit(0);
-        } else {
+        }
+        else
+        {
             printf("Command %s not found, please retry\n", command);
             show_menu();
         }
-    } else {
+    }
+    else
+    {
         printf("Command format not valid, please use the format !command\n");
         show_menu();
     }
 }
 
-char* client::prepare_req_packet(uint32_t *size, uint8_t opcode){
+char *client::prepare_req_packet(uint32_t *size, uint8_t opcode)
+{
 
-    //opcode = htons(opcode);
+    // opcode = htons(opcode);
 
-    char * packet;
+    char *packet;
     *size = sizeof(opcode);
     memcpy(packet, &opcode, sizeof(uint8_t));
     printf("request packet codice:%d ha size %d", opcode, *size);
     return packet;
-
 }
 
-void client::show_list(char* pkt, int pos){
-    
+void client::show_list(char *pkt, int pos)
+{
+
     uint16_t list_size;
 
-    //Deserializzazione
+    // Deserializzazione
 
     printf("Checkpoint1\n");
 
-    memcpy(&list_size, pkt+pos, sizeof(list_size)); //prelevo list_size inizializzo la variabile che dovrà contenerlo
+    memcpy(&list_size, pkt + pos, sizeof(list_size)); // prelevo list_size inizializzo la variabile che dovrà contenerlo
     pos += sizeof(list_size);
     printf("Checkpoint2\n");
     list_size = ntohs(list_size);
     char content[list_size];
-    //char* content /*= &temp[0]*/;
+    // char* content /*= &temp[0]*/;
 
-    //memcpy(&content, pkt+pos, list_size);//prelevo la lista
-    strcpy(content, pkt+pos);
+    // memcpy(&content, pkt+pos, list_size);//prelevo la lista
+    strcpy(content, pkt + pos);
 
-    //Fine Deserializzazione
+    // Fine Deserializzazione
     printf("Checkpoint3: %d\n", list_size);
 
     printf("Available files:\n%s", content);

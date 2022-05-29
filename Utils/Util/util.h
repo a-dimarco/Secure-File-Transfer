@@ -11,8 +11,8 @@ using namespace std;
 #ifndef SECURE_FILE_TRANSFER_UTIL_H
 #define SECURE_FILE_TRANSFER_UTIL_H
 
-#endif //SECURE_FILE_TRANSFER_UTIL_H
+#endif // SECURE_FILE_TRANSFER_UTIL_H
 
-char* crt_file_pkt(char* filename, int* size, uint8_t opcode, uint16_t counter);
+char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter);
 bool nameChecker(char *name, int mode);
-bool file_opener(char* filename, char* username);
+bool file_opener(char *filename, char *username);

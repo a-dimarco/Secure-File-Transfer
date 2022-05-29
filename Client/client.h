@@ -6,7 +6,8 @@
 #include "../Utils/Util/util.h"
 using namespace std;
 
-class client {
+class client
+{
 public:
     client();
 
@@ -22,18 +23,18 @@ public:
 
     char *send_clienthello();
 
-    //packet
+    // packet
     char *crt_pkt_listreq();
 
     char *crt_pkt_req(char *namefile, char *ext);
 
     char *crt_pkt_rename(char *namefile, char *ext, char *new_name, char *new_ext);
 
-    char *crt_pkt_upload(char *file, int* size);
+    char *crt_pkt_upload(char *file, int *size);
 
     ~client();
 
-    //andrea
+    // andrea
 
     void handle_req(char *pkt);
 
@@ -42,16 +43,13 @@ public:
     void print_commands();
 
 private:
-
     char *user;
     connection_manager *cm;
     uint16_t counter;
 
     char *crt_pkt_hello(unsigned char *nonce);
-    char* prepare_req_packet(uint32_t *size, uint8_t opcode);
-    void show_list(char* pkt, int pos);
-
+    char *prepare_req_packet(uint32_t *size, uint8_t opcode);
+    void show_list(char *pkt, int pos);
 };
-
 
 #endif
