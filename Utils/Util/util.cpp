@@ -134,3 +134,40 @@ bool file_opener(char *filename, char *username)
         return false;
     }
 }
+
+char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counter, unsigned char* shared_key) {
+
+	crypto* c = new crypto();
+	
+	int aad_size = sizeof(uint8_t)+sizeof(uint16_t)*2;
+	int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+	uint16_t ptext_size = htons(strlen(filename) + 1);
+	int pos = 0;
+	int cipherlen;
+	uint16_t n_counter = htons(counter);
+	*size = aad_size+iv_size+ptext_size+2*16;
+	
+	char* pkt = (char*)malloc(*size);
+	unsigned char* iv = c->create_random_iv();
+	unsigned char* tag = (unsigned char*)malloc(16);
+	//unsigned char* ciphertext = (unsigned char*)malloc(ptext_size+16);
+	
+	memcpy(pkt, &opcode, sizeof(uint8_t));
+	pos += sizeof(uint8_t);
+	memcpy(pkt+pos, &n_counter, sizeof(uint16_t));
+	pos += sizeof(uint16_t);
+	memcpy(pkt+pos, &ptext_size, sizeof(uint16_t));
+	pos += sizeof(uint16_t);
+	memcpy(pkt+pos, iv, iv_size);
+	pos += iv_size;
+	 
+	cipherlen = encrypt_packet(filename, strlen(filename)+1,
+                           pkt, aad_size, shared_key, iv, iv_size,
+                           pkt+pos, tag);
+        
+        pos += cipherlen;
+        memcpy(pkt+pos, tag, 16);
+        return pkt;  
+}
+
+

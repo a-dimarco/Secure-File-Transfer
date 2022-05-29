@@ -12,10 +12,12 @@ server::server(int sock)
 
 void server::check_file(char *pkt, uint8_t opcode)
 {
+/*
     int pos = 8;
-    int count;
+    uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t));
     pos += sizeof(uint16_t);
+    count = ntohs(count);
     if (count != this->counter)
     {
         cerr << "Probable replay attack";
@@ -38,7 +40,45 @@ void server::check_file(char *pkt, uint8_t opcode)
     memcpy(tag, pkt + pos, 16);
     crypto *c = new crypto();
     unsigned char pt[name_size - 16];
-    c->decrypt_message(ct, name_size, aad, aad_size, tag, this->shared_key, iv, iv_size, pt);
+    c->decrypt_message(ct, name_size, aad, aad_size, tag, this->shared_key, iv, iv_size, pt);*/
+    
+        int pos = 8;
+    uint16_t count;
+    memcpy(&count, pkt + pos, sizeof(uint16_t));
+    count = ntohs(count);
+    
+    pos += sizeof(uint16_t);
+    if (count != this->counter)
+    {
+        cerr << "Probable replay attack";
+    }
+    uint16_t name_size;
+    memcpy(&name_size, pkt + pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    name_size = ntohs(name_size);
+    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    unsigned char iv[iv_size];
+    memcpy(iv, pkt + pos, iv_size);
+    pos += iv_size;
+    
+    int cipherlen = name_size + (16 - name_size%16);
+    if (name_size % 16 == 0)
+    	cipherlen += 16;
+    
+    unsigned char ct[cipherlen];
+    
+    memcpy(ct, pkt + pos, name_size);
+    pos += name_size;
+    int aad_size = sizeof(uint8_t) + sizeof(uint16_t) * 2;
+    unsigned char aad[aad_size];
+    memcpy(aad, pkt, aad_size);
+    unsigned char tag[16];
+    memcpy(tag, pkt + pos, 16);
+    crypto *c = new crypto();
+    unsigned char pt[name_size];
+    	
+    c->decrypt_message(ct, cipherlen, aad, aad_size, tag, this->shared_key, iv, iv_size, pt);
+    
     bool b = nameChecker((char *)pt, FILENAME);
     if (!b)
     {
@@ -58,9 +98,9 @@ void server::check_file(char *pkt, uint8_t opcode)
             this->cm->send_packet(pkt, *size);
             return;
         }
-        this->file_name = (char *) malloc(name_size - 16);
-        memcpy(file_name, pt, name_size - 17);
-        memcpy(file_name, "\0", 1);
+        this->file_name = (char *) malloc(name_size);
+        memcpy(file_name, pt, name_size-1);
+        memcpy(file_name+name_size-1, "\0", 1);
         uint32_t *size;
         char msg[] = "Check eseguito correttamente";
         char *p = prepare_ack_packet(size, msg, sizeof(msg));
@@ -82,10 +122,27 @@ void server::check_file(char *pkt, uint8_t opcode)
             this->cm->send_packet(pkt, *size);
             return;
         }
-        this->file_name = (char *) malloc(name_size - 16);
-        memcpy(file_name, pt, name_size - 17);
-        memcpy(file_name, "\0", 1);
+        this->file_name = (char *) malloc(name_size);
+        memcpy(file_name, pt, name_size - 1);
+        memcpy(file_name+name_size-1, "\0", 1);
         delete_file();
+    } else if(opcode == DOWNLOAD) {
+    	if (!a) {
+    		uint32_t size;
+    		this->file_name = (char *) malloc(name_size);
+        	memcpy(file_name, pt, name_size - 1);
+       	memcpy(file_name+name_size-1, "\0", 1);
+        	char* pkt = crt_file_pkt(file_name, &size, opcode, this->counter)
+        	this->cm->send_packet(pkt, *size);
+        	return;
+    	}
+    	else {
+    	     uint32_t *size;
+            char msg[] = "File non esistente";
+            char *pkt = prepare_ack_packet(size, msg, sizeof(msg));
+            this->cm->send_packet(pkt, *size);
+            return;
+    	}
     }
 }
 
@@ -169,10 +226,11 @@ void server::handle_req()
     }
     else if (opcode == DOWNLOAD)
     { // IMPLEMENT
+    	check_file(pkt, opcode);
     }
     else if (opcode == UPLOAD)
     { // IMPLEMENT+
-        check_file(pkt, pos);
+        check_file(pkt, opcode);
         // store_file(pkt, opcode);
     }
     else if (opcode == RENAME)
@@ -334,7 +392,7 @@ void server::store_file(char *pkt)
     uint32_t file_size;
     memcpy(&file_size, pkt + pos, sizeof(file_size));
     pos += sizeof(file_size);
-    file_size = ntohs(file_size);
+    file_size = ntohl(file_size);
     int aad_size = sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint16_t);
     unsigned char aad[aad_size];
     memcpy(aad, pkt, aad_size);

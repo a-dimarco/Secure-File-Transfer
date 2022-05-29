@@ -182,6 +182,8 @@ void client::handle_req(char *pkt)
         show_menu();
         return; // TEST
     }
+    else if (opcode == DOWNLOAD) {
+    }
     else
     {
         printf("Not a valid opcode\n");
@@ -220,6 +222,10 @@ void client::show_menu()
         }
         else if (strcmp(command, "!download\n") == 0)
         { // IMPLEMENT
+            crt_download_request(&size);
+            cm->send_packet(packet, size);
+            char *pkt = cm->receive_packet(); // waits for the list packet
+            handle_req(pkt);
             show_menu();
         }
         else if (strcmp(command, "!upload\n") == 0)
@@ -328,4 +334,25 @@ char * client::crt_pkt_remove(char *namefile, int name_size, uint32_t *size){
     pos+=name_size+16;
     memcpy(packet+pos,tag,16);
     return packet;
+}
+
+char* client::crt_download_request(uint32_t* size) {
+	printf("Inserisci file\n");
+	char filename[31];
+	fgets(filename, 31, stdin);
+
+	for (int i=0; i<31;i++)
+		if (filename[i] == '\n') {
+			filename[i] = '\0';
+			break;
+		}
+		
+	bool check = nameChecker(filename, FILENAME);
+	if (!check) {
+		printf("Inserisci un nome corretto\n");
+		return;
+	}
+	this->counter++;
+	char* packet = crt_request_pkt(filename, size, DOWNLOAD, this->counter, this->shared_key);
+	return packet;
 }
