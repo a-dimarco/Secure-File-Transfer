@@ -1,5 +1,5 @@
 #include "../Crypto/crypto.h"
-
+#include "../../Client/client.h"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -85,4 +85,25 @@ static char* crt_file_pkt(char* filename, int* size, uint8_t opcode, uint16_t co
     *size = pos;
     return final_packet;
 }
+
+bool nameChecker(char *name, int mode) {//Checks if file (code = FILENAME) or command (code = COMMAND) is formatted correctly - utility
+
+    bool ret;
+    size_t len = strlen(name) - 1;
+    char *filename = (char *) malloc(len);
+    memcpy(filename, name, len);
+    //printf("Test: %s\n", test);
+    if (mode == FILENAME) {
+        ret = regex_match(filename, regex("^[A-Za-z0-9]*\\.[A-Za-z0-9]+$"));
+    } else if (mode == COMMAND) {
+        ret = regex_match(filename, regex("^\\![A-Za-z]+$"));
+    } else {
+        ret = false;
+    }
+    free(filename);
+    return ret;
+
+}
+
+
 

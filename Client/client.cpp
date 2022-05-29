@@ -149,24 +149,6 @@ void client::print_commands() {
     printf("!logout --> Disconnect from the server and close the application\n");
 }
 
-bool nameChecker(char *name, int mode) {//Checks if file (code = FILENAME) or command (code = COMMAND) is formatted correctly - utility
-
-    bool ret;
-    size_t len = strlen(name) - 1;
-    char *filename = (char *) malloc(len);
-    memcpy(filename, name, len);
-    //printf("Test: %s\n", test);
-    if (mode == FILENAME) {
-        ret = regex_match(filename, regex("^[A-Za-z0-9]*\\.[A-Za-z0-9]+$"));
-    } else if (mode == COMMAND) {
-        ret = regex_match(filename, regex("^\\![A-Za-z]+$"));
-    } else {
-        ret = false;
-    }
-    free(filename);
-    return ret;
-
-}
 
 void client::handle_req(char *pkt) {
 

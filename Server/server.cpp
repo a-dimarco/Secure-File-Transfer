@@ -1,10 +1,52 @@
 #include "server.h"
+#include "../Utils/Util/util.cpp"
 using namespace std;
 
 server::server(int sock) {
     this->socket = sock;
     this->cm = new connection_manager(this->socket);
     this->counter = 0;
+}
+
+void server::check_file(unsigned char* pkt, uint8_t opcode) {
+    int pos=8;
+    int count;
+    memcpy(&count, pkt + pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    if (count != this->counter) {
+        cerr << "Probable replay attack";
+    }
+    int name_size;
+    memcpy(&name_size, pkt + pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    name_size = ntohs(name_size);
+    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    unsigned char iv[iv_size];
+    memcpy(iv, pkt + pos, iv_size);
+    pos += iv_size;
+    unsigned char ct[name_size];
+    memcpy(ct, pkt + pos, name_size);
+    pos+=name_size;
+    int aad_size=sizeof(uint8_t)+sizeof(uint16_t)*2;
+    unsigned char aad[aad_size];
+    memcpy(aad, pkt, aad_size);
+    unsigned char tag[16];
+    memcpy(tag,pkt+pos,16);
+    crypto *c=new crypto();
+    unsigned char pt[name_size-16];
+    c->decrypt_message(ct,name_size,aad,aad_size,tag,this->shared_key,iv,iv_size,pt);
+    bool b= nameChecker(pt,FILENAME);
+
+    char* packt;
+    packt= this->cm->receive_packet();
+    int pos1 = 0;
+    uint8_t opcode2;
+    memcpy(&opcode2, pkt, sizeof(opcode2));//prelevo opcode
+    //opcode = ntohs(opcode);
+    pos += sizeof(opcode2);
+    printf("OPCODE ricevuto: %d\n", opcode2);
+    store_file(packt, opcode2);
+
 }
 
 /*void server::handle_req() {//TEST deserializza e gestisce il 1° packet dell'handshake con il server
@@ -75,15 +117,7 @@ void server::handle_req() {
 
     //Andrea test
     //Deserializzazione
-    int pos = 0;
-    uint8_t opcode;
-
-
-    memcpy(&opcode, pkt, sizeof(opcode));//prelevo opcode
-    //opcode = ntohs(opcode);
-    pos += sizeof(opcode);
-
-    printf("OPCODE ricevuto: %d\n", opcode);
+    g
 
     if(opcode == LIST){//IMPLEMENT
         send_list();
@@ -91,8 +125,9 @@ void server::handle_req() {
     else if(opcode == DOWNLOAD){//IMPLEMENT
     
     }
-    else if(opcode == UPLOAD){//IMPLEMENT
-    
+    else if(opcode == UPLOAD){//IMPLEMENT+
+        check_file(pkt, pos);
+        //store_file(pkt, opcode);
     }
     else if(opcode == RENAME){//IMPLEMENT
     
@@ -195,6 +230,35 @@ char *server::crt_pkt_download(char *file, int* size) {
 void server::send_list() {
     
     handle_req();
+}
+
+void server::store_file(char * pkt, uint8_t opcode ) {
+    int pos=sizeof(uint8_t);
+    uint32_t file_size;
+    memcpy(&file_size, pkt+pos, sizeof(file_size));
+    pos+=sizeof(file_size);
+    file_size = ntohs(file_size);
+    int count;
+    memcpy(&count, pkt+pos, sizeof(uint16_t));
+    pos+=sizeof(uint16_t);
+    count = ntohs(count);
+    if(count!=this->counter){
+        cerr << "Probable replay attack";
+    }
+    int aad_size=sizeof(uint8_t)+sizeof(uint32_t)+sizeof(uint16_t);
+    unsigned char aad[aad_size];
+    memcpy(&aad, pkt, aad_size);
+
+    unsigned charg iv[]
+
+    unsigned char file[file_size];
+    memcpy(&file, pkt+pos, file_size);
+    pos+=file_size;
+    unsigned char tag[16];
+    memcpy(&tag, pkt+pos, 16);
+    crypto *c=new crypto();
+    c->decrypt_message(file,file_size,aad,aad_size,tag,this->shared_key,)
+
 }
 /*
 char* print_folder(char* path){//Takes all files and saves them into a variable

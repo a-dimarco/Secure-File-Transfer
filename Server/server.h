@@ -32,6 +32,7 @@ public:
     //pacchetto con il file
     const char *crt_pkt_downfile(char *filename);
 
+
     ~server();
 
     //Andrea
@@ -43,6 +44,10 @@ private:
     int socket;
     uint16_t counter;
     connection_manager *cm;
+    unsigned char * shared_key;
+
+    void check_file(unsigned char* pkt, int pos);
+
     char* logged_user;//TEST
 
     void client_hello_handler(char *pkt, int pos);
@@ -50,6 +55,8 @@ private:
     char *prepare_ack_packet(uint32_t *size);
     
     char *crt_pkt_download(char *file, int* size);
+
+    void store_file(char* pkt, uint8_t opcode);
 
 };
 

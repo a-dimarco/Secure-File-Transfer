@@ -363,7 +363,7 @@ int crypto::encrypt_packet(unsigned char *plaintext, int plaintext_len,
     return ciphertext_len;
 }
 
-int decrypt_message(unsigned char *ciphertext, int ciphertext_len,
+int crypto::decrypt_message(unsigned char *ciphertext, int ciphertext_len,
                     unsigned char *aad, int aad_len,
                     unsigned char *tag,
                     unsigned char *key,
