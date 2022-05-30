@@ -222,8 +222,8 @@ void client::show_menu()
         }
         else if (strcmp(command, "!download\n") == 0)
         { // IMPLEMENT
-            crt_download_request(&size);
-            cm->send_packet(packet, size);
+            char* req = crt_download_request(&size);
+            cm->send_packet(req, size);
             char *pkt = cm->receive_packet(); // waits for the list packet
             handle_req(pkt);
             show_menu();
@@ -350,9 +350,46 @@ char* client::crt_download_request(uint32_t* size) {
 	bool check = nameChecker(filename, FILENAME);
 	if (!check) {
 		printf("Inserisci un nome corretto\n");
-		return;
+		return NULL;
 	}
 	this->counter++;
-	char* packet = crt_request_pkt(filename, size, DOWNLOAD, this->counter, this->shared_key);
+	char* packet = crt_request_pkt(filename, (int*)size, DOWNLOAD, this->counter, this->shared_key);
 	return packet;
 }
+
+char* client::crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counter, unsigned char* shared_key) {
+
+	crypto* c = new crypto();
+	
+	int aad_size = sizeof(uint8_t)+sizeof(uint16_t)*2;
+	int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+	uint16_t ptext_size = htons(strlen(filename) + 1);
+	int pos = 0;
+	int cipherlen;
+	uint16_t n_counter = htons(counter);
+	*size = aad_size+iv_size+ptext_size+2*16;
+	
+	char* pkt = (char*)malloc(*size);
+	unsigned char* iv = c->create_random_iv();
+	unsigned char* tag = (unsigned char*)malloc(16);
+	//unsigned char* ciphertext = (unsigned char*)malloc(ptext_size+16);
+	
+	memcpy(pkt, &opcode, sizeof(uint8_t));
+	pos += sizeof(uint8_t);
+	memcpy(pkt+pos, &n_counter, sizeof(uint16_t));
+	pos += sizeof(uint16_t);
+	memcpy(pkt+pos, &ptext_size, sizeof(uint16_t));
+	pos += sizeof(uint16_t);
+	memcpy(pkt+pos, iv, iv_size);
+	pos += iv_size;
+	 
+	
+	cipherlen = c->encrypt_packet((unsigned char*)filename, strlen(filename)+1,
+                           (unsigned char*)pkt, aad_size, shared_key, iv, iv_size,
+                           (unsigned char*)pkt+pos, tag);
+        
+        pos += cipherlen;
+        memcpy(pkt+pos, tag, 16);
+        return pkt;  
+}
+

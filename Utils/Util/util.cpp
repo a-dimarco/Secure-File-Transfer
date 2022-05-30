@@ -161,9 +161,10 @@ char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counte
 	memcpy(pkt+pos, iv, iv_size);
 	pos += iv_size;
 	 
-	cipherlen = encrypt_packet(filename, strlen(filename)+1,
-                           pkt, aad_size, shared_key, iv, iv_size,
-                           pkt+pos, tag);
+	
+	cipherlen = c->encrypt_packet((unsigned char*)filename, strlen(filename)+1,
+                           (unsigned char*)pkt, aad_size, shared_key, iv, iv_size,
+                           (unsigned char*)pkt+pos, tag);
         
         pos += cipherlen;
         memcpy(pkt+pos, tag, 16);

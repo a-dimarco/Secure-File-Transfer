@@ -132,8 +132,8 @@ void server::check_file(char *pkt, uint8_t opcode)
     		this->file_name = (char *) malloc(name_size);
         	memcpy(file_name, pt, name_size - 1);
        	memcpy(file_name+name_size-1, "\0", 1);
-        	char* pkt = crt_file_pkt(file_name, &size, opcode, this->counter)
-        	this->cm->send_packet(pkt, *size);
+        	char* pkt = crt_file_pkt(file_name, (int*)&size, opcode, this->counter);
+        	this->cm->send_packet(pkt, (int)size);
         	return;
     	}
     	else {

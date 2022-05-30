@@ -43,6 +43,10 @@ public:
     void show_menu();
 
     void print_commands();
+    
+    char* crt_download_request(uint32_t* size);
+    
+    char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counter, unsigned char* shared_key);
 
 private:
     char *user;
