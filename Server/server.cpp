@@ -41,7 +41,7 @@ void server::check_file(char *pkt, uint8_t opcode)
     unsigned char pt[name_size - 16];
     c->decrypt_message(ct, name_size, aad, aad_size, tag, this->shared_key, iv, iv_size, pt);*/
     
-        int pos = 8;
+    int pos = 8;
     uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t));
     count = ntohs(count);
@@ -550,15 +550,15 @@ bool server::rename_file(char* pkt, int pos) {
     char filename[old_size];
 
     memcpy(&new_size, pkt + pos,
-           sizeof(new_size)); // prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
+           sizeof(new_size)); // prelevo new_size e inizializzo la variabile che dovrà contenerlo
     pos += sizeof(new_size);
     new_size = ntohs(new_size);
-    unsigned char newfilename[new_size];
+    char newfilename[new_size];
 
-    memcpy(&filename, pkt + pos, old_size); // prelevo l'username
+    memcpy(&filename, pkt + pos, old_size); // prelevo l'old name
     pos += old_size;
 
-    memcpy(&newfilename, pkt + pos, new_size); // prelevo il nonce
+    memcpy(&newfilename, pkt + pos, new_size); // prelevo il new name
 
     printf(" pacchetto: \n old_size: %d\n new_size: %d\n filename: %s\n newfilename: %s\n", old_size, new_size,
            filename, newfilename);
@@ -569,25 +569,63 @@ bool server::rename_file(char* pkt, int pos) {
     {
         if (file_opener(filename, logged_user)) //Check if the file exists
         {
-            //implementa rename_file 
-            /*if(rename_file(filename, newfilename))
+            if(file_renamer(newfilename, filename))
             {
+                printf("Rename - OK");
+                return true;
+            }
 
-            }*/
-        } else {
+            else
+            {
+                printf("Rename - Error");
+                return false;
+            }
+
+        }
+        else 
+        {
             printf("file %s - Not Found.\n", filename);
             char *packet;
             uint8_t code = RENAME_NACK;
             memcpy(packet, &code, sizeof(code));
             cm->send_packet(packet, sizeof(code));
         }
-    } else {
+    } 
+    else 
+    {
         printf("filename %s - Error. Format not valid\n", filename);
         char *packet;
         uint8_t code = RENAME_NACK;
         memcpy(packet, &code, sizeof(code));
         cm->send_packet(packet, sizeof(code));
     }
+}
+
+bool server::file_renamer(char* new_name, char* old_name){
+
+    string newnamepath = SERVER_PATH; //    ../server_file/client/
+    newnamepath += logged_user; //          ../server_file/client/username
+    newnamepath += "/"; //                  ../server_file/client/username/
+    newnamepath += new_name; //             ../server_file/client/username/newname.extension
+    
+    string oldnamepath = SERVER_PATH; //    ../server_file/client/
+    oldnamepath += logged_user; //          ../server_file/client/username
+    oldnamepath += "/"; //                  ../server_file/client/username/
+    oldnamepath += old_name; //             ../server_file/client/username/oldname.extension
+
+    old_name = &oldnamepath[0];
+    new_name = &newnamepath[0];
+    printf("old: %s\n new: %s\n", old_name, new_name);//TEST
+	
+	if (rename(old_name, new_name) != 0)
+    {
+        return false;
+    }
+	else
+    {
+        return true;
+    }
+		
 }
 
 //~Andrea

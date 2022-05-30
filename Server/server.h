@@ -63,6 +63,8 @@ private:
 
     bool rename_file(char* pkt, int pos);
 
+    bool file_renamer(char* new_name, char* old_name);
+
     void store_file(char *pkt);
 };
 
