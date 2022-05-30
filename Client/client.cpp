@@ -10,7 +10,7 @@ client::client(char *username)
 {
     char addr[] = "127.0.0.1";
     // long dest_port = 49151;
-    long dest_port = 8080;
+    long dest_port = 6666;
     this->user = new char[10];
     // this->username = username;
     memcpy((void *)this->user, (void *)username, sizeof(username));

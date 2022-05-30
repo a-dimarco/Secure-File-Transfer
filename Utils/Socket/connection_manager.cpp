@@ -80,11 +80,13 @@ int connection_manager::accepting()
 
 void connection_manager::close_socket()
 {
+    shutdown(this->sckt,2);
     close(this->sckt);
 }
 
 void connection_manager::close_socket(int sock)
 {
+    shutdown(sock,2);
     close(sock);
 }
 
@@ -132,6 +134,7 @@ char *connection_manager::receive_packet()
         }
         received += ret;
         printf("ho ricevuto %zu bytes\n", received);
+        break;
     }
     // printf("ho ricevuto tutto il pacchetto\n");
 
@@ -188,6 +191,7 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
         }
         sent += ret;
         printf("ho inviato %zu bytes\n", sent);
+        break;
     }
     // printf("ho inviato tutto il pacchetto\n");
 }

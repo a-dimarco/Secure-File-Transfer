@@ -25,7 +25,7 @@ int main()
 {
     char addr[] = "127.0.0.1";
     // long std_port = 49151;
-    long std_port = 8080;
+    long std_port = 6666;
     cm = new connection_manager(addr, std_port);
     cm->listening(10);
     signal(SIGINT, signal_callback_handler);
@@ -33,14 +33,16 @@ int main()
     while (true)
     {
         sock = cm->accepting();
+        
         pid_t pid = fork();
         if (pid == 0)
         {
-            cm->close_socket();
+            //cm->close_socket();
             start_session(sock);
             exit(0);
         }
         else
             cm->close_socket(sock);
+        
     }
 }
