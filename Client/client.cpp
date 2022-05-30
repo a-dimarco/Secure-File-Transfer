@@ -183,6 +183,7 @@ void client::handle_req(char *pkt)
         return; // TEST
     }
     else if (opcode == DOWNLOAD) {
+    	create_downloaded_file(pkt);
     }
     else
     {
@@ -224,7 +225,7 @@ void client::show_menu()
         { // IMPLEMENT
             char* req = crt_download_request(&size);
             cm->send_packet(req, size);
-            char *pkt = cm->receive_packet(); // waits for the list packet
+            char *pkt = cm->receive_packet();
             handle_req(pkt);
             show_menu();
         }
@@ -352,6 +353,7 @@ char* client::crt_download_request(uint32_t* size) {
 		printf("Inserisci un nome corretto\n");
 		return NULL;
 	}
+	this->file_name = filename;
 	this->counter++;
 	char* packet = crt_request_pkt(filename, (int*)size, DOWNLOAD, this->counter, this->shared_key);
 	return packet;
@@ -391,5 +393,62 @@ char* client::crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_
         pos += cipherlen;
         memcpy(pkt+pos, tag, 16);
         return pkt;  
+}
+
+void client::create_downloaded_file(char* pkt) {
+
+	int ret;
+		
+	crypto* c = new crypto();
+	int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+	int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
+	
+	char* counter_pos = pkt + sizeof(uint8_t);
+	char* size_pos = counter_pos + sizeof(uint16_t);
+	char* iv_pos = size_pos + sizeof(uint32_t);
+	char* ct_pos = iv_pos + iv_size;
+	
+	uint16_t h_counter;
+	uint32_t h_size;
+	
+	memcpy(&h_counter, counter_pos, sizeof(uint16_t));
+	h_counter = ntohs(h_counter);
+	memcpy(&h_size, size_pos, sizeof(uint32_t));
+	h_size = ntohl(h_size);
+	
+	int ct_len = h_size + (16 - h_size%16);
+    	if (h_size % 16 == 0)
+    		ct_len += 16;
+    		
+    	char* tag_pos = ct_pos + ct_len;
+    	
+    	unsigned char* ptext = (unsigned char*)malloc(h_size);
+    	
+    	c->decrypt_message((unsigned char*)ct_pos, ct_len,
+                            (unsigned char*)pkt, aad_len,
+                            (unsigned char*)tag_pos,
+                            this->shared_key,
+                            (unsigned char*)iv_pos, iv_size,
+                            ptext);
+                            
+       FILE* file = fopen(this->file_name, "wb");
+       if (file == NULL) {
+       	printf("Errore nella fopen\n");
+       	exit(-1);
+       }                     
+	
+	ret = fwrite(ptext, sizeof(unsigned char), h_size, file);
+	if (ret < h_size) {
+		printf("Errore nella fwrite\n");
+		exit(-1);
+	}
+	ret = fclose(file);
+	
+	#pragma optimize("", off);
+        memset(ptext, 0, h_size);
+	#pragma optimize("", on);
+	
+	free(ptext);
+		
 }
 

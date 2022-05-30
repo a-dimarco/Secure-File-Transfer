@@ -50,12 +50,14 @@ public:
 
 private:
     char *user;
+    char* file_name;
     connection_manager *cm;
     uint16_t counter;
     unsigned char* shared_key;
     char *crt_pkt_hello(unsigned char *nonce);
     char *prepare_req_packet(uint32_t *size, uint8_t opcode);
     void show_list(char *pkt, int pos);
+    void create_downloaded_file(char* pkt);
 };
 
 #endif
