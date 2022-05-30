@@ -1,4 +1,3 @@
-#pragma once
 #ifndef SECURE_FILE_TRANSFER_CLIENT_H
 #define SECURE_FILE_TRANSFER_CLIENT_H
 
@@ -48,14 +47,17 @@ public:
     
     char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counter, unsigned char* shared_key);
 
+    void rename_file();
+
 private:
     char *user;
     char* file_name;
     connection_manager *cm;
     uint16_t counter;
-    unsigned char* shared_key;
-    char *crt_pkt_hello(unsigned char *nonce);
-    char *prepare_req_packet(uint32_t *size, uint8_t opcode);
+
+    char* crt_pkt_hello(unsigned char *nonce);
+    char* prepare_req_packet(uint32_t *size, uint8_t opcode);
+    char* prepare_filename_packet(uint8_t opcode, uint32_t *size, char* file_name, char* new_name);
     void show_list(char *pkt, int pos);
     void create_downloaded_file(char* pkt);
 };

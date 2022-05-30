@@ -1,7 +1,7 @@
 #include <iostream>
 #include "server.h"
 #include <unistd.h>
-#pragma once
+
 using namespace std;
 
 //int socket;

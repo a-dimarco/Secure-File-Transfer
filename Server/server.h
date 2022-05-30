@@ -1,6 +1,5 @@
 #ifndef SECURE_FILE_TRANSFER_SERVER_H
 #define SECURE_FILE_TRANSFER_SERVER_H
-#pragma once
 #include "../Utils/Socket/connection_manager.h"
 #include "../Utils/Util/util.h"
 
@@ -60,7 +59,9 @@ private:
 
     char *crt_pkt_download(char *file, int *size);
 
-    void store_file(char *pkt);
+    void store_file(char *pkt, uint8_t opcode);
+
+    bool rename_file(char* pkt, int pos);
 };
 
 #endif // SECURE_FILE_TRANSFER_SERVER_H

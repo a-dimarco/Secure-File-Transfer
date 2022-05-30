@@ -1,4 +1,3 @@
-#pragma once
 #include "client.h"
 #include <openssl/rand.h>
 #include "../Utils/Crypto/crypto.h"
@@ -21,6 +20,7 @@ client::client(char *username)
     this->cm=new connection_manager(addr,std_port);*/
 
     this->cm = new connection_manager(addr, 8000);
+
     this->cm->connection(addr, dest_port);
     this->counter = 0;
 }
@@ -203,25 +203,26 @@ void client::show_menu()
 
     char command[30];
     fgets(command, 30, stdin);
+    command[strcspn(command,"\n")] = 0;
 
     printf("command : %s \n", command);
 
     if (nameChecker(command, COMMAND))
     {
         uint32_t size;
-        if (strcmp(command, "!help\n") == 0)
+        if (strcmp(command, "!help") == 0)
         {
             show_menu();
         }
-        else if (strcmp(command, "!list\n") == 0)
+        else if (strcmp(command, "!list") == 0)
         {
             char *packet = prepare_req_packet(&size, LIST);
-            // printf("Test dimensione list packet: %d\n", size);
             cm->send_packet(packet, size);
+            printf("Waiting for the list!\n");
             char *pkt = cm->receive_packet(); // waits for the list packet
             handle_req(pkt);
         }
-        else if (strcmp(command, "!download\n") == 0)
+        else if (strcmp(command, "!download") == 0)
         { // IMPLEMENT
             char* req = crt_download_request(&size);
             cm->send_packet(req, size);
@@ -229,13 +230,14 @@ void client::show_menu()
             handle_req(pkt);
             show_menu();
         }
-        else if (strcmp(command, "!upload\n") == 0)
+        else if (strcmp(command, "!upload") == 0)
         { // IMPLEMENT
             show_menu();
         }
-        else if (strcmp(command, "!rename\n") == 0)
-        { // IMPLEMENT
-            show_menu();
+        else if (strcmp(command, "!rename") == 0)
+        {
+            //show_menu();
+            rename_file();
         }
         else if (strcmp(command, "!delete\n") == 0)
         {
@@ -247,7 +249,7 @@ void client::show_menu()
             handle_req(packet);
             show_menu();
         }
-        else if (strcmp(command, "!logout\n") == 0)
+        else if (strcmp(command, "!logout") == 0)
         { // IMPLEMENT
             char *packet = prepare_req_packet(&size, LOGOUT);
             cm->send_packet(packet, size);
@@ -268,7 +270,7 @@ void client::show_menu()
     }
 }
 
-char *client::prepare_req_packet(uint32_t *size, uint8_t opcode)
+char* client::prepare_req_packet(uint32_t *size, uint8_t opcode)
 {
 
     // opcode = htons(opcode);
@@ -452,3 +454,83 @@ void client::create_downloaded_file(char* pkt) {
 		
 }
 
+void client::rename_file(){//Va testata
+    
+    cout << "Rename - Which file?\n";
+    char file_name[11];
+    fgets(file_name, 11, stdin);
+
+    file_name[strcspn(file_name,"\n")] = 0;
+
+    if(nameChecker(file_name, FILENAME))
+    {
+        printf("Filename %s - ok, please specify a new filename\n", file_name);
+
+        char new_name[11];
+        fgets(new_name, 11, stdin);
+
+        new_name[strcspn(new_name,"\n")] = 0;
+
+        if(nameChecker(new_name, FILENAME))
+        {
+            uint32_t size;
+            char *packet = prepare_filename_packet(RENAME, &size, file_name, new_name);  
+            
+            cm->send_packet(packet, size);
+            printf("Rename request for file %s - sent\n waiting for response...\n", file_name);
+
+            //--Receive and analyze server's response
+
+            char *response;
+            response = cm->receive_packet();
+            uint8_t opcode;
+
+            memcpy(&opcode, response, sizeof(opcode)); // prelevo opcode
+
+            if (opcode == RENAME_ACK)//renametest: devo rimandargli old_name e new_name per verificare, mi pare basti il counter - dubbio
+            {
+                printf("Rename - OK\n");
+            }
+            else
+            {
+                printf("Rename - FAIL\n");
+            }
+        }
+        
+        else
+        {
+            printf("Filename %s - not accepted, please use filename.extension format\n", new_name);
+        }
+
+    }
+    else
+    {
+        printf("Filename %s - not accepted, please use filename.extension format\n", file_name);
+    }
+
+    show_menu();
+}
+
+char* client::prepare_filename_packet(uint8_t opcode, uint32_t *size, char* file_name, char* new_name){
+
+    uint16_t old_size = htons(strlen(file_name) + 1);
+    uint16_t new_size = htons(strlen(new_name) + 1);
+
+    int pos = 0;
+    char pkt[sizeof(uint8_t)+sizeof(uint16_t)+sizeof(uint16_t)+strlen(file_name)+1+strlen(new_name)+1];
+
+    memcpy(pkt, &opcode, sizeof(uint8_t));//opcode
+    pos += sizeof(uint8_t);
+    memcpy(pkt + pos, &old_size, sizeof(uint16_t));//strlen old_name
+    pos += sizeof(uint16_t);
+    memcpy(pkt + pos, &new_size, sizeof(uint16_t));//strlen new_name
+    pos += sizeof(uint16_t);
+    memcpy(pkt + pos, file_name, strlen(file_name)+1);//old_name
+    pos += strlen(file_name)+1;
+    memcpy(pkt + pos, new_name, strlen(new_name)+1);//new_name
+
+    *size = sizeof(pkt);
+    printf("request packet codice:%d ha size %d", opcode, size);
+
+    return pkt;
+}

@@ -6,7 +6,6 @@
 #include <string.h>
 #include <regex>
 #include "../Socket/connection_manager.h"
-#pragma once
 using namespace std;
 #ifndef SECURE_FILE_TRANSFER_UTIL_H
 #define SECURE_FILE_TRANSFER_UTIL_H

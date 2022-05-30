@@ -1,6 +1,5 @@
 #include "server.h"
 
-#pragma once
 using namespace std;
 
 server::server(int sock)
@@ -221,8 +220,9 @@ void server::handle_req()
     // Deserializzazione
 
     if (opcode == LIST)
-    { // IMPLEMENT
+    {
         send_list();
+        handle_req();
     }
     else if (opcode == DOWNLOAD)
     { // IMPLEMENT
@@ -235,6 +235,21 @@ void server::handle_req()
     }
     else if (opcode == RENAME)
     { // IMPLEMENT
+        if(rename_file(pkt, pos)) //Rename success
+        {
+            char *packet;
+            uint8_t opcode = RENAME_ACK;
+            memcpy(packet, &opcode, sizeof(opcode));
+            cm->send_packet(packet, sizeof(opcode));
+        }
+        else //Rename failure
+        {
+            char *packet;
+            uint8_t opcode = RENAME_NACK;
+            memcpy(packet, &opcode, sizeof(opcode));
+            cm->send_packet(packet, sizeof(opcode));
+        }
+        handle_req();
     }
     else if (opcode == DELETE)
     {
@@ -245,21 +260,6 @@ void server::handle_req()
         printf("Received logout request. Closing connections.\n Bye!\n");
         cm->close_socket();
         exit(0);
-    }
-    else if (opcode == ACK)
-    {
-    }
-    else if (opcode == UPLOAD)
-    { // IMPLEMENT
-    }
-    else if (opcode == RENAME)
-    { // IMPLEMENT
-    }
-    else if (opcode == DELETE)
-    { // IMPLEMENT
-    }
-    else if (opcode == LOGOUT)
-    { // IMPLEMENT
     }
     else if (opcode == ACK)
     {
@@ -461,7 +461,6 @@ void server::send_list()
     cm->send_packet(pkt, packet_size);
 
     printf("list sent: size %d\n %s\n", list_size, content); // TEST
-    handle_req();
 }
 
 string server::print_folder(char *path)
@@ -538,5 +537,60 @@ void server::delete_file() {
 int server::get_socket() {
 	return this->socket;
 }
+
+bool server::rename_file(char* pkt, int pos)
+{
+    uint16_t new_size;
+    uint16_t old_size;
+
+    // Deserializzazione
+
+    memcpy(&old_size, pkt + pos, sizeof(old_size)); // prelevo old_size inizializzo la variabile che dovrà contenerlo
+    pos += sizeof(old_size);
+    old_size = ntohs(old_size);
+    char filename[old_size];
+
+    memcpy(&new_size, pkt + pos, sizeof(new_size)); // prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
+    pos += sizeof(new_size);
+    new_size = ntohs(new_size);
+    unsigned char newfilename[new_size];
+
+    memcpy(&filename, pkt + pos, old_size); // prelevo l'username
+    pos += old_size;    
+    
+    memcpy(&newfilename, pkt + pos, new_size); // prelevo il nonce
+
+    printf(" pacchetto: \n old_size: %d\n new_size: %d\n filename: %s\n newfilename: %s\n", old_size, new_size,
+           filename, newfilename);
+
+    // Fine Deserializzazione
+
+    if(nameChecker(filename, FILENAME)) //Check if username format is correct
+    {
+        if(file_opener(filename, logged_user)) //Check if the file exists
+        {
+            //implementa rename_file 
+            /*if(rename_file(filename, newfilename))
+            {
+
+            }*/
+        }
+        else
+        {
+            printf("file %s - Not Found.\n", filename);
+            char *packet;
+            uint8_t code = RENAME_NACK;
+            memcpy(packet, &code, sizeof(code));
+            cm->send_packet(packet, sizeof(code));
+        }
+    }
+    else{
+        printf("filename %s - Error. Format not valid\n", filename);
+        char *packet;
+        uint8_t code = RENAME_NACK;
+        memcpy(packet, &code, sizeof(code));
+        cm->send_packet(packet, sizeof(code));
+    }
+
 
 //~Andrea

@@ -1,6 +1,5 @@
 #ifndef SECURE_FILE_TRANSFER_CONNECTION_MANAGER_H
 #define SECURE_FILE_TRANSFER_CONNECTION_MANAGER_H
-#pragma once
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -24,6 +23,8 @@
 #define RENAME 14
 #define DELETE 15
 #define LOGOUT 16
+#define RENAME_ACK 17
+#define RENAME_NACK 18
 
 //--PACKET SIZES
 #define CLIENT_HELLO_SIZE 23
@@ -36,6 +37,9 @@
 //--COMMANDS
 #define FILENAME 1111
 #define COMMAND 2222
+#define CLIENT  3333
+#define SERVER  4444
+
 
 using namespace std;
 

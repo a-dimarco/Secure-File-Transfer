@@ -65,23 +65,19 @@ bool nameChecker(char *name, int mode)
 { // Checks if file (code = FILENAME) or command (code = COMMAND) is formatted correctly - utility
 
     bool ret;
-    size_t len = strlen(name) - 1;
-    char *filename = (char *)malloc(len);
-    memcpy(filename, name, len);
-    // printf("Test: %s\n", test);
+
     if (mode == FILENAME)
     {
         ret = regex_match(filename, regex("[A-Za-z]*\\.[A-Za-z]"));
     }
     else if (mode == COMMAND)
     {
-        ret = regex_match(filename, regex("^\\![A-Za-z]+$"));
+        ret = regex_match(name, regex("^\\![A-Za-z]+$"));
     }
     else
     {
         ret = false;
     }
-    free(filename);
     return ret;
 }
 

@@ -8,6 +8,11 @@ connection_manager::connection_manager() {}
 connection_manager::connection_manager(int sock)
 {
     this->sckt = sock;
+    if(sckt < 0)
+    {         
+        printf("Error creating the socket\n");         
+        exit(1);    
+    }
 }
 
 connection_manager::connection_manager(char *my_addr, long port)
@@ -15,6 +20,11 @@ connection_manager::connection_manager(char *my_addr, long port)
     int ret;
     struct sockaddr_in addr;
     this->sckt = socket(AF_INET, SOCK_STREAM, 0);
+    if(sckt < 0)
+    {         
+        printf("Error creating the socket\n");         
+        exit(1);    
+    }
 
     const int trueFlag = 1;
     setsockopt(this->sckt, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int)); // Tells socket to reuse the connection
@@ -101,7 +111,6 @@ char *connection_manager::receive_packet()
     if (pkt_len < 0)
         cerr << "Error";
     exit(1);
-
     if (pkt_len == 0) {
         cerr << "Error";
         exit(1);
@@ -132,31 +141,22 @@ char *connection_manager::receive_packet()
         uint16_t us_size;
         uint16_t nonce_size;
         uint8_t opcode;
-
-
         memcpy(&opcode, pkt, sizeof(opcode));//prelevo opcode
         opcode = ntohs(opcode);
         pos+=sizeof(opcode);
-
         memcpy(&us_size, pkt+pos, sizeof(us_size)); //prelevo us_size inizializzo la variabile che dovrà contenerlo
         pos+=sizeof(us_size);
         us_size = ntohs(us_size);
         char username[us_size];
-
         memcpy(&nonce_size, pkt+pos, sizeof(nonce_size)); //prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
         pos+=sizeof(nonce_size);
         nonce_size = ntohs(nonce_size);
         unsigned char nonce[nonce_size];
-
         memcpy(&username, pkt+pos, us_size);//prelevo l'username
         pos+=us_size;
-
         memcpy(&nonce, pkt+pos, nonce_size);//prelevo il nonce
-
         //Fine Deserializzazione
-
         //printf("pacchetto: \n opcode: %d\n us_size: %d\n nonce_size: %d\n, username: %s\n nonce: %s\n" ,opcode,us_size, nonce_size, username, nonce);
-
         //test andrea
         return username;
         //test andrea
