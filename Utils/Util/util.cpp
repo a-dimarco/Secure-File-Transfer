@@ -68,7 +68,7 @@ bool nameChecker(char *name, int mode)
 
     if (mode == FILENAME)
     {
-        ret = regex_match(name, regex("[A-Za-z]*\\.[A-Za-z]"));
+        ret = regex_match(name, regex("^[A-Za-z0-9]*\\.[A-Za-z0-9]+$"));
     }
     else if (mode == COMMAND)
     {

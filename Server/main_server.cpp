@@ -37,7 +37,7 @@ int main()
         pid_t pid = fork();
         if (pid == 0)
         {
-            //cm->close_socket();
+            cm->close_socket();
             start_session(sock);
             exit(0);
         }

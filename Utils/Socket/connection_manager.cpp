@@ -80,13 +80,13 @@ int connection_manager::accepting()
 
 void connection_manager::close_socket()
 {
-    shutdown(this->sckt,2);
+    //shutdown(this->sckt,2);
     close(this->sckt);
 }
 
 void connection_manager::close_socket(int sock)
 {
-    shutdown(sock,2);
+    //shutdown(sock,2);
     close(sock);
 }
 
@@ -170,7 +170,7 @@ char *connection_manager::receive_packet()
 void connection_manager::send_packet(char *packet, uint32_t pkt_len)
 {
     size_t sent = 0;
-    printf("%s", packet);
+    //printf("%s", packet);
     ssize_t ret;
     uint32_t pkt_len_n = htonl(pkt_len);
     ret = send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
@@ -196,6 +196,6 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
     // printf("ho inviato tutto il pacchetto\n");
 }
 
-connection_manager::~connection_manager() {}
+connection_manager::~connection_manager();
 
 //---Andrea TEST---
