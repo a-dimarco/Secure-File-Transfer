@@ -54,7 +54,7 @@ private:
     char* file_name;
     connection_manager *cm;
     uint16_t counter;
-
+    unsigned char* shared_key;
     char* crt_pkt_hello(unsigned char *nonce);
     char* prepare_req_packet(uint32_t *size, uint8_t opcode);
     char* prepare_filename_packet(uint8_t opcode, uint32_t *size, char* file_name, char* new_name);
