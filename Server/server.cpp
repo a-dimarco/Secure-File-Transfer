@@ -538,8 +538,7 @@ int server::get_socket() {
 	return this->socket;
 }
 
-bool server::rename_file(char* pkt, int pos)
-{
+bool server::rename_file(char* pkt, int pos) {
     uint16_t new_size;
     uint16_t old_size;
 
@@ -550,14 +549,15 @@ bool server::rename_file(char* pkt, int pos)
     old_size = ntohs(old_size);
     char filename[old_size];
 
-    memcpy(&new_size, pkt + pos, sizeof(new_size)); // prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
+    memcpy(&new_size, pkt + pos,
+           sizeof(new_size)); // prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
     pos += sizeof(new_size);
     new_size = ntohs(new_size);
     unsigned char newfilename[new_size];
 
     memcpy(&filename, pkt + pos, old_size); // prelevo l'username
-    pos += old_size;    
-    
+    pos += old_size;
+
     memcpy(&newfilename, pkt + pos, new_size); // prelevo il nonce
 
     printf(" pacchetto: \n old_size: %d\n new_size: %d\n filename: %s\n newfilename: %s\n", old_size, new_size,
@@ -565,32 +565,29 @@ bool server::rename_file(char* pkt, int pos)
 
     // Fine Deserializzazione
 
-    if(nameChecker(filename, FILENAME)) //Check if username format is correct
+    if (nameChecker(filename, FILENAME)) //Check if username format is correct
     {
-        if(file_opener(filename, logged_user)) //Check if the file exists
+        if (file_opener(filename, logged_user)) //Check if the file exists
         {
             //implementa rename_file 
             /*if(rename_file(filename, newfilename))
             {
 
             }*/
-        }
-        else
-        {
+        } else {
             printf("file %s - Not Found.\n", filename);
             char *packet;
             uint8_t code = RENAME_NACK;
             memcpy(packet, &code, sizeof(code));
             cm->send_packet(packet, sizeof(code));
         }
-    }
-    else{
+    } else {
         printf("filename %s - Error. Format not valid\n", filename);
         char *packet;
         uint8_t code = RENAME_NACK;
         memcpy(packet, &code, sizeof(code));
         cm->send_packet(packet, sizeof(code));
     }
-
+}
 
 //~Andrea

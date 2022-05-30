@@ -62,6 +62,8 @@ private:
     void store_file(char *pkt, uint8_t opcode);
 
     bool rename_file(char* pkt, int pos);
+
+    void store_file(char *pkt);
 };
 
 #endif // SECURE_FILE_TRANSFER_SERVER_H
