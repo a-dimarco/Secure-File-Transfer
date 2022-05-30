@@ -40,6 +40,8 @@ public:
     void handle_req();
 
     string print_folder(char *path);
+    
+    int get_socket();
 
 private:
     int socket;

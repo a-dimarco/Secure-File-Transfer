@@ -4,9 +4,13 @@
 #pragma once
 using namespace std;
 
-void signal_callback_handler()
+//int socket;
+connection_manager* cm;
+
+void signal_callback_handler(int flag)
 {
     cout << "Server shutting down " << endl;
+    cm->close_socket();
     // Terminate program
     exit(1);
 }
@@ -22,9 +26,9 @@ int main()
     char addr[] = "127.0.0.1";
     // long std_port = 49151;
     long std_port = 8080;
-    connection_manager *cm = new connection_manager(addr, std_port);
+    cm = new connection_manager(addr, std_port);
     cm->listening(10);
-    // signal(SIGINT, signal_callback_handler);
+    signal(SIGINT, signal_callback_handler);
     int sock;
     while (true)
     {

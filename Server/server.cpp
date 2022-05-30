@@ -535,4 +535,8 @@ void server::delete_file() {
     free(this->file_name);
 }
 
+int server::get_socket() {
+	return this->socket;
+}
+
 //~Andrea
