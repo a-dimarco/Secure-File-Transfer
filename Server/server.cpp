@@ -311,6 +311,7 @@ void server::client_hello_handler(char *pkt, int pos)
     printf("username ricevuto %s\n", username);
     logged_user = username;
 
+    /*
     if (strcmp(username, "test") == 0)
     { // username usato per testing metodi
         printf("Username - OK\n");
@@ -329,6 +330,8 @@ void server::client_hello_handler(char *pkt, int pos)
         close(this->socket);
         exit(1);
     }
+     */
+    server_hello(nonce);
 }
 
 char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size)
@@ -626,6 +629,51 @@ bool server::file_renamer(char* new_name, char* old_name){
         return true;
     }
 		
+}
+
+void server::server_hello(unsigned char* nonce) {
+    uint8_t opcode=SHELLO_OPCODE;
+    crypto *c=new crypto();
+    this->snonce=c->create_nonce();
+    uint32_t *cert_size;
+    unsigned char * cert= c->getServerCert(cert_size);
+    this->my_prvkey= c->dh_keygen();
+    uint32_t* key_size;
+    unsigned char* key=c->serialize_dh_pubkey(this->my_prvkey, key_size);
+    int sign_size=*key_size+16;
+    unsigned char tosign[sign_size];
+    int pos=0;
+    memcpy(tosign,key,*key_size);
+    pos+=*key_size;
+    uint16_t  nonce_size=sizeof(nonce);
+    memcpy(tosign+pos,&nonce,1);
+    uint32_t *sgnt_size;
+    unsigned char* sign=c->sign(tosign,sign_size,"server_prvkey.pem",sgnt_size);
+    uint32_t pkt_len=3*4+2+1+nonce_size+*key_size+*cert_size+*sgnt_size;
+    char pkt[pkt_len];
+    pos=0;
+    memcpy(pkt,&opcode,sizeof(opcode));
+    pos+=sizeof(opcode);
+    uint16_t nonce_size_s=htons(nonce_size);
+    memcpy(pkt+pos,&nonce_size_s,sizeof(uint16_t));
+    pos+=sizeof(uint16_t);
+    uint32_t cert_size_s=htonl(*cert_size);
+    memcpy(pkt+pos,&cert_size_s,sizeof(uint32_t));
+    pos+=sizeof(uint32_t);
+    uint32_t key_size_s=htonl(*key_size);
+    memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
+    pos+=sizeof(uint32_t);
+    uint32_t sgnt_size_s=htonl(*sgnt_size);
+    memcpy(pkt+pos,&sgnt_size_s,sizeof(uint32_t));
+    pos+=sizeof(uint32_t);
+    memcpy(pkt+pos,snonce,nonce_size);
+    pos+=nonce_size;
+    memcpy(pkt+pos,cert,*cert_size);
+    pos+=*cert_size;
+    memcpy(pkt+pos,key,*key_size);
+    pos+=*key_size;
+    memcpy(pkt+pos,sign,*sgnt_size);
+    this->cm->send_packet(pkt,pkt_len);
 }
 
 //~Andrea

@@ -31,7 +31,7 @@ char *client::send_clienthello()
 
     // unsigned char* nonce=c->create_nonce();
     RAND_poll();
-    unsigned char nonce[8];
+    this->nonce[8];
     RAND_bytes(nonce, 8);
 
     printf("checkpoint\n");
@@ -134,8 +134,11 @@ char *client::crt_pkt_upload(char *filename, int *size)
      return final_packet;*/
 }
 
-void client::auth(char *pkt)
+void client::auth()
 {
+    crypto *c=new crypto();
+
+    unsigned char pkt[]
 }
 
 client::~client() { this->cm->close_socket(); }
@@ -168,7 +171,7 @@ void client::handle_req(char *pkt)
 
     if (opcode == SHELLO_OPCODE)
     {
-        // server_hello_handler(pkt, pos);
+        server_hello_handler(pkt, pos);
     }
     else if (opcode == LIST)
     {
@@ -533,4 +536,66 @@ char* client::prepare_filename_packet(uint8_t opcode, uint32_t *size, char* file
     printf("request packet codice:%d ha size %d", opcode, size);
 
     return pkt;
+}
+
+void client::server_hello_handler(char *pkt, int pos) {
+    crypto *c=new crypto();
+    int ret;
+    uint16_t nonce_size;
+    memcpy(&nonce_size,pkt+pos,sizeof(uint16_t));
+    pos+=sizeof(uint16_t);
+    nonce_size = ntohs(nonce_size);
+    uint32_t cert_size;
+    memcpy(&cert_size,pkt+pos,sizeof(uint32_t));
+    pos+=sizeof(uint32_t);
+    cert_size=ntohl(cert_size);
+    uint32_t key_size;
+    memcpy(&key_size,pkt+pos,sizeof(uint32_t));
+    pos+=sizeof(uint32_t);
+    key_size= ntohl(key_size);
+    uint32_t sgnt_size;
+    memcpy(&sgnt_size,pkt+pos,sizeof(uint32_t));
+    pos+=sizeof(uint32_t);
+    sgnt_size= ntohl(sgnt_size);
+    unsigned char snonce[nonce_size];
+    memcpy(snonce,pkt+pos,nonce_size);
+    pos+=nonce_size;
+    unsigned char cert[cert_size];
+    memcpy(cert,pkt+pos,cert_size);
+    pos+=cert_size;
+    unsigned char key[key_size];
+    memcpy(key,pkt+pos,key_size);
+    pos+=key_size;
+    unsigned char sign[sgnt_size];
+    memcpy(sign,pkt+pos,sgnt_size);
+    BIO* bio= BIO_new(BIO_s_mem());
+    ret=BIO_write(bio, cert, cert_size);
+    if(ret==0){
+        cerr << "errore in BIO_write";
+        exit(1);
+    }
+    X509* certificate=PEM_read_bio_X509( bio, NULL, NULL, NULL);
+    if(certificate==NULL){
+        cerr<<"PEM_read_bio_X509 error";
+        exit(1);
+    }
+    bool b=c->verify_cert(certificate);
+    if(!b){
+        cerr << "certificate not valid";
+        exit(1);
+    }
+    pos=0;
+    unsigned char to_verify[key_size+nonce_size];
+    memcpy(to_verify,key,key_size);
+    pos+=key_size;
+    memcpy(to_verify+pos,this->nonce,nonce_size);
+    b=c->verify_sign(sign,sgnt_size,to_verify,key_size+nonce_size,certificate);
+    if(!b){
+        cerr << "signature not valid";
+        exit(1);
+    }
+    X509_free(certificate);
+    BIO_free(bio);
+    auth();
+
 }

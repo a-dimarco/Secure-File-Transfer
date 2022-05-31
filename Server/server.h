@@ -24,7 +24,7 @@ public:
     void end_connection();
 
     // packet
-    void server_hello(int nonce);
+    void server_hello(unsigned char* nonce);
 
     // pacchetto per errori, conferme e lista di file
     const char *crt_pkt_string(char *s);
@@ -44,12 +44,13 @@ public:
 
 private:
     int socket;
+    unsigned char* snonce;
     uint16_t counter;
     connection_manager *cm;
     unsigned char *shared_key;
     char *file_name;
     void check_file(char *pkt, uint8_t opcode);
-
+    EVP_PKEY *my_prvkey;
     char *logged_user; // TEST
 
     void client_hello_handler(char *pkt, int pos);

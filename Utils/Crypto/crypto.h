@@ -41,17 +41,18 @@ public:
 
     EVP_PKEY *dh_params_gen(); // edo
 
-    EVP_PKEY *dh_keygen(EVP_PKEY *dh_params); // genera coppia di chiavi dh
+    EVP_PKEY *dh_keygen(); // genera coppia di chiavi dh
 
-    unsigned char *serialize_dh_pubkey(EVP_PKEY *dh_key, long *size); // genera public key - edo
+
+    unsigned char *serialize_dh_pubkey(EVP_PKEY *dh_key,uint32_t *size); // genera public key - edo
     EVP_PKEY *deserialize_dh_pubkey(unsigned char *dh_key, long size);
 
     unsigned char *dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, size_t *size); // edo
 
-    unsigned char *sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, char *psw); // lore
+    unsigned char *sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name,uint32_t *sgnt_size); // lore
 
     bool
-    verify_sign(unsigned char *sgnt_buf, int *key, long int sgnt_size, unsigned char *clear_buf, long int clear_size,
+    verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned char *clear_buf, long int clear_size,
                 X509 *cert); // lore
 
     bool verify_cert(X509 *cert); // lore
@@ -61,12 +62,13 @@ public:
     unsigned char *create_random_iv();
 
     unsigned char *create_nonce();
-
+    unsigned char* getServerCert(uint32_t * size);
     // EVP_PKEY *extract_pubkey(X509_STORE *cert);//lore
 
 private:
     void handleError(char *s); // lore
     unsigned char *shared_key; // free it when the session is finished
+
 };
 
 #endif

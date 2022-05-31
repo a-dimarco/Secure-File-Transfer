@@ -12,7 +12,7 @@ public:
 
     client(char *usernmame);
 
-    void auth(char *pkt);
+    void auth();
 
     void receive_list();
 
@@ -21,6 +21,8 @@ public:
     void delete_file();
 
     char *send_clienthello();
+
+    void server_hello_handler(char* pkt, int pos);
 
     // packet
     char *crt_pkt_listreq();
@@ -50,6 +52,8 @@ public:
     void rename_file();
 
 private:
+    unsigned char* nonce;
+    EVP_PKEY * my_prvkey;
     char *user;
     char* file_name;
     connection_manager *cm;
