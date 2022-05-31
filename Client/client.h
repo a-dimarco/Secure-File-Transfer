@@ -64,6 +64,7 @@ private:
     char* prepare_filename_packet(uint8_t opcode, uint32_t *size, char* file_name, char* new_name);
     void show_list(char *pkt, int pos);
     void create_downloaded_file(char* pkt);
+    void handle_ack(char *pkt,uint8_t opcode);
 };
 
 #endif

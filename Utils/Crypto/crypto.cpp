@@ -81,12 +81,12 @@ unsigned char *crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, uint32_t *size) {
     char ** pp;
     long s=BIO_get_mem_data(bio, pp);
     void * pubkey;
-    *size=s;g
+    *size=s;
     ret= BIO_read(bio, pubkey, s);
     return (unsigned char*)pubkey;
 
 }
-
+/*
 EVP_PKEY *crypto::deserialize_dh_pubkey(unsigned char *dh_key) {
 
     int ret;
@@ -124,6 +124,7 @@ EVP_PKEY *crypto::deserialize_dh_pubkey(unsigned char *dh_key) {
 
     return pub_key;
 }
+ */
 
 unsigned char *crypto::dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, size_t *size) {
 
@@ -489,6 +490,10 @@ bool crypto::verify_cert(X509 *cert) {
         exit(1);
     }
     ret = X509_verify_cert(certvfy_ctx);
+    X509_STORE_free(store);
+    X509_free(cacert);
+    X509_CRL_free(crl);
+    X509_STORE_CTX_free(certvfy_ctx);
     if (ret != 1) {
         cerr << "Error: X509_verify_cert returned " << ret << "\n"
              << ERR_error_string(ERR_get_error(), NULL) << "\n";
@@ -498,10 +503,7 @@ bool crypto::verify_cert(X509 *cert) {
     }
 
     // X509_free(cert); da fare comunque dopo
-    X509_STORE_free(store);
-    X509_free(cacert);
-    X509_CRL_free(crl);
-    X509_STORE_CTX_free(certvfy_ctx);
+
 }
 
 bool crypto::verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned char *clear_buf,
@@ -531,7 +533,6 @@ bool crypto::verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned c
         cerr << "Error: Invalid signature!\n";
         return false;
     }
-    X509_free(cert);
     EVP_MD_CTX_free(md_ctx);
     return true;
 }

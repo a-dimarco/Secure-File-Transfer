@@ -19,7 +19,7 @@ client::client(char *username)
     long std_port=rand()%6000+43151;
     this->cm=new connection_manager(addr,std_port);*/
 
-    this->cm = new connection_manager(addr, 8000);
+    this->cm = new connection_manager(addr, 8888);
 
     this->cm->connection(addr, dest_port);
     this->counter = 0;
@@ -220,7 +220,7 @@ void client::handle_req(char *pkt)
     }
     else if (opcode == ACK)
     { // TEST
-        printf("ACK - OK\n");
+        handle_ack(pkt,opcode);
         show_menu();
         return; // TEST
     }
@@ -649,4 +649,38 @@ void client::server_hello_handler(char *pkt, int pos) {
     BIO_free(bio);
     auth(snonce,pubkey);
 
+}
+
+void client::handle_ack(char *pkt,uint8_t opcode) {
+
+    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    int pos=sizeof(opcode);
+    this->counter++;
+    uint16_t count;
+    memcpy(&count, pkt+pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    count= ntohs(count);
+    if(this->counter!=count){
+        cerr<<"counter errato";
+    }
+    uint16_t size_m;
+    memcpy(&size_m, pkt+pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    size_m= ntohs(size_m);
+    crypto *c = new crypto();
+    unsigned char *iv;
+    memcpy(iv, pkt+pos, iv_size);
+    pos += iv_size;
+    unsigned char ct[size_m];
+    memcpy(ct,pkt+pos,size_m);
+    pos+=size_m;
+    unsigned char tag[16];
+    memcpy(tag,pkt+pos,16);
+    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t);
+    unsigned char *pt;
+    pos=0;
+    unsigned char aad[aad_size];
+    memcpy(aad, pkt, aad_size);
+    c->decrypt_message(ct,size_m,aad,aad_size,tag,this->shared_key,iv,iv_size,pt);
+    printf("%s",pt);
 }

@@ -50,6 +50,7 @@ private:
     void check_file(char *pkt, uint8_t opcode);
     EVP_PKEY *my_prvkey;
     char *logged_user; // TEST
+    size_t *key_size;
     void auth(char *pkt, int pos);
     void client_hello_handler(char *pkt, int pos);
 

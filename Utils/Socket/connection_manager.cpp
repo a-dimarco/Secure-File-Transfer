@@ -12,6 +12,8 @@ connection_manager::connection_manager(int sock)
     {         
         printf("Error creating the socket\n");         
         exit(1);    
+    }else{
+        printf("Socket creato\n");
     }
 }
 

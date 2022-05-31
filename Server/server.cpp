@@ -348,7 +348,8 @@ char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size)
     memcpy(packet, &opcode, sizeof(opcode));
     pos += sizeof(opcode);
     this->counter++;
-    memcpy(packet + pos, &counter, sizeof(uint16_t));
+    uint16_t count=htons(counter);
+    memcpy(packet + pos, &count, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     uint16_t size_m = htons(msg_size);
     memcpy(packet + pos, &size_m, sizeof(uint16_t));
@@ -651,7 +652,7 @@ void server::server_hello(unsigned char* nonce) {
     uint16_t  nonce_size=sizeof(nonce);
     memcpy(tosign+pos,&nonce,1);
     uint32_t *sgnt_size;
-    unsigned char* sign=c->sign(tosign,sign_size,"server_prvkey.pem",sgnt_size);
+    unsigned char* sign=c->sign(tosign,sign_size,"server_prvkey.pem",NULL,sgnt_size);
     uint32_t pkt_len=3*4+2+1+nonce_size+*key_size+*cert_size+*sgnt_size;
     char pkt[pkt_len];
     pos=0;
@@ -681,6 +682,7 @@ void server::server_hello(unsigned char* nonce) {
 
 void server::auth(char *pkt, int pos) {
     int ret;
+    crypto *c=new crypto();
     uint32_t key_size;
     memcpy(&key_size,pkt+pos,sizeof(uint32_t));
     key_size= ntohl(key_size);
@@ -706,7 +708,34 @@ void server::auth(char *pkt, int pos) {
         exit(1);
     }
     BIO_free(bio);
-
+    unsigned char to_verify[key_size+8];
+    pos=0;
+    memcpy(to_verify+pos,key,key_size);
+    pos+=key_size;
+    memcpy(to_verify+pos,this->snonce,8);
+    string newnamepath = SERVER_PATH; //    ../server_file/client/
+    newnamepath += logged_user; //          ../server_file/client/username
+    newnamepath += "/"; //                  ../server_file/client/username/
+    newnamepath += "pubkey.pem";
+    char* path = &newnamepath[0];
+    FILE * file;
+    file=fopen(path,"rb");
+    EVP_PKEY* user_pk= PEM_read_PUBKEY(file,NULL,NULL,NULL);
+    bool b=c->verify_sign(sign,sgnt_size,to_verify,key_size+8,user_pk);
+    if(!b){
+        cerr << "signature not valid";
+        exit(1);
+    }
+    EVP_PKEY_free(user_pk);
+    unsigned char* g=c->dh_sharedkey(this->my_prvkey,pubkey,this->key_size);
+    this->shared_key=c->key_derivation(g,*this->key_size);
+    EVP_PKEY_free(pubkey);
+    EVP_PKEY_free(my_prvkey);
+    uint32_t *pkt_len;
+    char msg[]="Connection established";
+    char* packet=prepare_ack_packet(pkt_len,msg,sizeof(msg));
+    this->cm->send_packet(packet,*pkt_len);
+    handle_req();
 }
 
 //~Andrea
