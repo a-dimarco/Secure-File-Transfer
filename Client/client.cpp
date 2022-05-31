@@ -134,11 +134,50 @@ char *client::crt_pkt_upload(char *filename, int *size)
      return final_packet;*/
 }
 
-void client::auth()
+void client::auth(unsigned char* nonce, EVP_PKEY* pubkey)
 {
     crypto *c=new crypto();
+    EVP_PKEY * my_prvkey= c->dh_keygen();
+    uint32_t* key_size;
+    unsigned char* key=c->serialize_dh_pubkey(my_prvkey, key_size);
+    int sign_size=*key_size+16;
+    unsigned char tosign[sign_size];
+    int pos=0;
+    uint32_t nonce_size=8;
+    memcpy(tosign,key,*key_size);
+    pos+=*key_size;
+    memcpy(tosign+pos,nonce,nonce_size);
+    cout << "Please, type your private key file: ";
+    char file[30];
+    fgets(file, 30, stdin);
+    file[strcspn(file,"\n")] = 0;
+    cout << "Please, type your password: ";
+    char psw[30];
+    fgets(psw, 30, stdin);
+    file[strcspn(psw,"\n")] = 0;
+    uint32_t * sgnt_size;
+    unsigned char* sign=c->sign(tosign,sign_size,file,psw,sgnt_size);
+    uint8_t opcode=AUTH;
+    uint32_t pkt_len=sizeof(opcode)+4+4+*key_size+*sgnt_size;
+    char pkt[pkt_len];
+    pos=0;
+    memcpy(pkt+pos,&opcode,sizeof(uint8_t));
+    pos+=sizeof(uint8_t);
+    uint32_t key_size_s=htonl(*key_size);
+    memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
+    pos+=sizeof(uint32_t);
+    uint32_t sgnt_size_s=htonl(*sgnt_size);
+    memcpy(pkt+pos,&sgnt_size_s,sizeof(uint32_t));
+    pos+=sizeof(uint32_t);
+    memcpy(pkt+pos,key,*key_size);
+    pos+=*key_size;
+    memcpy(pkt+pos,sign,*sgnt_size);
+    unsigned char* g=c->dh_sharedkey(my_prvkey,pubkey,this->key_size);
+    this->shared_key=c->key_derivation(g,*this->key_size);
+    EVP_PKEY_free(pubkey);
+    EVP_PKEY_free(my_prvkey);
+    this->cm->send_packet(pkt,pkt_len);
 
-    unsigned char pkt[]
 }
 
 client::~client() { this->cm->close_socket(); }
@@ -589,13 +628,25 @@ void client::server_hello_handler(char *pkt, int pos) {
     memcpy(to_verify,key,key_size);
     pos+=key_size;
     memcpy(to_verify+pos,this->nonce,nonce_size);
-    b=c->verify_sign(sign,sgnt_size,to_verify,key_size+nonce_size,certificate);
+    b=c->verify_sign(sign,sgnt_size,to_verify,key_size+nonce_size,X509_get_pubkey(certificate));
     if(!b){
         cerr << "signature not valid";
         exit(1);
     }
     X509_free(certificate);
     BIO_free(bio);
-    auth();
+    bio= BIO_new(BIO_s_mem());
+    ret=BIO_write(bio, key, key_size);
+    if(ret==0){
+        cerr << "errore in BIO_write";
+        exit(1);
+    }
+    EVP_PKEY* pubkey=PEM_read_bio_PUBKEY( bio, NULL, NULL, NULL);
+    if(pubkey==NULL){
+        cerr<<"PEM_read_bio_PUBKEY error";
+        exit(1);
+    }
+    BIO_free(bio);
+    auth(snonce,pubkey);
 
 }

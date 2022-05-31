@@ -268,6 +268,9 @@ void server::handle_req()
     {
         client_hello_handler(pkt, pos);
     }
+    else if (opcode== AUTH){
+        auth(pkt,pos);
+    }
     else
     {
         printf("Not a valid opcode\n");
@@ -674,6 +677,36 @@ void server::server_hello(unsigned char* nonce) {
     pos+=*key_size;
     memcpy(pkt+pos,sign,*sgnt_size);
     this->cm->send_packet(pkt,pkt_len);
+}
+
+void server::auth(char *pkt, int pos) {
+    int ret;
+    uint32_t key_size;
+    memcpy(&key_size,pkt+pos,sizeof(uint32_t));
+    key_size= ntohl(key_size);
+    pos+=sizeof(uint32_t);
+    uint32_t sgnt_size;
+    memcpy(&sgnt_size,pkt+pos,sizeof(uint32_t));
+    pos+=sizeof(uint32_t);
+    sgnt_size= ntohl(sgnt_size);
+    unsigned char key[key_size];
+    memcpy(key,pkt+pos,key_size);
+    pos+=key_size;
+    unsigned char sign[sgnt_size];
+    memcpy(sign,pkt+pos,sgnt_size);
+    BIO* bio= BIO_new(BIO_s_mem());
+    ret=BIO_write(bio, key, key_size);
+    if(ret==0){
+        cerr << "errore in BIO_write";
+        exit(1);
+    }
+    EVP_PKEY* pubkey=PEM_read_bio_PUBKEY( bio, NULL, NULL, NULL);
+    if(pubkey==NULL){
+        cerr<<"PEM_read_bio_PUBKEY error";
+        exit(1);
+    }
+    BIO_free(bio);
+
 }
 
 //~Andrea

@@ -16,6 +16,7 @@
 //--OPCODES
 #define CHELLO_OPCODE 0
 #define SHELLO_OPCODE 1
+#define AUTH 2
 #define ACK 10
 #define LIST 11
 #define DOWNLOAD 12

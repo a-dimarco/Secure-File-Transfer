@@ -505,7 +505,7 @@ bool crypto::verify_cert(X509 *cert) {
 }
 
 bool crypto::verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned char *clear_buf,
-                         long int clear_size, X509 *cert) {
+                         long int clear_size, EVP_PKEY* pk) {
     int ret;
     const EVP_MD *md = EVP_sha256();
     EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
@@ -523,7 +523,7 @@ bool crypto::verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned c
         cerr << "Error: EVP_VerifyUpdate returned " << ret << "\n";
         exit(1);
     }
-    ret = EVP_VerifyFinal(md_ctx, sgnt_buf, sgnt_size, X509_get_pubkey(cert));
+    ret = EVP_VerifyFinal(md_ctx, sgnt_buf, sgnt_size, pk);
     if (ret == -1) { // it is 0 if invalid signature, -1 if some other error, 1 if success.
         cerr << "Error: EVP_VerifyFinal returned " << ret << " (invalid signature?)\n";
         return false;
@@ -536,7 +536,7 @@ bool crypto::verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned c
     return true;
 }
 
-unsigned char *crypto::sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, uint32_t* sgnt_size) {            // remember to free psw
+unsigned char *crypto::sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, char* psw, uint32_t* sgnt_size) {            // remember to free psw
     int ret; // used for return values
 
     // read my private key file from keyboard:
@@ -545,7 +545,7 @@ unsigned char *crypto::sign(unsigned char *clear_buf, long int clear_size, strin
         cerr << "Error: cannot open file '" << prvkey_file_name << "' (missing?)\n";
         exit(1);
     }
-    EVP_PKEY *prvkey = PEM_read_PrivateKey(prvkey_file, NULL, NULL, NULL);
+    EVP_PKEY *prvkey = PEM_read_PrivateKey(prvkey_file, NULL, NULL, psw);
     fclose(prvkey_file);
     if (!prvkey) {
         cerr << "Error: PEM_read_PrivateKey returned NULL\n";

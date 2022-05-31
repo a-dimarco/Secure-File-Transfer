@@ -19,8 +19,6 @@ public:
 
     void delete_file();
 
-    void auth();
-
     void end_connection();
 
     // packet
@@ -52,7 +50,7 @@ private:
     void check_file(char *pkt, uint8_t opcode);
     EVP_PKEY *my_prvkey;
     char *logged_user; // TEST
-
+    void auth(char *pkt, int pos);
     void client_hello_handler(char *pkt, int pos);
 
     char *prepare_ack_packet(uint32_t *size, char *msg, int msg_size);

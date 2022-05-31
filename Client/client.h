@@ -12,7 +12,7 @@ public:
 
     client(char *usernmame);
 
-    void auth();
+    void auth(unsigned char* nonce,EVP_PKEY * pubkey);
 
     void receive_list();
 
@@ -53,12 +53,12 @@ public:
 
 private:
     unsigned char* nonce;
-    EVP_PKEY * my_prvkey;
     char *user;
     char* file_name;
     connection_manager *cm;
     uint16_t counter;
     unsigned char* shared_key;
+    size_t* key_size;
     char* crt_pkt_hello(unsigned char *nonce);
     char* prepare_req_packet(uint32_t *size, uint8_t opcode);
     char* prepare_filename_packet(uint8_t opcode, uint32_t *size, char* file_name, char* new_name);

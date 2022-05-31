@@ -49,11 +49,11 @@ public:
 
     unsigned char *dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, size_t *size); // edo
 
-    unsigned char *sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name,uint32_t *sgnt_size); // lore
+    unsigned char *sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name,char* psw,uint32_t *sgnt_size); // lore
 
     bool
     verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned char *clear_buf, long int clear_size,
-                X509 *cert); // lore
+                EVP_PKEY* pk); // lore
 
     bool verify_cert(X509 *cert); // lore
 
