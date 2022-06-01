@@ -644,7 +644,7 @@ void server::server_hello(unsigned char* nonce) {
     uint32_t *cert_size;
     //unsigned char * cert= c->getServerCert(cert_size);
     BIO* bio1=BIO_new(BIO_s_mem());
-    string cacert_file_name = "/home/mirawara/CLionProjects/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
+    string cacert_file_name = "/home/edoardo/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
     FILE *cacert_file = fopen(cacert_file_name.c_str(), "r");
     if (!cacert_file) {
         cerr << "Error: cannot open file '" << cacert_file_name << "' (missing?)\n";
@@ -667,8 +667,6 @@ void server::server_hello(unsigned char* nonce) {
     *cert_size=strlen(*cert);
     this->my_prvkey= c->dh_keygen();
 
-
-
     uint32_t* key_size;
     //c->serialize_dh_pubkey(this->my_prvkey,key);
     BIO* bio=BIO_new(BIO_s_mem());
@@ -679,7 +677,11 @@ void server::server_hello(unsigned char* nonce) {
     }
     printf("prima di bio\n");
     char ** key;
+    //char** key_copy = new char*();
+    
+    printf("Checkpoint1\n");
     long s=BIO_get_mem_data(bio,key);
+    printf("Checkpoint2\n");
     printf("pubkey %s:\n",*key);
     printf("size: %d\n:",strlen(*key));
     *key_size=strlen(*key);
