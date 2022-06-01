@@ -44,12 +44,12 @@ public:
     EVP_PKEY *dh_keygen(); // genera coppia di chiavi dh
 
 
-    unsigned char *serialize_dh_pubkey(EVP_PKEY *dh_key,uint32_t *size); // genera public key - edo
+    void serialize_dh_pubkey(EVP_PKEY *dh_key, char* pubkey); // genera public key - edo
     EVP_PKEY *deserialize_dh_pubkey(unsigned char *dh_key, long size);
-
+    unsigned char *signn(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, unsigned int* sgnt_size);
     unsigned char *dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, size_t *size); // edo
 
-    unsigned char *sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name,char* psw,uint32_t *sgnt_size); // lore
+    unsigned char *sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name,char* psw,unsigned int *sgnt_size); // lore
 
     bool
     verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned char *clear_buf, long int clear_size,

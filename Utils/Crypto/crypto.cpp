@@ -1,6 +1,6 @@
 #include "crypto.h"
-
-#pragma onceg
+#include <string.h>
+#pragma once
 using namespace std;
 
 unsigned char *crypto::get_key() {
@@ -78,19 +78,22 @@ EVP_PKEY *crypto::dh_keygen() {
     return my_prvkey;
 }
 
-unsigned char *crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, uint32_t *size) {
+void crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, char* pubkey) {
     BIO* bio=BIO_new(BIO_s_mem());
     int ret= PEM_write_bio_PUBKEY(bio, dh_key);
     if (ret == 0) {
         cerr << "Error: PEM_write_bio_PUBKEY returned " << ret << "\n";
         exit(1);
     }
-    char ** pp;
-    long s=BIO_get_mem_data(bio, pp);
-    void * pubkey;
-    *size=s;
-    ret= BIO_read(bio, pubkey, s);
-    return (unsigned char*)pubkey;
+    printf("prima di bio\n");
+    char ** key;
+    long s=BIO_get_mem_data(bio,key);
+    printf("pubkey %s:\n",*key);
+    pubkey=(char *)malloc(s);
+    memcpy(pubkey,*key,s);
+    //pubkey=*key;
+    printf("pubkey %s:\n",pubkey);
+    printf("ok");
 
 }
 /*
@@ -428,10 +431,11 @@ bool crypto::verify_cert(X509 *cert) {
 
     // load the CA's certificate:
     //string cacert_file_name = "/home/studenti/Documents/GitHub/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
-    char cacert_file_name[] = "/home/studenti/Documents/GitHub/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
+    char cacert_file_name[] = "/home/mirawara/CLionProjects/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
     printf("Paolo\n");
     FILE *cacert_file = fopen(cacert_file_name, "r");
     if (!cacert_file) {
+        printf("%d",435);
         cerr << "Error: cannot open file '" << cacert_file_name << "' (missing?)\n";
         exit(1);
     }
@@ -443,9 +447,10 @@ bool crypto::verify_cert(X509 *cert) {
     }
 
     // load the CRL:
-    string crl_file_name = "SecureFileTransfer_crl.pem";
+    string crl_file_name = "/home/mirawara/CLionProjects/Secure-File-Transfer/server_file/server/SecureFileTransfer_crl.pem";
     FILE *crl_file = fopen(crl_file_name.c_str(), "r");
     if (!crl_file) {
+        printf("%d",449);
         cerr << "Error: cannot open file '" << crl_file_name << "' (missing?)\n";
         exit(1);
     }
@@ -545,8 +550,52 @@ bool crypto::verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned c
     EVP_MD_CTX_free(md_ctx);
     return true;
 }
+unsigned char *crypto::signn(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, unsigned int* sgnt_size) {
+    int ret; // used for return values
+    printf("sono entrato\n");
+    FILE* prvkey_file = fopen(prvkey_file_name.c_str(), "r");
+    if(!prvkey_file){ cerr << "Error: cannot open file '" << prvkey_file_name << "' (missing?)\n"; exit(1); }
+    EVP_PKEY* prvkey = PEM_read_PrivateKey(prvkey_file, NULL, NULL, NULL);
+    fclose(prvkey_file);
+    if(!prvkey){ cerr << "Error: PEM_read_PrivateKey returned NULL\n"; exit(1); }
 
-unsigned char *crypto::sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, char* psw, uint32_t* sgnt_size) {            // remember to free psw
+    // declare some useful variables:
+    const EVP_MD* md = EVP_sha256();
+
+    // create the signature context:
+    EVP_MD_CTX* md_ctx = EVP_MD_CTX_new();
+    if(!md_ctx){ cerr << "Error: EVP_MD_CTX_new returned NULL\n"; exit(1); }
+
+    // allocate buffer for signature:
+    //unsigned char* sgnt_buf = (unsigned char*)malloc(EVP_PKEY_size(prvkey));
+    unsigned char* sgnt_buf = (unsigned char*)malloc(EVP_PKEY_size(prvkey));
+    printf("size key: %d\n",EVP_PKEY_size(prvkey));
+    if(!sgnt_buf) { cerr << "Error: malloc returned NULL (signature too big?)\n"; exit(1); }
+
+    // sign the plaintext:
+    // (perform a single update on the whole plaintext,
+    // assuming that the plaintext is not huge)
+    ret = EVP_SignInit(md_ctx, md);
+    if(ret == 0){ cerr << "Error: EVP_SignInit returned " << ret << "\n"; exit(1); }
+    ret = EVP_SignUpdate(md_ctx, clear_buf, clear_size);
+    printf("update ok\n");
+    if(ret == 0){ cerr << "Error: EVP_SignUpdate returned " << ret << "\n"; exit(1); }
+    ret = EVP_SignFinal(md_ctx, sgnt_buf, sgnt_size, prvkey);
+    if(ret == 0){ cerr << "Error: EVP_SignFinal returned " << ret << "\n"; exit(1); }
+    printf("ok");
+    // delete the digest and the private key from memory:
+    EVP_MD_CTX_free(md_ctx);
+    EVP_PKEY_free(prvkey);
+
+    return sgnt_buf;
+
+    // deallocate buffers:
+    free(clear_buf);
+    free(sgnt_buf);
+
+}
+
+unsigned char *crypto::sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, char* psw, unsigned int* sgnt_size) {            // remember to free psw
     int ret; // used for return values
 
     // read my private key file from keyboard:
@@ -556,6 +605,11 @@ unsigned char *crypto::sign(unsigned char *clear_buf, long int clear_size, strin
         exit(1);
     }
     EVP_PKEY *prvkey = PEM_read_PrivateKey(prvkey_file, NULL, NULL, psw);
+    if(prvkey == NULL){
+        printf("Error reading prvt_key\n");
+        exit(1);
+    }
+
     fclose(prvkey_file);
     if (!prvkey) {
         cerr << "Error: PEM_read_PrivateKey returned NULL\n";
@@ -563,8 +617,7 @@ unsigned char *crypto::sign(unsigned char *clear_buf, long int clear_size, strin
     }
 
     // declare some useful variables:
-    const EVP_MD *md = EVP_sha256();
-
+    //const EVP_MD *md = EVP_sha256();
     // create the signature context:
     EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
     if (!md_ctx) {
@@ -572,32 +625,46 @@ unsigned char *crypto::sign(unsigned char *clear_buf, long int clear_size, strin
         exit(1);
     }
 
+
+    printf("checkpoint1\n");
     // allocate buffer for signature:
     unsigned char *sgnt_buf = (unsigned char *) malloc(EVP_PKEY_size(prvkey));
     if (!sgnt_buf) {
         cerr << "Error: malloc returned NULL (signature too big?)\n";
         exit(1);
     }
-
+    printf("checkpoint2\n");
     // sign the plaintext:
     // (perform a single update on the whole plaintext,
     // assuming that the plaintext is not huge)
-    ret = EVP_SignInit(md_ctx, md);
-    if (ret == 0) {
+    //ret = EVP_SignInit(md_ctx, md);
+    ret = EVP_SignInit(md_ctx, EVP_sha256());
+    if (ret ==0) {
         cerr << "Error: EVP_SignInit returned " << ret << "\n";
         exit(1);
     }
-    ret = EVP_SignUpdate(md_ctx, clear_buf, clear_size);
-    if (ret == 0) {
-        cerr << "Error: EVP_SignUpdate returned " << ret << "\n";
-        exit(1);
+    printf("init done\n");
+    int current_size;
+    int signed_size=0;
+    printf("clear size: %d\n",clear_size);
+    while(signed_size<clear_size) {
+        current_size=(clear_size-signed_size<10) ? clear_size-signed_size : 10;
+        ret = EVP_SignUpdate(md_ctx, clear_buf+signed_size, current_size);
+        if (ret ==0) {
+            cerr << "Error: EVP_SignUpdate returned " << ret << "\n";
+            exit(1);
+        }
+        signed_size+=current_size;
+        printf("signed_size: %d, current_size: %d\n",signed_size,current_size);
     }
-
+    printf("update done");
     ret = EVP_SignFinal(md_ctx, sgnt_buf, sgnt_size, prvkey);
-    if (ret == 0) {
+    printf("checkpoint5  %d\n",ret);
+    if (ret ==0) {
         cerr << "Error: EVP_SignFinal returned " << ret << "\n";
         exit(1);
     }
+    printf("sign ok\n");
 
     // delete the digest and the private key from memory:
     EVP_MD_CTX_free(md_ctx);
@@ -612,9 +679,10 @@ unsigned char *crypto::sign(unsigned char *clear_buf, long int clear_size, strin
 }
 
 unsigned char *crypto::getServerCert(uint32_t *size) {
-    string cacert_file_name = "SecureFileTransfer_cert.pem";
+    string cacert_file_name = "/home/mirawara/CLionProjects/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
     FILE *cacert_file = fopen(cacert_file_name.c_str(), "r");
     if (!cacert_file) {
+        printf("%d",619);
         cerr << "Error: cannot open file '" << cacert_file_name << "' (missing?)\n";
         exit(1);
     }
@@ -630,10 +698,12 @@ unsigned char *crypto::getServerCert(uint32_t *size) {
         cerr << "Error: PEM_write_bio_X509 returned " << ret << "\n";
         exit(1);
     }
-    char ** pp;
-    long s=BIO_get_mem_data(bio, pp);
-    void * cert;
+    unsigned char * cert;
+    long s=BIO_get_mem_data(bio, &cert);;
     ret= BIO_read(bio, cert, s);
+    if(ret<1){
+        cerr<<"Bio blu";
+    }
     BIO_free(bio);
-    return (unsigned char*)cert;
+    return cert;
 }

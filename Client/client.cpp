@@ -138,8 +138,9 @@ void client::auth(unsigned char* nonce, EVP_PKEY* pubkey)
 {
     crypto *c=new crypto();
     EVP_PKEY * my_prvkey= c->dh_keygen();
-    uint32_t* key_size;
-    unsigned char* key=c->serialize_dh_pubkey(my_prvkey, key_size);
+    int* key_size;
+    char* key;
+    c->serialize_dh_pubkey(my_prvkey,key);
     int sign_size=*key_size+16;
     unsigned char tosign[sign_size];
     int pos=0;

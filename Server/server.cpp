@@ -637,20 +637,63 @@ void server::server_hello(unsigned char* nonce) {
     uint8_t opcode=SHELLO_OPCODE;
     crypto *c=new crypto();
     c->create_nonce(snonce);
+
+
+
+
     uint32_t *cert_size;
-    unsigned char * cert= c->getServerCert(cert_size);
+    //unsigned char * cert= c->getServerCert(cert_size);
+    BIO* bio1=BIO_new(BIO_s_mem());
+    string cacert_file_name = "/home/mirawara/CLionProjects/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
+    FILE *cacert_file = fopen(cacert_file_name.c_str(), "r");
+    if (!cacert_file) {
+        cerr << "Error: cannot open file '" << cacert_file_name << "' (missing?)\n";
+        exit(1);
+    }
+    X509 *cacert = PEM_read_X509(cacert_file, NULL, NULL, NULL);
+    fclose(cacert_file);
+    if (!cacert) {
+        cerr << "Error: PEM_read_X509 returned NULL\n";
+        exit(1);
+    }
+    int ret= PEM_write_bio_X509(bio1, cacert);
+    if (ret == 0) {
+        cerr << "Error: PEM_write_bio_X509 returned " << ret << "\n";
+        exit(1);
+    }
+    char ** cert;
+    long s1=BIO_get_mem_data(bio1, cert);
+    printf("cert %s\n",*cert);
+    *cert_size=strlen(*cert);
     this->my_prvkey= c->dh_keygen();
+
+
+
     uint32_t* key_size;
-    unsigned char* key=c->serialize_dh_pubkey(this->my_prvkey, key_size);
-    int sign_size=*key_size+16;
-    unsigned char tosign[sign_size];
+    //c->serialize_dh_pubkey(this->my_prvkey,key);
+    BIO* bio=BIO_new(BIO_s_mem());
+    ret= PEM_write_bio_PUBKEY(bio, my_prvkey);
+    if (ret == 0) {
+        cerr << "Error: PEM_write_bio_PUBKEY returned " << ret << "\n";
+        exit(1);
+    }
+    printf("prima di bio\n");
+    char ** key;
+    long s=BIO_get_mem_data(bio,key);
+    printf("pubkey %s:\n",*key);
+    printf("size: %d\n:",strlen(*key));
+    *key_size=strlen(*key);
+    int sign_size=*key_size+sizeof(nonce);
+    printf("sign size: %d\n",sign_size);
+    unsigned char* tosign=(unsigned char*)malloc(sign_size);
     int pos=0;
     memcpy(tosign,key,*key_size);
     pos+=*key_size;
     uint16_t  nonce_size=sizeof(nonce);
-    memcpy(tosign+pos,&nonce,1);
-    uint32_t *sgnt_size;
-    unsigned char* sign=c->sign(tosign,sign_size,"server_prvkey.pem",NULL,sgnt_size);
+    memcpy(tosign+pos,&nonce,nonce_size);
+    unsigned int *sgnt_size;
+    unsigned char* sign=c->signn(tosign,sign_size,"/home/mirawara/CLionProjects/Secure-File-Transfer/server_file/server/Server_key.pem",sgnt_size);
+    printf("checkpoint1\n");
     uint32_t pkt_len=3*4+2+1+nonce_size+*key_size+*cert_size+*sgnt_size;
     char pkt[pkt_len];
     pos=0;
@@ -670,12 +713,16 @@ void server::server_hello(unsigned char* nonce) {
     pos+=sizeof(uint32_t);
     memcpy(pkt+pos,snonce,nonce_size);
     pos+=nonce_size;
-    memcpy(pkt+pos,cert,*cert_size);
+    memcpy(pkt+pos,*cert,*cert_size);
     pos+=*cert_size;
     memcpy(pkt+pos,key,*key_size);
     pos+=*key_size;
     memcpy(pkt+pos,sign,*sgnt_size);
+    printf("checkpoint2\n");
+    BIO_free(bio);
     this->cm->send_packet(pkt,pkt_len);
+
+
 }
 
 void server::auth(char *pkt, int pos) {
