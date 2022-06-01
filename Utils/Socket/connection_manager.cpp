@@ -100,7 +100,7 @@ char *connection_manager::receive_packet()
     uint32_t pkt_len_n;
     size_t received = 0;
     ssize_t ret = 0;
-
+    printf("Aspetto di ricevere il paccheetto\n");
     // Ricevo dimensione dei dati in ingresso
     ret = recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
     printf("ret size: %zd\n", ret); // TEST

@@ -52,8 +52,8 @@ char *client::crt_pkt_hello(unsigned char *nonce)
     // PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
     printf("Sono appena entrato in create packet hello\n");
 
-    uint16_t us_size = htons(strlen(user) + 1);
-    uint16_t nonce_size = htons(sizeof(nonce) + 1);
+    uint16_t us_size = htons(strlen(user)+1);
+    uint16_t nonce_size = htons(sizeof(nonce));
     uint8_t opcode = htons(CHELLO_OPCODE);
     int pos = 0;
     static char pkt[CLIENT_HELLO_SIZE];
@@ -66,7 +66,7 @@ char *client::crt_pkt_hello(unsigned char *nonce)
     pos += sizeof(uint16_t);
     memcpy(pkt + pos, user, sizeof(user));
     // pos += sizeof(user);
-    pos += strlen(user) + 1;
+    pos += strlen(user) +1;
     memcpy(pkt + pos, nonce, 8);
 
     // printf("Ho appena finito create packet hello\n");
@@ -136,42 +136,57 @@ char *client::crt_pkt_upload(char *filename, int *size)
 
 void client::auth(unsigned char* nonce, EVP_PKEY* pubkey)
 {
+    printf("auth iniziata\n");
     crypto *c=new crypto();
     EVP_PKEY * my_prvkey= c->dh_keygen();
-    int* key_size;
-    char* key;
-    c->serialize_dh_pubkey(my_prvkey,key);
-    int sign_size=*key_size+16;
-    unsigned char tosign[sign_size];
+    uint32_t key_size;
+    //c->serialize_dh_pubkey(this->my_prvkey,key);
+    BIO* bio=BIO_new(BIO_s_mem());
+    int ret= PEM_write_bio_PUBKEY(bio, my_prvkey);
+    if (ret == 0) {
+        cerr << "Error: PEM_write_bio_PUBKEY returned " << ret << "\n";
+        exit(1);
+    }
+
+    printf("prima di bio\n");
+    BUF_MEM *bptr;
+    BIO_get_mem_ptr(bio, &bptr);
+    printf("key %s\n",*bptr);
+    BIO_set_close(bio, BIO_NOCLOSE); /* So BIO_free() leaves BUF_MEM alone */
+    printf("len %zu:\n",bptr->length);
+    char key[bptr->length];
+    memcpy(key,bptr->data,bptr->length);
+    printf("key %s:\n",key);
+    BIO_free(bio);
+    key_size=bptr->length;
+    int sign_size=key_size+sizeof(nonce);
+    printf("sign size: %d\n",sign_size);
+    unsigned char* tosign=(unsigned char*)malloc(sign_size);
     int pos=0;
-    uint32_t nonce_size=8;
-    memcpy(tosign,key,*key_size);
-    pos+=*key_size;
+    memcpy(tosign,key,key_size);
+    pos+=key_size;
+    uint16_t  nonce_size=sizeof(nonce);
     memcpy(tosign+pos,nonce,nonce_size);
-    cout << "Please, type your private key file: ";
-    char file[30];
-    fgets(file, 30, stdin);
-    file[strcspn(file,"\n")] = 0;
-    cout << "Please, type your password: ";
-    char psw[30];
-    fgets(psw, 30, stdin);
-    file[strcspn(psw,"\n")] = 0;
-    uint32_t * sgnt_size;
-    unsigned char* sign=c->sign(tosign,sign_size,file,psw,sgnt_size);
+    printf("nonce %s\n",nonce);
+    unsigned int *sgnt_size;
+    printf("ciao: %s\n",tosign);
+    unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",sgnt_size);
+    //unsigned char* sign=c->signn(tosign,sign_size,"./client_file/Alice/alice_privkey.pem",sgnt_size);
+    printf("firmato fra\n");
     uint8_t opcode=AUTH;
-    uint32_t pkt_len=sizeof(opcode)+4+4+*key_size+*sgnt_size;
+    uint32_t pkt_len=sizeof(opcode)+4+4+key_size+*sgnt_size;
     char pkt[pkt_len];
     pos=0;
     memcpy(pkt+pos,&opcode,sizeof(uint8_t));
     pos+=sizeof(uint8_t);
-    uint32_t key_size_s=htonl(*key_size);
+    uint32_t key_size_s=htonl(key_size);
     memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
     uint32_t sgnt_size_s=htonl(*sgnt_size);
     memcpy(pkt+pos,&sgnt_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-    memcpy(pkt+pos,key,*key_size);
-    pos+=*key_size;
+    memcpy(pkt+pos,key,key_size);
+    pos+=key_size;
     memcpy(pkt+pos,sign,*sgnt_size);
     unsigned char* g=c->dh_sharedkey(my_prvkey,pubkey,this->key_size);
     this->shared_key=c->key_derivation(g,*this->key_size);
@@ -597,6 +612,7 @@ void client::server_hello_handler(char *pkt, int pos) {
     memcpy(&sgnt_size,pkt+pos,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
     sgnt_size= ntohl(sgnt_size);
+    printf("sgnt_size: %d",sgnt_size);
     unsigned char snonce[nonce_size];
     memcpy(snonce,pkt+pos,nonce_size);
     pos+=nonce_size;
@@ -624,16 +640,15 @@ void client::server_hello_handler(char *pkt, int pos) {
         cerr << "certificate not valid";
         exit(1);
     }
+    printf("valid!\n");
     pos=0;
     unsigned char to_verify[key_size+nonce_size];
     memcpy(to_verify,key,key_size);
     pos+=key_size;
     memcpy(to_verify+pos,this->nonce,nonce_size);
-    b=c->verify_sign(sign,sgnt_size,to_verify,key_size+nonce_size,X509_get_pubkey(certificate));
-    if(!b){
-        cerr << "signature not valid";
-        exit(1);
-    }
+    printf("nonce: %s\n",nonce);
+    printf("ciao1: %s\n",to_verify);
+
     X509_free(certificate);
     BIO_free(bio);
     bio= BIO_new(BIO_s_mem());

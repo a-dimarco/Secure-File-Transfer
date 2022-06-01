@@ -640,34 +640,32 @@ void server::server_hello(unsigned char* nonce) {
 
 
 
+    string cacert_file_name = "./server_file/server/Server_cert.pem";
 
-    uint32_t *cert_size;
-    //unsigned char * cert= c->getServerCert(cert_size);
-    BIO* bio1=BIO_new(BIO_s_mem());
-    string cacert_file_name = "/home/edoardo/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
+    // open the file to sign:
     FILE *cacert_file = fopen(cacert_file_name.c_str(), "r");
-    if (!cacert_file) {
-        cerr << "Error: cannot open file '" << cacert_file_name << "' (missing?)\n";
-        exit(1);
-    }
-    X509 *cacert = PEM_read_X509(cacert_file, NULL, NULL, NULL);
+    if(!cacert_file) { cerr << "Error: cannot open file '" << cacert_file_name << "' (file does not exist?)\n"; exit(1); }
+
+    // get the file size:
+    // (assuming no failures in fseek() and ftell())
+    fseek(cacert_file, 0, SEEK_END);
+    long int clear_size = ftell(cacert_file);
+    fseek(cacert_file, 0, SEEK_SET);
+
+    // read the plaintext from file:
+    unsigned char* cert = (unsigned char*)malloc(clear_size);
+    if(!cert) { cerr << "Error: malloc returned NULL (file too big?)\n"; exit(1); }
+    int ret = fread(cert, 1, clear_size, cacert_file);
+    if(ret < clear_size) { cerr << "Error while reading file '" << cacert_file_name << "'\n"; exit(1); }
     fclose(cacert_file);
-    if (!cacert) {
-        cerr << "Error: PEM_read_X509 returned NULL\n";
-        exit(1);
-    }
-    int ret= PEM_write_bio_X509(bio1, cacert);
-    if (ret == 0) {
-        cerr << "Error: PEM_write_bio_X509 returned " << ret << "\n";
-        exit(1);
-    }
-    char ** cert;
-    long s1=BIO_get_mem_data(bio1, cert);
-    printf("cert %s\n",*cert);
-    *cert_size=strlen(*cert);
+
+    uint32_t cert_size=(uint32_t)clear_size;
+
     this->my_prvkey= c->dh_keygen();
 
-    uint32_t* key_size;
+
+
+    uint32_t key_size;
     //c->serialize_dh_pubkey(this->my_prvkey,key);
     BIO* bio=BIO_new(BIO_s_mem());
     ret= PEM_write_bio_PUBKEY(bio, my_prvkey);
@@ -675,55 +673,69 @@ void server::server_hello(unsigned char* nonce) {
         cerr << "Error: PEM_write_bio_PUBKEY returned " << ret << "\n";
         exit(1);
     }
+
     printf("prima di bio\n");
-    char ** key;
-    //char** key_copy = new char*();
-    
-    printf("Checkpoint1\n");
-    long s=BIO_get_mem_data(bio,key);
-    printf("Checkpoint2\n");
-    printf("pubkey %s:\n",*key);
-    printf("size: %d\n:",strlen(*key));
-    *key_size=strlen(*key);
-    int sign_size=*key_size+sizeof(nonce);
+    BUF_MEM *bptr;
+    BIO_get_mem_ptr(bio, &bptr);
+    printf("key %s\n",*bptr);
+    BIO_set_close(bio, BIO_NOCLOSE); /* So BIO_free() leaves BUF_MEM alone */
+    printf("len %zu:\n",bptr->length);
+    char key[bptr->length];
+    memcpy(key,bptr->data,bptr->length);
+    printf("key %s:\n",key);
+    BIO_free(bio);
+    key_size=bptr->length;
+
+
+    int sign_size=key_size+sizeof(nonce);
     printf("sign size: %d\n",sign_size);
     unsigned char* tosign=(unsigned char*)malloc(sign_size);
     int pos=0;
-    memcpy(tosign,key,*key_size);
-    pos+=*key_size;
+    memcpy(tosign,key,key_size);
+    pos+=key_size;
     uint16_t  nonce_size=sizeof(nonce);
-    memcpy(tosign+pos,&nonce,nonce_size);
+    memcpy(tosign+pos,nonce,nonce_size);
+    printf("nonce %s\n",nonce);
     unsigned int *sgnt_size;
-    unsigned char* sign=c->signn(tosign,sign_size,"/home/mirawara/CLionProjects/Secure-File-Transfer/server_file/server/Server_key.pem",sgnt_size);
-    printf("checkpoint1\n");
-    uint32_t pkt_len=3*4+2+1+nonce_size+*key_size+*cert_size+*sgnt_size;
+    printf("ciao: %s\n",tosign);
+    unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",sgnt_size);
+    printf("signature size: %d",*sgnt_size);
+    uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_size+cert_size+(*sgnt_size);
     char pkt[pkt_len];
+    printf("pktlen %d\n",pkt_len);
+    printf("checkpoint1\n");
     pos=0;
     memcpy(pkt,&opcode,sizeof(opcode));
     pos+=sizeof(opcode);
+    printf("pos %d\n",pos);
     uint16_t nonce_size_s=htons(nonce_size);
     memcpy(pkt+pos,&nonce_size_s,sizeof(uint16_t));
     pos+=sizeof(uint16_t);
-    uint32_t cert_size_s=htonl(*cert_size);
+    printf("pos %d\n",pos);
+    uint32_t cert_size_s=htonl(cert_size);
     memcpy(pkt+pos,&cert_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-    uint32_t key_size_s=htonl(*key_size);
+    printf("pos %d\n",pos);
+    uint32_t key_size_s=htonl(key_size);
     memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
+    printf("pos %d\n",pos);
     uint32_t sgnt_size_s=htonl(*sgnt_size);
     memcpy(pkt+pos,&sgnt_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
+    printf("pos %d\n",pos);
     memcpy(pkt+pos,snonce,nonce_size);
     pos+=nonce_size;
-    memcpy(pkt+pos,*cert,*cert_size);
-    pos+=*cert_size;
-    memcpy(pkt+pos,key,*key_size);
-    pos+=*key_size;
-    memcpy(pkt+pos,sign,*sgnt_size);
-    printf("checkpoint2\n");
-    BIO_free(bio);
+    printf("pos %d\n",pos);
+    memcpy(pkt+pos,cert,cert_size);
+    pos+=cert_size;
+    printf("pos %d\n",pos);
+    memcpy(pkt+pos,key,key_size);
+    pos+=key_size;
+    printf("pos %d\n",pos);
+    memcpy(pkt+pos,sign,ntohl(sgnt_size_s));
     this->cm->send_packet(pkt,pkt_len);
-
+    printf("checkpoint10\n");
 
 }
 

@@ -17,6 +17,7 @@ using namespace std;
 class crypto
 {
 public:
+    int testverify();
     int decrypt_message(unsigned char *ciphertext, int ciphertext_len,
                         unsigned char *aad, int aad_len,
                         unsigned char *tag,
