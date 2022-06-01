@@ -14,6 +14,8 @@ int main()
 
     username[strcspn(username,"\n")] = 0;
 
+    
+
     client *cl = new client(username);
 
     char *pkt = cl->send_clienthello();

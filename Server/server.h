@@ -42,7 +42,7 @@ public:
 
 private:
     int socket;
-    unsigned char* snonce;
+    unsigned char snonce[8];
     uint16_t counter;
     connection_manager *cm;
     unsigned char *shared_key;

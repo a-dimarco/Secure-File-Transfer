@@ -61,7 +61,8 @@ public:
 
     unsigned char *create_random_iv();
 
-    unsigned char *create_nonce();
+    //unsigned char *create_nonce();
+    void create_nonce(unsigned char * p);
     unsigned char* getServerCert(uint32_t * size);
     // EVP_PKEY *extract_pubkey(X509_STORE *cert);//lore
 

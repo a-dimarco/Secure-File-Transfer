@@ -28,13 +28,13 @@ client::client(char *username)
 char *client::send_clienthello()
 {
     crypto *c = new crypto();
+    printf("Checkpoint\n");
 
-    // unsigned char* nonce=c->create_nonce();
-    RAND_poll();
-    this->nonce[8];
+    c->create_nonce(nonce);
+    /*RAND_poll();
     RAND_bytes(nonce, 8);
 
-    printf("checkpoint\n");
+    printf("checkpoint\n");*/
     char *pkt = this->crt_pkt_hello(nonce);
 
     this->cm->send_packet(pkt, 23);

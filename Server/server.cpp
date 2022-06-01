@@ -288,14 +288,12 @@ void server::client_hello_handler(char *pkt, int pos)
 
     // Deserializzazione
 
-    memcpy(&us_size, pkt + pos,
-           sizeof(us_size)); // prelevo us_size inizializzo la variabile che dovrà contenerlo
+    memcpy(&us_size, pkt + pos, sizeof(us_size)); // prelevo us_size inizializzo la variabile che dovrà contenerlo
     pos += sizeof(us_size);
     us_size = ntohs(us_size);
     char username[us_size];
 
-    memcpy(&nonce_size, pkt + pos,
-           sizeof(nonce_size)); // prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
+    memcpy(&nonce_size, pkt + pos, sizeof(nonce_size)); // prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
     pos += sizeof(nonce_size);
     nonce_size = ntohs(nonce_size);
     unsigned char nonce[nonce_size];
@@ -638,7 +636,7 @@ bool server::file_renamer(char* new_name, char* old_name){
 void server::server_hello(unsigned char* nonce) {
     uint8_t opcode=SHELLO_OPCODE;
     crypto *c=new crypto();
-    this->snonce=c->create_nonce();
+    c->create_nonce(snonce);
     uint32_t *cert_size;
     unsigned char * cert= c->getServerCert(cert_size);
     this->my_prvkey= c->dh_keygen();

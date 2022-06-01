@@ -14,11 +14,18 @@ unsigned char *crypto::create_random_iv() {
     return iv;
 }
 
-unsigned char *crypto::create_nonce() {
+/*unsigned char *crypto::create_nonce() {
     RAND_poll();
     unsigned char nonce[8];
-    RAND_bytes(nonce, 9);
+    RAND_bytes(nonce, 8);
     return nonce;
+}*/
+
+void crypto::create_nonce(unsigned char* p) {
+    RAND_poll();
+    //unsigned char nonce[8];
+    RAND_bytes(p, 8);
+    //return nonce;
 }
 
 EVP_PKEY *crypto::dh_params_gen() {
@@ -420,8 +427,10 @@ bool crypto::verify_cert(X509 *cert) {
     int ret; // used for return values
 
     // load the CA's certificate:
-    string cacert_file_name = "SecureFileTransfer_cert.pem";
-    FILE *cacert_file = fopen(cacert_file_name.c_str(), "r");
+    //string cacert_file_name = "/home/studenti/Documents/GitHub/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
+    char cacert_file_name[] = "/home/studenti/Documents/GitHub/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
+    printf("Paolo\n");
+    FILE *cacert_file = fopen(cacert_file_name, "r");
     if (!cacert_file) {
         cerr << "Error: cannot open file '" << cacert_file_name << "' (missing?)\n";
         exit(1);

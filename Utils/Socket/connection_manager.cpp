@@ -27,6 +27,7 @@ connection_manager::connection_manager(char *my_addr, long port)
         printf("Error creating the socket\n");         
         exit(1);    
     }
+    printf("socket created\n");
 
     const int trueFlag = 1;
     setsockopt(this->sckt, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int)); // Tells socket to reuse the connection
@@ -39,7 +40,6 @@ connection_manager::connection_manager(char *my_addr, long port)
     if (ret < 0)
     {
         cerr << "Binding Error\n";
-
         exit(1);
     }
 }
@@ -59,6 +59,7 @@ void connection_manager::connection(char *addr, long dest_port)
         cerr << "Connection Error";
         exit(1);
     }
+    printf("Connection Established\n");
 }
 
 void connection_manager::listening(int queue_size)

@@ -52,7 +52,7 @@ public:
     void rename_file();
 
 private:
-    unsigned char* nonce;
+    unsigned char nonce[8];
     char *user;
     char* file_name;
     connection_manager *cm;
