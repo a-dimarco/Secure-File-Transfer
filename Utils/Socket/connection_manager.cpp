@@ -111,7 +111,7 @@ char *connection_manager::receive_packet()
     }
 
     pkt_len = ntohl(pkt_len_n);
-    printf("ho ricevuto la size: %d\n", pkt_len);
+    //printf("ho ricevuto la size: %d\n", pkt_len);
     /*
     if (pkt_len < 0)
         cerr << "Error";
@@ -136,7 +136,7 @@ char *connection_manager::receive_packet()
             exit(1);
         }
         received += ret;
-        printf("ho ricevuto %zu bytes\n", received);
+        //printf("ho ricevuto %zu bytes\n", received);
     }
     // printf("ho ricevuto tutto il pacchetto\n");
 
@@ -182,8 +182,8 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
         exit(1);
     }
     pkt_len=ntohl(pkt_len);
-    printf("size inviata %d \n", pkt_len);
-    printf("packet: %s\n",packet);
+    //printf("size inviata %d \n", pkt_len);
+    //printf("packet: %s\n",packet);
     while (sent < pkt_len)
     {
         // printf("appena entrato nel ciclo sending\n");
@@ -191,11 +191,11 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
         if (ret < 0)
         {
             cerr << "Error in sending the packet";
-            printf("ret %d\n",ret);
+            //printf("ret %d\n",ret);
             exit(1);
         }
         sent += ret;
-        printf("ho inviato %zu bytes\n", sent);
+        //printf("ho inviato %zu bytes\n", sent);
     }
     // printf("ho inviato tutto il pacchetto\n");
 }
