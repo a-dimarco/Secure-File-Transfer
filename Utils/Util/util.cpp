@@ -28,8 +28,8 @@ char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter)
     memcpy(start_packet + pos1, &n_counter, sizeof(uint16_t));
     pos1 += sizeof(uint16_t);
     memcpy(start_packet + pos1, &file_size, sizeof(uint32_t));
-
-    unsigned char *iv = c->create_random_iv();
+    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+    c->create_random_iv(iv);
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
 
     unsigned char ciphertext[file_size + 16];
@@ -144,7 +144,8 @@ char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counte
 	*size = aad_size+iv_size+ptext_size+2*16;
 	
 	char* pkt = (char*)malloc(*size);
-	unsigned char* iv = c->create_random_iv();
+    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+	c->create_random_iv(iv);
 	unsigned char* tag = (unsigned char*)malloc(16);
 	//unsigned char* ciphertext = (unsigned char*)malloc(ptext_size+16);
 	

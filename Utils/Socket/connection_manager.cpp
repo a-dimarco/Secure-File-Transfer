@@ -99,11 +99,11 @@ char *connection_manager::receive_packet()
     int pkt_len;
     uint32_t pkt_len_n;
     size_t received = 0;
-    ssize_t ret = 0;
+    ssize_t ret;
     printf("Aspetto di ricevere il paccheetto\n");
     // Ricevo dimensione dei dati in ingresso
     ret = recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
-    printf("ret size: %zd\n", ret); // TEST
+
     if (ret < 0)
     {
         cerr << "Error in receiving the size of the packet\n";
@@ -111,7 +111,7 @@ char *connection_manager::receive_packet()
     }
 
     pkt_len = ntohl(pkt_len_n);
-    // printf("ho ricevuto la size: %d\n", pkt_len);
+    printf("ho ricevuto la size: %d\n", pkt_len);
     /*
     if (pkt_len < 0)
         cerr << "Error";
@@ -130,7 +130,7 @@ char *connection_manager::receive_packet()
     {
         // printf("appena entrato nel ciclo receiving\n");
         ret = recv(this->sckt, pkt + received, pkt_len - received, 0);
-        if (ret < 0)
+        if (ret <= 0)
         {
             cerr << "Error in receiving the packet\n";
             exit(1);
@@ -174,14 +174,16 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
     size_t sent = 0;
     //printf("%s", packet);
     ssize_t ret;
-    uint32_t pkt_len_n = htonl(pkt_len);
-    ret = send(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
+    pkt_len = htonl(pkt_len);
+    ret = send(this->sckt, &pkt_len, sizeof(pkt_len), 0);
     if (ret < 0)
     {
-        cerr << "Error in sending the packet";
+        cerr << "Error in sending the size";
         exit(1);
     }
-    // printf("size inviata %d or %d \n", pkt_len, pkt_len_n);
+    pkt_len=ntohl(pkt_len);
+    printf("size inviata %d \n", pkt_len);
+    printf("packet: %s\n",packet);
     while (sent < pkt_len)
     {
         // printf("appena entrato nel ciclo sending\n");
@@ -189,6 +191,7 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
         if (ret < 0)
         {
             cerr << "Error in sending the packet";
+            printf("ret %d\n",ret);
             exit(1);
         }
         sent += ret;

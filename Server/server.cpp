@@ -337,32 +337,50 @@ void server::client_hello_handler(char *pkt, int pos)
 
 char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size)
 {
+    printf("ack packet\n");
     int pos = 0;
+    printf("pos: %d\n",pos);
     uint8_t opcode = ACK;
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t) + msg_size + 16;
-    char packet[pkt_len];
+    printf("ivsize: %d\n",iv_size);
+    uint32_t ct_size=msg_size;
+    int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+iv_size + ct_size + 16;
+    char* packet=(char *)malloc(pkt_len);
     *size = pkt_len;
     memcpy(packet, &opcode, sizeof(opcode));
     pos += sizeof(opcode);
+    printf("pos: %d\n",pos);
     this->counter++;
-    uint16_t count=htons(counter);
+    int counter2=counter;
+    uint16_t count=htons(counter2);
     memcpy(packet + pos, &count, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-    uint16_t size_m = htons(msg_size);
+    printf("pos: %d\n",pos);
+    uint16_t size_m = htons(ct_size);
     memcpy(packet + pos, &size_m, sizeof(uint16_t));
     pos += sizeof(uint16_t);
+    printf("packet1 %s\n",packet);
+    printf("pos: %d\n",pos);
     crypto *c = new crypto();
-    unsigned char *iv = c->create_random_iv();
+    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+    c->create_random_iv(iv);
+    printf("iv %s\n",iv);
     memcpy(packet + pos, iv, iv_size);
     pos += iv_size;
+    printf("pos: %d\n",pos);
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t);
-    unsigned char ct[msg_size + 16];
+    unsigned char ct[ct_size];
     unsigned char tag[16];
+    printf("prima di encrypt\n");
+    printf("msg size: %d\n",ntohs(size_m));
     c->encrypt_packet((unsigned char *)msg, msg_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
-    memcpy(packet+pos,ct,msg_size+16);
-    pos+=msg_size+16;
+    printf("encrypt %s\n",ct);
+    memcpy(packet+pos,ct,ct_size);
+    pos+=ct_size;
+    printf("pos: %d\n",pos);
     memcpy(packet+pos,tag,16);
+    printf("pos: %d\n",pos+16);
+    printf("packet %s\n",packet);
     return packet;
 }
 char *server::prepare_ack_packet(uint32_t *size)
@@ -735,65 +753,79 @@ void server::server_hello(unsigned char* nonce) {
     printf("pos %d\n",pos);
     memcpy(pkt+pos,sign,ntohl(sgnt_size_s));
     this->cm->send_packet(pkt,pkt_len);
-    printf("checkpoint10\n");
+    free(sign);
+    handle_req();
 
 }
 
 void server::auth(char *pkt, int pos) {
+    printf("auth sever\n");
     int ret;
     crypto *c=new crypto();
-    uint32_t key_size;
-    memcpy(&key_size,pkt+pos,sizeof(uint32_t));
-    key_size= ntohl(key_size);
+    uint32_t key_siz;
+    memcpy(&key_siz,pkt+pos,sizeof(uint32_t));
+    key_siz= ntohl(key_siz);
+    printf("key size: %d\n",key_siz);
     pos+=sizeof(uint32_t);
     uint32_t sgnt_size;
     memcpy(&sgnt_size,pkt+pos,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
     sgnt_size= ntohl(sgnt_size);
-    unsigned char key[key_size];
-    memcpy(key,pkt+pos,key_size);
-    pos+=key_size;
+    printf("sgn size: %d\n",sgnt_size);
+    unsigned char key[key_siz];
+    memcpy(key,pkt+pos,key_siz);
+    pos+=key_siz;
+    printf("key %s:",key);
     unsigned char sign[sgnt_size];
     memcpy(sign,pkt+pos,sgnt_size);
     BIO* bio= BIO_new(BIO_s_mem());
-    ret=BIO_write(bio, key, key_size);
+    ret=BIO_write(bio, key, key_siz);
+    printf("bio wirte ok\n");
     if(ret==0){
         cerr << "errore in BIO_write";
         exit(1);
     }
     EVP_PKEY* pubkey=PEM_read_bio_PUBKEY( bio, NULL, NULL, NULL);
+    printf("PEM read ok\n");
     if(pubkey==NULL){
         cerr<<"PEM_read_bio_PUBKEY error";
         exit(1);
     }
-    BIO_free(bio);
-    unsigned char to_verify[key_size+8];
+    unsigned char to_verify[key_siz+8];
     pos=0;
-    memcpy(to_verify+pos,key,key_size);
-    pos+=key_size;
-    memcpy(to_verify+pos,this->snonce,8);
+    memcpy(to_verify+pos,key,key_siz);
+    pos+=key_siz;
+    memcpy(to_verify+pos,this->snonce,sizeof(snonce));
     string newnamepath = SERVER_PATH; //    ../server_file/client/
     newnamepath += logged_user; //          ../server_file/client/username
     newnamepath += "/"; //                  ../server_file/client/username/
+    newnamepath += "pubkey";
+    newnamepath += "/";
     newnamepath += "pubkey.pem";
     char* path = &newnamepath[0];
+    printf("Path: %s\n",path);
     FILE * file;
     file=fopen(path,"rb");
     EVP_PKEY* user_pk= PEM_read_PUBKEY(file,NULL,NULL,NULL);
-    bool b=c->verify_sign(sign,sgnt_size,to_verify,key_size+8,user_pk);
+    printf("read pubkey ok\n");
+    bool b=c->verify_sign(sign,sgnt_size,to_verify,key_siz+8,user_pk);
     if(!b){
         cerr << "signature not valid";
         exit(1);
     }
     EVP_PKEY_free(user_pk);
-    unsigned char* g=c->dh_sharedkey(this->my_prvkey,pubkey,this->key_size);
-    this->shared_key=c->key_derivation(g,*this->key_size);
+    unsigned char* g=c->dh_sharedkey(this->my_prvkey,pubkey,&this->key_size);
+    printf("g %s\n",g);
+    this->shared_key=c->key_derivation(g,this->key_size);
+    printf("shared key: %s\n",shared_key);
+    uint32_t pkt_len;
+    char msg[]="Connection established";
+    char* packet=prepare_ack_packet(&pkt_len,msg,sizeof(msg));
+    printf("pkt_len %d\n",pkt_len);
+    this->cm->send_packet(packet,pkt_len);
+    BIO_free(bio);
     EVP_PKEY_free(pubkey);
     EVP_PKEY_free(my_prvkey);
-    uint32_t *pkt_len;
-    char msg[]="Connection established";
-    char* packet=prepare_ack_packet(pkt_len,msg,sizeof(msg));
-    this->cm->send_packet(packet,*pkt_len);
     handle_req();
 }
 

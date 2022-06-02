@@ -139,7 +139,7 @@ void client::auth(unsigned char* nonce, EVP_PKEY* pubkey)
     printf("auth iniziata\n");
     crypto *c=new crypto();
     EVP_PKEY * my_prvkey= c->dh_keygen();
-    uint32_t key_size;
+    uint32_t key_siz;
     //c->serialize_dh_pubkey(this->my_prvkey,key);
     BIO* bio=BIO_new(BIO_s_mem());
     int ret= PEM_write_bio_PUBKEY(bio, my_prvkey);
@@ -157,43 +157,48 @@ void client::auth(unsigned char* nonce, EVP_PKEY* pubkey)
     char key[bptr->length];
     memcpy(key,bptr->data,bptr->length);
     printf("key %s:\n",key);
-    BIO_free(bio);
-    key_size=bptr->length;
-    int sign_size=key_size+sizeof(nonce);
+    key_siz=bptr->length;
+    int sign_size=key_siz+sizeof(nonce);
     printf("sign size: %d\n",sign_size);
-    unsigned char* tosign=(unsigned char*)malloc(sign_size);
+    unsigned char tosign[sign_size];
     int pos=0;
-    memcpy(tosign,key,key_size);
-    pos+=key_size;
+    memcpy(tosign,key,key_siz);
+    pos+=key_siz;
     uint16_t  nonce_size=sizeof(nonce);
     memcpy(tosign+pos,nonce,nonce_size);
     printf("nonce %s\n",nonce);
-    unsigned int *sgnt_size;
+    unsigned int sgnt_size;
     printf("ciao: %s\n",tosign);
-    unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",sgnt_size);
-    //unsigned char* sign=c->signn(tosign,sign_size,"./client_file/Alice/alice_privkey.pem",sgnt_size);
-    printf("firmato fra\n");
+    //unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
+    unsigned char* sign=c->signn(tosign,sign_size,"./client_file/Alice/alice_privkey.pem",&sgnt_size);
     uint8_t opcode=AUTH;
-    uint32_t pkt_len=sizeof(opcode)+4+4+key_size+*sgnt_size;
+    uint32_t pkt_len=sizeof(opcode)+sizeof(uint32_t)*2+key_siz+sgnt_size;
     char pkt[pkt_len];
     pos=0;
     memcpy(pkt+pos,&opcode,sizeof(uint8_t));
     pos+=sizeof(uint8_t);
-    uint32_t key_size_s=htonl(key_size);
+    uint32_t key_size_s=htonl(key_siz);
     memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-    uint32_t sgnt_size_s=htonl(*sgnt_size);
+    uint32_t sgnt_size_s=htonl(sgnt_size);
     memcpy(pkt+pos,&sgnt_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-    memcpy(pkt+pos,key,key_size);
-    pos+=key_size;
-    memcpy(pkt+pos,sign,*sgnt_size);
-    unsigned char* g=c->dh_sharedkey(my_prvkey,pubkey,this->key_size);
-    this->shared_key=c->key_derivation(g,*this->key_size);
+    memcpy(pkt+pos,key, ntohl(key_size_s));
+    pos+=ntohl(key_size_s);
+    memcpy(pkt+pos,sign,ntohl(sgnt_size_s));
+    printf("adesso sì\n");
+    unsigned char* g=c->dh_sharedkey(my_prvkey,pubkey,&this->key_size);
+    printf("g: %s\n",g);
+    this->shared_key=c->key_derivation(g,this->key_size);
+    printf("shred key: %s\n",shared_key);
+
+    this->cm->send_packet(pkt,pkt_len);
     EVP_PKEY_free(pubkey);
     EVP_PKEY_free(my_prvkey);
-    this->cm->send_packet(pkt,pkt_len);
-
+    BIO_free(bio);
+    free(sign);
+    char* pkto=cm->receive_packet();
+    handle_req(pkto);
 }
 
 client::~client() { this->cm->close_socket(); }
@@ -384,7 +389,8 @@ char * client::crt_pkt_remove(char *namefile, int name_size, uint32_t *size){
     memcpy(packet + pos, &size_m, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     crypto *c = new crypto();
-    unsigned char *iv = c->create_random_iv();
+    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+    c->create_random_iv(iv);
     memcpy(packet + pos, iv, iv_size);
     pos += iv_size;
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t);
@@ -432,7 +438,8 @@ char* client::crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_
 	*size = aad_size+iv_size+ptext_size+2*16;
 	
 	char* pkt = (char*)malloc(*size);
-	unsigned char* iv = c->create_random_iv();
+    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+	c->create_random_iv(iv);
 	unsigned char* tag = (unsigned char*)malloc(16);
 	//unsigned char* ciphertext = (unsigned char*)malloc(ptext_size+16);
 	
@@ -667,10 +674,11 @@ void client::server_hello_handler(char *pkt, int pos) {
 
 }
 
-void client::handle_ack(char *pkt,uint8_t opcode) {
+void client::handle_ack(char *pkt,uint8_t opcod) {
 
+    printf("handle ack\n");
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    int pos=sizeof(opcode);
+    int pos=sizeof(opcod);
     this->counter++;
     uint16_t count;
     memcpy(&count, pkt+pos, sizeof(uint16_t));
@@ -683,8 +691,9 @@ void client::handle_ack(char *pkt,uint8_t opcode) {
     memcpy(&size_m, pkt+pos, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     size_m= ntohs(size_m);
+    printf("size m %d\n",size_m);
     crypto *c = new crypto();
-    unsigned char *iv;
+    unsigned char iv[iv_size];
     memcpy(iv, pkt+pos, iv_size);
     pos += iv_size;
     unsigned char ct[size_m];
@@ -692,8 +701,8 @@ void client::handle_ack(char *pkt,uint8_t opcode) {
     pos+=size_m;
     unsigned char tag[16];
     memcpy(tag,pkt+pos,16);
-    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t);
-    unsigned char *pt;
+    int aad_size = sizeof(opcod) + sizeof(uint16_t) + sizeof(uint16_t);
+    unsigned char pt[size_m];
     pos=0;
     unsigned char aad[aad_size];
     memcpy(aad, pkt, aad_size);

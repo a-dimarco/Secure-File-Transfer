@@ -7,11 +7,10 @@ unsigned char *crypto::get_key() {
     return this->shared_key;
 }
 
-unsigned char *crypto::create_random_iv() {
+void crypto::create_random_iv(unsigned char * iv) {
     RAND_poll();
-    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
     RAND_bytes(iv, EVP_CIPHER_iv_length(EVP_aes_128_gcm()));
-    return iv;
+
 }
 
 /*unsigned char *crypto::create_nonce() {
@@ -137,17 +136,19 @@ EVP_PKEY *crypto::deserialize_dh_pubkey(unsigned char *dh_key) {
  */
 
 unsigned char *crypto::dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, size_t *size) {
-
+    printf("shared key in\n");
     EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(my_key, NULL);
 
     if (1 != EVP_PKEY_derive_init(ctx)) {
         printf("Error in key derivation\n");
         exit(-1);
     }
+    printf("init ok\n");
     if (1 != EVP_PKEY_derive_set_peer(ctx, other_pubkey)) {
         printf("Error in key derivation\n");
         exit(-1);
     }
+    printf("derive ok\n");
     unsigned char *secret;
     size_t secretlen;
 
@@ -155,6 +156,7 @@ unsigned char *crypto::dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, si
         printf("Error in key derivation\n");
         exit(-1);
     }
+    printf("derive 2 ok\n");
 
     secret = (unsigned char *) malloc(secretlen);
     if (secret == NULL) {
@@ -166,10 +168,12 @@ unsigned char *crypto::dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, si
         printf("Error in key derivation\n");
         exit(-1);
     }
+    printf("derive 3 ok\n");
     EVP_PKEY_CTX_free(ctx);
 
     EVP_PKEY_free(my_key);
     *size = secretlen;
+    printf("fine\n");
     return secret;
 }
 
@@ -194,15 +198,17 @@ unsigned char *crypto::key_derivation(unsigned char *shared_secret, size_t size)
         printf("Key hashing failed\n");
         exit(-1);
     };
+    printf("init ok\n");
     if (1 != EVP_DigestUpdate(ctx, (unsigned char *) shared_secret, size)) {
         printf("Key hashing failed\n");
         exit(-1);
     };
+    printf("update ok\n");
     if (1 != EVP_DigestFinal(ctx, (unsigned char *) digest, &digestlen)) {
         printf("Key hashing failed\n");
         exit(-1);
     };
-
+    printf("final ok\n");
     EVP_MD_CTX_free(ctx);
 
 #pragma optimize("", off);
@@ -216,7 +222,8 @@ unsigned char *crypto::key_derivation(unsigned char *shared_secret, size_t size)
 #pragma optimize("", off);
     memset(digest, 0, EVP_MD_size(hash_type));
 #pragma optimize("", on);
-
+    printf("fine\n");
+    printf("session key %s\n",session_key);
     return session_key;
 }
 
@@ -332,8 +339,11 @@ int crypto::encrypt_packet(unsigned char *plaintext, int plaintext_len,
         printf("Errore nella encrypt_packet\n");
         exit(-1);
     }
+    printf("tag %s\n",tag);
     /* Clean up */
     EVP_CIPHER_CTX_free(ctx);
+    printf("msg len %d\n", plaintext_len);
+    printf("ciph_len %d\n",ciphertext_len);
     return ciphertext_len;
 }
 
@@ -587,7 +597,6 @@ unsigned char *crypto::signn(unsigned char *clear_buf, long int clear_size, stri
     printf("final ok\n");
     printf("signature size: %d",prv);
     *sgnt_size=prv;
-
     //printf("signature size: %d",prv);
     // delete the digest and the private key from memory:
     EVP_MD_CTX_free(md_ctx);

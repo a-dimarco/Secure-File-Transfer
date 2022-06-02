@@ -60,7 +60,7 @@ public:
 
     unsigned char *get_key();
 
-    unsigned char *create_random_iv();
+    void create_random_iv(unsigned char* iv);
 
     //unsigned char *create_nonce();
     void create_nonce(unsigned char * p);
