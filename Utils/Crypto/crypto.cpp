@@ -77,20 +77,6 @@ EVP_PKEY *crypto::dh_keygen() {
     return my_prvkey;
 }
 
-void crypto::serialize_dh_pubkey(EVP_PKEY *dh_key, char* pubkey) {
-    BIO* bio=BIO_new(BIO_s_mem());
-    int ret= PEM_write_bio_PUBKEY(bio, dh_key);
-    if (ret == 0) {
-        cerr << "Error: PEM_write_bio_PUBKEY returned " << ret << "\n";
-        exit(1);
-    }
-    char ** key;
-    long s=BIO_get_mem_data(bio,key);
-    pubkey=(char *)malloc(s);
-    memcpy(pubkey,*key,s);
-    //pubkey=*key;
-
-}
 
 unsigned char *crypto::dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, size_t *size) {
     EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(my_key, NULL);
@@ -140,7 +126,6 @@ unsigned char *crypto::key_derivation(unsigned char *shared_secret, size_t size)
     unsigned char *session_key;
     unsigned char *digest;
 
-    int keylen;
     unsigned int digestlen;
 
     digest = (unsigned char *) malloc(EVP_MD_size(hash_type));
@@ -169,6 +154,7 @@ unsigned char *crypto::key_derivation(unsigned char *shared_secret, size_t size)
 
 #pragma optimize("", off);
     memset(shared_secret, 0, size);
+    free(shared_secret);
 #pragma optimize("", on);
 
     int session_key_size = 128;
@@ -485,7 +471,7 @@ bool crypto::verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned c
         cerr << "Error: EVP_VerifyFinal returned " << ret << " (invalid signature?)\n";
         return false;
     } else if (ret == 0) {
-        cerr << "Error: Invalid signature!\n";
+        //cerr << "Error: Invalid signature!\n";
         return false;
     }
     EVP_MD_CTX_free(md_ctx);

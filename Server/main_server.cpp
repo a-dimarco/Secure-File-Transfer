@@ -18,7 +18,9 @@ void signal_callback_handler(int flag)
 void start_session(int sock)
 {
     server *s = new server(sock);
-    s->handle_req();
+    while(true) {
+        s->handle_req();
+    }
 }
 
 int main()

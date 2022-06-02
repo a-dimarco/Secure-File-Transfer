@@ -4,7 +4,6 @@
 #include "client.h"
 
 using namespace std;
-
 int main()
 {
 
@@ -18,10 +17,10 @@ int main()
 
     client *cl = new client(username);
 
-    char *pkt = cl->send_clienthello();
-    cl->handle_req(pkt);
-
-
+    cl->send_clienthello();
+    while(true) {
+        cl->handle_req();
+    }
 
     // cl->auth(pkt);
     // cl->show_menu();

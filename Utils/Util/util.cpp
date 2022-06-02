@@ -165,6 +165,7 @@ char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counte
         
         pos += cipherlen;
         memcpy(pkt+pos, tag, 16);
+        free(tag);
         return pkt;  
 }
 

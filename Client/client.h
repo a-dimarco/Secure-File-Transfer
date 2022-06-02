@@ -20,7 +20,7 @@ public:
 
     void delete_file();
 
-    char *send_clienthello();
+    void send_clienthello();
 
     void server_hello_handler(char* pkt, int pos);
 
@@ -39,7 +39,7 @@ public:
 
     // andrea
 
-    void handle_req(char *pkt);
+    void handle_req();
 
     void show_menu();
 
@@ -52,17 +52,17 @@ public:
     void rename_file();
 
 private:
-    unsigned char nonce[8];
-    char *user;
-    char* file_name;
-    connection_manager *cm;
-    uint16_t counter;
-    unsigned char* shared_key;
-    size_t key_size;
+    unsigned char* nonce{};
+    char *user{};
+    char* file_name{};
+    connection_manager *cm{};
+    uint16_t counter{};
+    unsigned char* shared_key{};
+    size_t key_size{};
     char* crt_pkt_hello(unsigned char *nonce);
     static char* prepare_req_packet(uint32_t *size, uint8_t opcode);
     char* prepare_filename_packet(uint8_t opcode, uint32_t *size, char* file_name, char* new_name);
-    void show_list(char *pkt, int pos);
+    static void show_list(char *pkt, int pos);
     void create_downloaded_file(char* pkt);
     void handle_ack(char *pkt,uint8_t opcode);
 };
