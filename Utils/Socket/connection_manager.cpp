@@ -103,7 +103,7 @@ char *connection_manager::receive_packet()
     printf("Aspetto di ricevere il paccheetto\n");
     // Ricevo dimensione dei dati in ingresso
     ret = recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
-
+    printf("Checkpoint1\n");
     if (ret < 0)
     {
         cerr << "Error in receiving the size of the packet\n";
@@ -111,6 +111,7 @@ char *connection_manager::receive_packet()
     }
 
     pkt_len = ntohl(pkt_len_n);
+    printf("%d", pkt_len);
     //printf("ho ricevuto la size: %d\n", pkt_len);
     /*
     if (pkt_len < 0)
@@ -123,7 +124,7 @@ char *connection_manager::receive_packet()
     */
     // printf("prima di allocare il buffer\n");
     //  Alloco il buffer per i dati in ingresso
-    pkt = new char[pkt_len];
+    pkt = (char*)malloc(pkt_len);
     // printf("sono qui prima di ricevere i dati\n");
     //  Ricevo i dati in ingresso
     while (received < pkt_len)
@@ -172,7 +173,7 @@ char *connection_manager::receive_packet()
 void connection_manager::send_packet(char *packet, uint32_t pkt_len)
 {
     size_t sent = 0;
-    //printf("%s", packet);
+    printf("%s", packet);
     ssize_t ret;
     pkt_len = htonl(pkt_len);
     ret = send(this->sckt, &pkt_len, sizeof(pkt_len), 0);
@@ -182,8 +183,8 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
         exit(1);
     }
     pkt_len=ntohl(pkt_len);
-    //printf("size inviata %d \n", pkt_len);
-    //printf("packet: %s\n",packet);
+    printf("size inviata %d \n", pkt_len);
+    printf("packet: %s\n",packet);
     while (sent < pkt_len)
     {
         // printf("appena entrato nel ciclo sending\n");
@@ -195,10 +196,11 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
             exit(1);
         }
         sent += ret;
-        //printf("ho inviato %zu bytes\n", sent);
+        printf("ho inviato %zu bytes\n", sent);
     }
+    
     free(packet);
-    // printf("ho inviato tutto il pacchetto\n");
+     printf("ho inviato tutto il pacchetto\n");
 }
 
 connection_manager::~connection_manager(){}
