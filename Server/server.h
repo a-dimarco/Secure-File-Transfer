@@ -40,6 +40,8 @@ public:
     
     int get_socket();
 
+    char* prepare_renameAck_pkt(uint32_t *size, uint8_t opcode);
+
 private:
     int socket;
     unsigned char snonce[8];

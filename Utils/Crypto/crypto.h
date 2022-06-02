@@ -50,8 +50,6 @@ public:
     unsigned char *signn(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, unsigned int* sgnt_size);
     unsigned char *dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, size_t *size); // edo
 
-    unsigned char *sign(unsigned char *clear_buf, long int clear_size, string prvkey_file_name,char* psw,unsigned int *sgnt_size); // lore
-
     bool
     verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned char *clear_buf, long int clear_size,
                 EVP_PKEY* pk); // lore
@@ -64,7 +62,6 @@ public:
 
     //unsigned char *create_nonce();
     void create_nonce(unsigned char * p);
-    unsigned char* getServerCert(uint32_t * size);
     // EVP_PKEY *extract_pubkey(X509_STORE *cert);//lore
 
 private:

@@ -108,10 +108,8 @@ void server::check_file(char *pkt, uint8_t opcode)
         packt = this->cm->receive_packet();
         int pos1 = 0;
         uint8_t opcode2;
-        memcpy(&opcode2, pkt, sizeof(opcode2)); // prelevo opcode
-        // opcode = ntohs(opcode);
+        memcpy(&opcode2, pkt, sizeof(opcode2)); 
         pos += sizeof(opcode2);
-        printf("OPCODE ricevuto: %d\n", opcode2);
         store_file(packt);
     }else if(opcode==DELETE){
         if(a){
@@ -216,8 +214,8 @@ void server::handle_req()
     uint8_t opcode;
     memcpy(&opcode, pkt, sizeof(uint8_t));
     pos += sizeof(uint8_t);
-    // Andrea test
-    // Deserializzazione
+
+    // Opcode Handle
 
     if (opcode == LIST)
     {
@@ -234,19 +232,21 @@ void server::handle_req()
         // store_file(pkt, opcode);
     }
     else if (opcode == RENAME)
-    { // IMPLEMENT
+    {
         if(rename_file(pkt, pos)) //Rename success
         {
             char *packet;
-            uint8_t opcode = RENAME_ACK;
-            memcpy(packet, &opcode, sizeof(opcode));
+            uint32_t size;
+            packet = prepare_renameAck_pkt(&size, RENAME_ACK);
+            
             cm->send_packet(packet, sizeof(opcode));
         }
         else //Rename failure
         {
             char *packet;
-            uint8_t opcode = RENAME_NACK;
-            memcpy(packet, &opcode, sizeof(opcode));
+            uint32_t size;
+            packet = prepare_renameAck_pkt(&size, RENAME_NACK);
+            
             cm->send_packet(packet, sizeof(opcode));
         }
         handle_req();
@@ -297,93 +297,71 @@ void server::client_hello_handler(char *pkt, int pos)
     pos += sizeof(nonce_size);
     nonce_size = ntohs(nonce_size);
     unsigned char nonce[nonce_size];
+    //unsigned char* nonce = (unsigned char*)malloc(nonce_size);
 
-    memcpy(&username, pkt + pos, us_size); // prelevo l'username
+    memcpy(&username[0], pkt + pos, us_size); // prelevo l'username
     pos += us_size;
 
-    memcpy(&nonce, pkt + pos, nonce_size); // prelevo il nonce
+    memcpy(nonce, pkt + pos, nonce_size); // prelevo il nonce
 
     // Fine Deserializzazione
 
-    printf(" pacchetto: \n us_size: %d\n nonce_size: %d\n username: %s\n nonce: %s\n", us_size, nonce_size,
-           username, nonce);
-
-    // test andrea
-    printf("username ricevuto %s\n", username);
     logged_user = username;
 
-    /*
-    if (strcmp(username, "test") == 0)
-    { // username usato per testing metodi
-        printf("Username - OK\n");
-        uint32_t size;
-        char *packet = prepare_ack_packet(&size);
-        printf("Test dimensione ack packet: %d\n", size);
-        cm->send_packet(packet, size);
-        // close(sock);
-        // exit(0);
-        handle_req(); // waits for a request from the client
-        // chiama metodo con while true che si blocca in receive packet fino a che non ha ricevuto opcode logout
-    }
-    else
-    {
-        printf("Username - Error\n");
-        close(this->socket);
-        exit(1);
-    }
-     */
     server_hello(nonce);
 }
 
-char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size)
+//Prepare Generic Ack Packet
+
+char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size) 
 {
-    printf("ack packet\n");
+    // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG)
+
     int pos = 0;
-    printf("pos: %d\n",pos);
     uint8_t opcode = ACK;
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    printf("ivsize: %d\n",iv_size);
     uint32_t ct_size=msg_size;
     int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+iv_size + ct_size + 16;
     char* packet=(char *)malloc(pkt_len);
     *size = pkt_len;
-    memcpy(packet, &opcode, sizeof(opcode));
+    
+    
+    memcpy(packet, &opcode, sizeof(opcode)); //OPCode
     pos += sizeof(opcode);
-    printf("pos: %d\n",pos);
-    this->counter++;
+    
+    
+    this->counter++; //Counter
     int counter2=counter;
     uint16_t count=htons(counter2);
     memcpy(packet + pos, &count, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-    printf("pos: %d\n",pos);
-    uint16_t size_m = htons(ct_size);
+    
+    
+    uint16_t size_m = htons(ct_size); //CipherText Size
     memcpy(packet + pos, &size_m, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-    printf("packet1 %s\n",packet);
-    printf("pos: %d\n",pos);
-    crypto *c = new crypto();
+    
+    
+    crypto *c = new crypto(); //IV
     unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
     c->create_random_iv(iv);
-    printf("iv %s\n",iv);
     memcpy(packet + pos, iv, iv_size);
     pos += iv_size;
-    printf("pos: %d\n",pos);
-    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t);
+
+
+    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
     unsigned char ct[ct_size];
-    unsigned char tag[16];
-    printf("prima di encrypt\n");
-    printf("msg size: %d\n",ntohs(size_m));
+    unsigned char tag[16]; 
     c->encrypt_packet((unsigned char *)msg, msg_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
-    printf("encrypt %s\n",ct);
     memcpy(packet+pos,ct,ct_size);
     pos+=ct_size;
-    printf("pos: %d\n",pos);
     memcpy(packet+pos,tag,16);
-    printf("pos: %d\n",pos+16);
-    printf("packet %s\n",packet);
+
     return packet;
 }
-char *server::prepare_ack_packet(uint32_t *size)
+
+
+char *server::prepare_ack_packet(uint32_t *size) //TEST - UNUSED
 {
     char *packet;
     uint8_t opcode = ACK;
@@ -456,9 +434,11 @@ void server::store_file(char *pkt)
     free(this->file_name);
 }
 
-void server::send_list()
+//Prepare list packet and sends it
+
+/*void server::send_list() //TEST MUST BE REMOVED
 {
-    // prepare packet and send it
+    // PACKET FORMAT: OPCODE - COUNTER - LIST_SIZE - IV - CIPHERTEXT - TAG
 
     printf("start send list\n");
 
@@ -475,19 +455,77 @@ void server::send_list()
     int pos = 0;
     char pkt[packet_size];
 
-    memcpy(pkt, &opcode, sizeof(uint8_t));
+    memcpy(pkt, &opcode, sizeof(uint8_t));//Opcode
     pos += sizeof(uint8_t);
-    memcpy(pkt + pos, &list_size, sizeof(uint16_t));
+
+    memcpy(pkt + pos, &list_size, sizeof(uint16_t));//List Size
     pos += sizeof(uint16_t);
-    memcpy(pkt + pos, content, list_size);
+    
+    memcpy(pkt + pos, content, list_size);//List
 
     cm->send_packet(pkt, packet_size);
 
     printf("list sent: size %d\n %s\n", list_size, content); // TEST
+}*/
+
+void server::send_list()
+{
+    // PACKET FORMAT: OPCODE - COUNTER - LIST_SIZE - IV - CIPHERTEXT - TAG
+
+    printf("start send list\n");
+
+    uint8_t opcode = LIST;
+    string temp = print_folder(SERVER_PATH);
+
+    char content[temp.length() + 1];//Retrieve the list
+    strcpy(content, temp.c_str());
+
+    printf("List:\n %s\n saved, trying to send it\n", content); // TEST
+
+    uint16_t list_size = htons(sizeof(content) + 1);
+    
+    int pos = 0;
+    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    uint32_t ct_size=strlen(content);
+    uint32_t packet_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+iv_size + ct_size + 16;
+    char packet[packet_size];
+
+    memcpy(packet, &opcode, sizeof(uint8_t));//Opcode
+    pos += sizeof(uint8_t);
+
+    this->counter++; //Counter
+    int counter2=counter;
+    uint16_t count=htons(counter2);
+    memcpy(packet + pos, &count, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+
+    memcpy(packet + pos, &list_size, sizeof(uint16_t));//List(CipherText) Size
+    pos += sizeof(uint16_t);
+    
+    crypto *c = new crypto(); //IV
+    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+    c->create_random_iv(iv);
+    memcpy(packet + pos, iv, iv_size);
+    pos += iv_size;
+
+
+    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
+    unsigned char ct[ct_size];
+    unsigned char tag[16]; 
+    c->encrypt_packet((unsigned char *)content, list_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
+    memcpy(packet+pos,ct,ct_size);
+    pos+=ct_size;
+    memcpy(packet+pos,tag,16);
+
+    cm->send_packet(packet, packet_size);
+
+    printf("list sent: size %d\n %s\n", list_size, content); // TEST
 }
 
+// Takes all files and saves them into a variable
+
 string server::print_folder(char *path)
-{ // Takes all files and saves them into a variable
+{ 
 
     DIR *dir;
     struct dirent *ent;
@@ -534,7 +572,11 @@ string server::print_folder(char *path)
     return file_list;
 }
 
+//Select a file and remove it, if it exists
+//return error otherwise
+
 void server::delete_file() {
+
     char *path = CLIENT_PATH;
     string file_path = path;
     file_path += this->logged_user;
@@ -547,11 +589,11 @@ void server::delete_file() {
     ret = remove(filePath);
     if (ret != 0)
     {
-        cerr << "Errore nell'eliminare il file";
+        cerr << "DELETE - ERROR\n";
     }
     free(filePath);
     uint32_t *siz;
-    char msg[] = "File eliminato";
+    char msg[] = "File Removed";
     char *pac = prepare_ack_packet(siz, msg, sizeof(msg));
     this->cm->send_packet(pac, *siz);
     free(this->file_name);
@@ -561,32 +603,132 @@ int server::get_socket() {
 	return this->socket;
 }
 
-bool server::rename_file(char* pkt, int pos) {
+//Deserializes a rename packet and rename
+//the file, if it exists
+
+/*bool server::rename_file(char* pkt, int pos) {
+
+    //RECEIVED PACKET FORMAT: OPCODE - COUNTER - OLD_NAME_SIZE - NEW_NAME_SIZE - IV - OLDNAME & NEWNAME - TAG
+
     uint16_t new_size;
     uint16_t old_size;
 
     // Deserializzazione
 
-    memcpy(&old_size, pkt + pos, sizeof(old_size)); // prelevo old_size inizializzo la variabile che dovrà contenerlo
+    memcpy(&old_size, pkt + pos, sizeof(old_size)); // Old_size
     pos += sizeof(old_size);
     old_size = ntohs(old_size);
     char filename[old_size];
 
-    memcpy(&new_size, pkt + pos,
-           sizeof(new_size)); // prelevo new_size e inizializzo la variabile che dovrà contenerlo
+    memcpy(&new_size, pkt + pos, sizeof(new_size)); // New_size
     pos += sizeof(new_size);
     new_size = ntohs(new_size);
     char newfilename[new_size];
 
-    memcpy(&filename, pkt + pos, old_size); // prelevo l'old name
+    memcpy(&filename, pkt + pos, old_size); // Old name
     pos += old_size;
 
-    memcpy(&newfilename, pkt + pos, new_size); // prelevo il new name
-
-    printf(" pacchetto: \n old_size: %d\n new_size: %d\n filename: %s\n newfilename: %s\n", old_size, new_size,
-           filename, newfilename);
+    memcpy(&newfilename, pkt + pos, new_size); // New name
 
     // Fine Deserializzazione
+
+    if (nameChecker(filename, FILENAME)) //Check if username format is correct
+    {
+        if (file_opener(filename, logged_user)) //Check if the file exists
+        {
+            if(file_renamer(newfilename, filename))
+            {
+                printf("Rename - OK");
+                return true;
+            }
+
+            else
+            {
+                printf("Rename - Error");
+                return false;
+            }
+
+        }
+        else 
+        {
+            printf("file %s - Not Found.\n", filename);
+            char *packet;
+            uint8_t code = RENAME_NACK;
+            memcpy(packet, &code, sizeof(code));
+            cm->send_packet(packet, sizeof(code));
+        }
+    } 
+    else 
+    {
+        printf("filename %s - Error. Format not valid\n", filename);
+        char *packet;
+        uint8_t code = RENAME_NACK;
+        memcpy(packet, &code, sizeof(code));
+        cm->send_packet(packet, sizeof(code));
+    }
+}*/
+
+bool server::rename_file(char* pkt, int pos) {
+
+    //RECEIVED PACKET FORMAT: OPCODE - COUNTER - CIPHERTEXT_SIZE - OLD_NAME_SIZE - NEW_NAME_SIZE - IV - OLDNAME & NEWNAME - TAG
+
+    uint16_t new_size;
+    uint16_t old_size;
+    uint16_t cipher_size;
+
+    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+
+    // Deserialization
+
+    this->counter++; // Counter
+    uint16_t count;
+    memcpy(&count, pkt + pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    count = ntohs(count);
+    if (this->counter != count) {
+        cerr << "counter errato";
+    }
+
+    memcpy(&cipher_size, pkt + pos, sizeof(cipher_size)); // Cipher_size
+    pos += sizeof(cipher_size);
+    old_size = ntohs(cipher_size);
+    unsigned char ct[cipher_size];
+
+    memcpy(&old_size, pkt + pos, sizeof(old_size)); // Old_size
+    pos += sizeof(old_size);
+    old_size = ntohs(old_size);
+    char filename[old_size];
+
+    memcpy(&new_size, pkt + pos, sizeof(new_size)); // New_size
+    pos += sizeof(new_size);
+    new_size = ntohs(new_size);
+    char newfilename[new_size];
+
+    crypto *c;  // IV
+    c = new crypto();
+    unsigned char iv[iv_size];
+    memcpy(iv, pkt + pos, iv_size);
+    pos += iv_size;
+
+    memcpy(ct, pkt + pos, cipher_size);
+    pos += cipher_size;
+    unsigned char tag[16];
+    memcpy(tag, pkt + pos, 16);
+    int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t);
+    unsigned char pt[cipher_size];
+    unsigned char aad[aad_size];
+    memcpy(aad, pkt, aad_size);
+    c->decrypt_message(ct, cipher_size, aad, aad_size, tag, this->shared_key, iv, iv_size, pt);
+    printf("%s\n", pt);
+
+    pos = 0;
+
+    memcpy(filename, pt, old_size); // Old name
+    pos += old_size;
+
+    memcpy(newfilename, pt+pos, new_size); // New name
+
+    // End Deserialization
 
     if (nameChecker(filename, FILENAME)) //Check if username format is correct
     {
@@ -638,7 +780,6 @@ bool server::file_renamer(char* new_name, char* old_name){
 
     old_name = &oldnamepath[0];
     new_name = &newnamepath[0];
-    printf("old: %s\n new: %s\n", old_name, new_name);//TEST
 	
 	if (rename(old_name, new_name) != 0)
     {
@@ -652,11 +793,10 @@ bool server::file_renamer(char* new_name, char* old_name){
 }
 
 void server::server_hello(unsigned char* nonce) {
+
     uint8_t opcode=SHELLO_OPCODE;
     crypto *c=new crypto();
     c->create_nonce(snonce);
-
-
 
     string cacert_file_name = "./server_file/server/Server_cert.pem";
 
@@ -692,65 +832,57 @@ void server::server_hello(unsigned char* nonce) {
         exit(1);
     }
 
-    printf("prima di bio\n");
     BUF_MEM *bptr;
     BIO_get_mem_ptr(bio, &bptr);
-    printf("key %s\n",*bptr);
     BIO_set_close(bio, BIO_NOCLOSE); /* So BIO_free() leaves BUF_MEM alone */
-    printf("len %zu:\n",bptr->length);
     char key[bptr->length];
     memcpy(key,bptr->data,bptr->length);
-    printf("key %s:\n",key);
     BIO_free(bio);
     key_size=bptr->length;
 
 
     int sign_size=key_size+sizeof(nonce);
-    printf("sign size: %d\n",sign_size);
     unsigned char* tosign=(unsigned char*)malloc(sign_size);
     int pos=0;
     memcpy(tosign,key,key_size);
     pos+=key_size;
     uint16_t  nonce_size=sizeof(nonce);
     memcpy(tosign+pos,nonce,nonce_size);
-    printf("nonce %s\n",nonce);
-    unsigned int *sgnt_size;
-    printf("ciao: %s\n",tosign);
-    unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",sgnt_size);
-    printf("signature size: %d",*sgnt_size);
-    uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_size+cert_size+(*sgnt_size);
+    unsigned int sgnt_size;
+    unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
+    uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_size+cert_size+(sgnt_size);
+    
     char pkt[pkt_len];
-    printf("pktlen %d\n",pkt_len);
-    printf("checkpoint1\n");
+    
     pos=0;
     memcpy(pkt,&opcode,sizeof(opcode));
     pos+=sizeof(opcode);
-    printf("pos %d\n",pos);
+
     uint16_t nonce_size_s=htons(nonce_size);
     memcpy(pkt+pos,&nonce_size_s,sizeof(uint16_t));
     pos+=sizeof(uint16_t);
-    printf("pos %d\n",pos);
+
     uint32_t cert_size_s=htonl(cert_size);
     memcpy(pkt+pos,&cert_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-    printf("pos %d\n",pos);
+
     uint32_t key_size_s=htonl(key_size);
     memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-    printf("pos %d\n",pos);
-    uint32_t sgnt_size_s=htonl(*sgnt_size);
+
+    uint32_t sgnt_size_s=htonl(sgnt_size);
     memcpy(pkt+pos,&sgnt_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-    printf("pos %d\n",pos);
-    memcpy(pkt+pos,snonce,nonce_size);
-    pos+=nonce_size;
-    printf("pos %d\n",pos);
-    memcpy(pkt+pos,cert,cert_size);
-    pos+=cert_size;
-    printf("pos %d\n",pos);
-    memcpy(pkt+pos,key,key_size);
-    pos+=key_size;
-    printf("pos %d\n",pos);
+
+    memcpy(pkt+pos,snonce,ntohs(nonce_size_s));
+    pos+=ntohs(nonce_size_s);
+
+    memcpy(pkt+pos,cert,ntohl(cert_size_s));
+    pos+=ntohl(cert_size_s);
+
+    memcpy(pkt+pos,key,ntohl(key_size_s));
+    pos+=ntohl(key_size_s);
+
     memcpy(pkt+pos,sign,ntohl(sgnt_size_s));
     this->cm->send_packet(pkt,pkt_len);
     free(sign);
@@ -765,28 +897,23 @@ void server::auth(char *pkt, int pos) {
     uint32_t key_siz;
     memcpy(&key_siz,pkt+pos,sizeof(uint32_t));
     key_siz= ntohl(key_siz);
-    printf("key size: %d\n",key_siz);
     pos+=sizeof(uint32_t);
     uint32_t sgnt_size;
     memcpy(&sgnt_size,pkt+pos,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
     sgnt_size= ntohl(sgnt_size);
-    printf("sgn size: %d\n",sgnt_size);
     unsigned char key[key_siz];
     memcpy(key,pkt+pos,key_siz);
     pos+=key_siz;
-    printf("key %s:",key);
     unsigned char sign[sgnt_size];
     memcpy(sign,pkt+pos,sgnt_size);
     BIO* bio= BIO_new(BIO_s_mem());
     ret=BIO_write(bio, key, key_siz);
-    printf("bio wirte ok\n");
     if(ret==0){
         cerr << "errore in BIO_write";
         exit(1);
     }
     EVP_PKEY* pubkey=PEM_read_bio_PUBKEY( bio, NULL, NULL, NULL);
-    printf("PEM read ok\n");
     if(pubkey==NULL){
         cerr<<"PEM_read_bio_PUBKEY error";
         exit(1);
@@ -803,11 +930,9 @@ void server::auth(char *pkt, int pos) {
     newnamepath += "/";
     newnamepath += "pubkey.pem";
     char* path = &newnamepath[0];
-    printf("Path: %s\n",path);
     FILE * file;
     file=fopen(path,"rb");
     EVP_PKEY* user_pk= PEM_read_PUBKEY(file,NULL,NULL,NULL);
-    printf("read pubkey ok\n");
     bool b=c->verify_sign(sign,sgnt_size,to_verify,key_siz+8,user_pk);
     if(!b){
         cerr << "signature not valid";
@@ -815,18 +940,47 @@ void server::auth(char *pkt, int pos) {
     }
     EVP_PKEY_free(user_pk);
     unsigned char* g=c->dh_sharedkey(this->my_prvkey,pubkey,&this->key_size);
-    printf("g %s\n",g);
     this->shared_key=c->key_derivation(g,this->key_size);
-    printf("shared key: %s\n",shared_key);
     uint32_t pkt_len;
     char msg[]="Connection established";
     char* packet=prepare_ack_packet(&pkt_len,msg,sizeof(msg));
-    printf("pkt_len %d\n",pkt_len);
     this->cm->send_packet(packet,pkt_len);
     BIO_free(bio);
     EVP_PKEY_free(pubkey);
     EVP_PKEY_free(my_prvkey);
     handle_req();
+}
+
+//Serializes a rename ACK-NACK packet
+
+char* server::prepare_renameAck_pkt(uint32_t *size, uint8_t opcode){
+
+    // PACKET FORMAT: OPCODE - COUNTER (- IV - TAG)
+
+    int pos = 0;
+    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)/*+iv_size*/;
+    //uint32_t ct_size=msg_size;
+    
+    char* packet=(char *)malloc(pkt_len);
+    *size = pkt_len;
+    
+    memcpy(packet, &opcode, sizeof(opcode)); //OPCode
+    pos += sizeof(opcode);
+
+    this->counter++; //Counter
+    int counter2=counter;
+    uint16_t count=htons(counter2);
+    memcpy(packet + pos, &count, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+
+    /*crypto *c = new crypto(); //IV
+    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+    c->create_random_iv(iv);
+    memcpy(packet + pos, iv, iv_size);*/
+
+    return packet;
+
 }
 
 //~Andrea
