@@ -724,10 +724,10 @@ bool server::rename_file(char* pkt, int pos) {
 
     pos = 0;
 
-    strncpy(&filename, pt, old_size); // Old name
+    memcpy(filename, pt, old_size); // Old name
     pos += old_size;
 
-    strncpy(&newfilename, pt+pos, new_size); // New name
+    memcpy(newfilename, pt+pos, new_size); // New name
 
     // End Deserialization
 
