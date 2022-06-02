@@ -197,6 +197,7 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
         sent += ret;
         //printf("ho inviato %zu bytes\n", sent);
     }
+    free(packet);
     // printf("ho inviato tutto il pacchetto\n");
 }
 
