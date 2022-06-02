@@ -31,8 +31,8 @@ void client::send_clienthello() {
     c->create_nonce(nonce);
     char *pkt = this->crt_pkt_hello(nonce);
 
-    this->cm->send_packet(pkt, CLIENT_HELLO_SIZE);
-    //free(pkt);
+    this->cm->send_packet(pkt, 23);
+
     /*if(this->cm->receive_ack()){
         char * test = new char[10];//TEST -> messa per non far andare il loop il client
         //cm->close_socket();//TEST
@@ -173,7 +173,7 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     this->shared_key = c->key_derivation(g, this->key_size);
 
     this->cm->send_packet(pkt, pkt_len);
-   // free(pkt);
+
     EVP_PKEY_free(pubkey);
     EVP_PKEY_free(my_prvkey);
     BIO_free(bio);
@@ -246,13 +246,13 @@ void client::show_menu() {
             char *packet = prepare_req_packet(&size, LIST);
             cm->send_packet(packet, size);
             free(command);
-            //free(packet);
+
             printf("Waiting for the list!\n");
         } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
             char *req = crt_download_request(&size);
             cm->send_packet(req, size);
             free(command);
-            //free(req);;
+
         } else if (strcmp(command, "!upload") == 0) { // IMPLEMENT
             free(command);
         } else if (strcmp(command, "!rename") == 0) {
@@ -264,12 +264,12 @@ void client::show_menu() {
             char namefile[] = "a.txt";
             char *pkt = crt_pkt_remove(namefile, sizeof(namefile), &size);
             this->cm->send_packet(pkt, size);
-            //free(pkt);
+
         } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
             free(command);
             char *packet = prepare_req_packet(&size, LOGOUT);
             cm->send_packet(packet, size);
-            //free(packet);
+
             printf("Bye!\n");
             cm->close_socket();
             exit(0);
@@ -493,7 +493,7 @@ void client::rename_file() {//Va testata
             free(new_name);
 
             cm->send_packet(packet, size);
-            //free(packet);
+
             printf("Rename request for file %s - sent\n waiting for response...\n", file_name);
             free(file_name);
             //--Receive and analyze server's response
