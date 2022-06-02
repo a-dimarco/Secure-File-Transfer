@@ -4,7 +4,7 @@
 
 using namespace std;
 
-client::client() {};
+client::client() = default;;
 
 client::client(char *username) {
     char addr[] = "127.0.0.1";
@@ -25,7 +25,8 @@ client::client(char *username) {
 }
 
 char *client::send_clienthello() {
-    crypto *c = new crypto();
+    crypto *c;
+    c = new crypto();
 
 
     c->create_nonce(nonce);
@@ -41,12 +42,12 @@ char *client::send_clienthello() {
     return this->cm->receive_packet();
 }
 
-char *client::crt_pkt_hello(unsigned char *nonce) { // Creates first handshake packet
+char *client::crt_pkt_hello(unsigned char *nounce) { // Creates first handshake packet
     // PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
 
 
     uint16_t us_size = htons(strlen(user) + 1);
-    uint16_t nonce_size = htons(sizeof(nonce));
+    uint16_t nonce_size = htons(sizeof(nounce));
     uint8_t opcode = htons(CHELLO_OPCODE);
     int pos = 0;
     static char pkt[CLIENT_HELLO_SIZE];
@@ -60,7 +61,7 @@ char *client::crt_pkt_hello(unsigned char *nonce) { // Creates first handshake p
     memcpy(pkt + pos, user, sizeof(user));
     // pos += sizeof(user);
     pos += strlen(user) + 1;
-    memcpy(pkt + pos, nonce, 8);
+    memcpy(pkt + pos, nounce, 8);
 
     return pkt;
 }
@@ -124,8 +125,9 @@ char *client::crt_pkt_upload(char *filename, int *size) {
      return final_packet;*/
 }
 
-void client::auth(unsigned char *nonce, EVP_PKEY *pubkey) {
-    crypto *c = new crypto();
+void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
+    crypto *c;
+    c = new crypto();
     EVP_PKEY *my_prvkey = c->dh_keygen();
     uint32_t key_siz;
     //c->serialize_dh_pubkey(this->my_prvkey,key);
@@ -142,13 +144,13 @@ void client::auth(unsigned char *nonce, EVP_PKEY *pubkey) {
     char key[bptr->length];
     memcpy(key, bptr->data, bptr->length);
     key_siz = bptr->length;
-    int sign_size = key_siz + sizeof(nonce);
+    int sign_size = key_siz + sizeof(nounce);
     unsigned char tosign[sign_size];
     int pos = 0;
     memcpy(tosign, key, key_siz);
     pos += key_siz;
-    uint16_t nonce_size = sizeof(nonce);
-    memcpy(tosign + pos, nonce, nonce_size);
+    uint16_t nonce_size = sizeof(nounce);
+    memcpy(tosign + pos, nounce, nonce_size);
     unsigned int sgnt_size;
     //unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
     unsigned char *sign = c->signn(tosign, sign_size, "./client_file/Alice/alice_privkey.pem", &sgnt_size);
@@ -286,7 +288,7 @@ char *client::prepare_req_packet(uint32_t *size, uint8_t opcode) {
 
     // opcode = htons(opcode);
 
-    char *packet;
+    char packet[sizeof(uint8_t)];
     *size = sizeof(opcode);
     memcpy(packet, &opcode, sizeof(uint8_t));
     printf("request packet codice:%d ha size %d", opcode, *size);
@@ -332,7 +334,8 @@ char *client::crt_pkt_remove(char *namefile, int name_size, uint32_t *size) {
     uint16_t size_m = htons(name_size);
     memcpy(packet + pos, &size_m, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-    crypto *c = new crypto();
+    crypto *c;
+    c = new crypto();
     unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
     c->create_random_iv(iv);
     memcpy(packet + pos, iv, iv_size);
@@ -353,16 +356,16 @@ char *client::crt_download_request(uint32_t *size) {
     char filename[31];
     fgets(filename, 31, stdin);
 
-    for (int i = 0; i < 31; i++)
-        if (filename[i] == '\n') {
-            filename[i] = '\0';
+    for (char & i : filename)
+        if (i == '\n') {
+            i = '\0';
             break;
         }
 
     bool check = nameChecker(filename, FILENAME);
     if (!check) {
         printf("Inserisci un nome corretto\n");
-        return NULL;
+        return nullptr;
     }
     this->file_name = filename;
     this->counter++;
@@ -538,7 +541,8 @@ char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, char *file
 }
 
 void client::server_hello_handler(char *pkt, int pos) {
-    crypto *c = new crypto();
+    crypto *c;
+    c = new crypto();
     int ret;
     uint16_t nonce_size;
     memcpy(&nonce_size, pkt + pos, sizeof(uint16_t));
@@ -548,10 +552,10 @@ void client::server_hello_handler(char *pkt, int pos) {
     memcpy(&cert_size, pkt + pos, sizeof(uint32_t));
     pos += sizeof(uint32_t);
     cert_size = ntohl(cert_size);
-    uint32_t key_size;
-    memcpy(&key_size, pkt + pos, sizeof(uint32_t));
+    uint32_t key_siz;
+    memcpy(&key_siz, pkt + pos, sizeof(uint32_t));
     pos += sizeof(uint32_t);
-    key_size = ntohl(key_size);
+    key_siz = ntohl(key_siz);
     uint32_t sgnt_size;
     memcpy(&sgnt_size, pkt + pos, sizeof(uint32_t));
     pos += sizeof(uint32_t);
@@ -562,9 +566,9 @@ void client::server_hello_handler(char *pkt, int pos) {
     unsigned char cert[cert_size];
     memcpy(cert, pkt + pos, cert_size);
     pos += cert_size;
-    unsigned char key[key_size];
-    memcpy(key, pkt + pos, key_size);
-    pos += key_size;
+    unsigned char key[key_siz];
+    memcpy(key, pkt + pos, key_siz);
+    pos += key_siz;
     unsigned char sign[sgnt_size];
     memcpy(sign, pkt + pos, sgnt_size);
     BIO *bio = BIO_new(BIO_s_mem());
@@ -573,8 +577,8 @@ void client::server_hello_handler(char *pkt, int pos) {
         cerr << "errore in BIO_write";
         exit(1);
     }
-    X509 *certificate = PEM_read_bio_X509(bio, NULL, NULL, NULL);
-    if (certificate == NULL) {
+    X509 *certificate = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
+    if (certificate == nullptr) {
         cerr << "PEM_read_bio_X509 error";
         exit(1);
     }
@@ -586,23 +590,23 @@ void client::server_hello_handler(char *pkt, int pos) {
         printf("Valid Certificate!");
     }
     pos = 0;
-    unsigned char to_verify[key_size + nonce_size];
-    memcpy(to_verify, key, key_size);
-    pos += key_size;
+    unsigned char to_verify[key_siz + nonce_size];
+    memcpy(to_verify, key, key_siz);
+    pos += key_siz;
     memcpy(to_verify + pos, this->nonce, nonce_size);
     BIO_free(bio);
     bio = BIO_new(BIO_s_mem());
-    ret = BIO_write(bio, key, key_size);
+    ret = BIO_write(bio, key, key_siz);
     if (ret == 0) {
         cerr << "errore in BIO_write";
         exit(1);
     }
-    EVP_PKEY *pubkey = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
-    if (pubkey == NULL) {
+    EVP_PKEY *pubkey = PEM_read_bio_PUBKEY(bio, nullptr, nullptr, nullptr);
+    if (pubkey == nullptr) {
         cerr << "PEM_read_bio_PUBKEY error";
         exit(1);
     }
-    b = c->verify_sign(sign, sgnt_size, to_verify, key_size + nonce_size, X509_get_pubkey(certificate));
+    b = c->verify_sign(sign, sgnt_size, to_verify, key_siz + nonce_size, X509_get_pubkey(certificate));
     if (!b) {
         cerr << "signature not valid";
         exit(1);
@@ -630,7 +634,8 @@ void client::handle_ack(char *pkt, uint8_t opcod) {
     memcpy(&size_m, pkt + pos, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     size_m = ntohs(size_m);
-    crypto *c = new crypto();
+    crypto *c;
+    c = new crypto();
     unsigned char iv[iv_size];
     memcpy(iv, pkt + pos, iv_size);
     pos += iv_size;

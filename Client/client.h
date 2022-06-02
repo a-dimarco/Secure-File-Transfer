@@ -43,7 +43,7 @@ public:
 
     void show_menu();
 
-    void print_commands();
+    static void print_commands();
     
     char* crt_download_request(uint32_t* size);
     
@@ -60,7 +60,7 @@ private:
     unsigned char* shared_key;
     size_t key_size;
     char* crt_pkt_hello(unsigned char *nonce);
-    char* prepare_req_packet(uint32_t *size, uint8_t opcode);
+    static char* prepare_req_packet(uint32_t *size, uint8_t opcode);
     char* prepare_filename_packet(uint8_t opcode, uint32_t *size, char* file_name, char* new_name);
     void show_list(char *pkt, int pos);
     void create_downloaded_file(char* pkt);
