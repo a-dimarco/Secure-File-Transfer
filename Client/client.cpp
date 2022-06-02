@@ -43,8 +43,8 @@ char *client::send_clienthello() {
 }
 
 char *client::crt_pkt_hello(unsigned char *nounce) { // Creates first handshake packet
+    
     // PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
-
 
     uint16_t us_size = htons(strlen(user) + 1);
     uint16_t nonce_size = htons(sizeof(nounce));
@@ -502,14 +502,20 @@ void client::rename_file() {//Va testata
                 RENAME_ACK)//renametest: devo rimandargli old_name e new_name per verificare, mi pare basti il counter - dubbio
             {
                 printf("Rename - OK\n");
-            } else {
+            } 
+            else 
+            {
                 printf("Rename - FAIL\n");
             }
-        } else {
+        } 
+        else 
+        {
             printf("Filename %s - not accepted, please use filename.extension format\n", new_name);
         }
 
-    } else {
+    } 
+    else 
+    {
         printf("Filename %s - not accepted, please use filename.extension format\n", file_name);
     }
 
