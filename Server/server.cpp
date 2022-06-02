@@ -285,7 +285,7 @@ void server::handle_req()
 
 void server::client_hello_handler(char *pkt, int pos)
 {
-
+    printf("client_hello_handler\n");
     uint16_t us_size;
     uint16_t nonce_size;
 
@@ -294,24 +294,17 @@ void server::client_hello_handler(char *pkt, int pos)
     memcpy(&us_size, pkt + pos, sizeof(us_size)); // prelevo us_size inizializzo la variabile che dovrà contenerlo
     pos += sizeof(us_size);
     us_size = ntohs(us_size);
-    char* username = (char*)malloc(us_size);
-
+    this->logged_user = (char*)malloc(us_size);
     memcpy(&nonce_size, pkt + pos, sizeof(nonce_size)); // prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
     pos += sizeof(nonce_size);
     nonce_size = ntohs(nonce_size);
+    printf("nonce size %d\n",nonce_size);
     unsigned char* nonce = (unsigned char*)malloc(nonce_size);
-
-    memcpy(&username, pkt + pos, us_size); // prelevo l'username
+    memcpy(this->logged_user, pkt + pos, us_size); // prelevo l'username
     pos += us_size;
-
-    memcpy(&nonce, pkt + pos, nonce_size); // prelevo il nonce
-
-    // Fine Deserializzazione
-
-    // test andrea
-    printf("username ricevuto %s\n", username);//TEST
-    logged_user = username;
-
+    memcpy(nonce, pkt + pos, nonce_size); // prelevo il nonce
+    printf("username ricevuto %s\n", this->logged_user);//TEST
+    printf("nonce: %s\n",nonce);
     server_hello(nonce);
     free(nonce);
 }
@@ -816,12 +809,13 @@ bool server::file_renamer(char* new_name, char* old_name){
 }
 
 void server::server_hello(unsigned char* nonce) {
+    printf("server_hello\n");
+
     uint8_t opcode=SHELLO_OPCODE;
     crypto *c=new crypto();
+    this->snonce=(unsigned char*)malloc(8);
     c->create_nonce(snonce);
-
-
-
+    printf("snonce %s\n",snonce);
     string cacert_file_name = "./server_file/server/Server_cert.pem";
 
     // open the file to sign:
@@ -838,15 +832,14 @@ void server::server_hello(unsigned char* nonce) {
     unsigned char* cert = (unsigned char*)malloc(clear_size);
     if(!cert) { cerr << "Error: malloc returned NULL (file too big?)\n"; exit(1); }
     int ret = fread(cert, 1, clear_size, cacert_file);
+    ;
     if(ret < clear_size) { cerr << "Error while reading file '" << cacert_file_name << "'\n"; exit(1); }
     fclose(cacert_file);
 
     uint32_t cert_size=(uint32_t)clear_size;
 
     this->my_prvkey= c->dh_keygen();
-
-
-
+    printf("prv key %s\n",my_prvkey);
     uint32_t key_size;
     //c->serialize_dh_pubkey(this->my_prvkey,key);
     BIO* bio=BIO_new(BIO_s_mem());
@@ -864,7 +857,6 @@ void server::server_hello(unsigned char* nonce) {
     BIO_free(bio);
     key_size=bptr->length;
 
-
     int sign_size=key_size+sizeof(nonce);
     unsigned char* tosign=(unsigned char*)malloc(sign_size);
     int pos=0;
@@ -872,9 +864,9 @@ void server::server_hello(unsigned char* nonce) {
     pos+=key_size;
     uint16_t  nonce_size=sizeof(nonce);
     memcpy(tosign+pos,nonce,nonce_size);
-    unsigned int *sgnt_size;
-    unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",sgnt_size);
-    uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_size+cert_size+(*sgnt_size);
+    unsigned int sgnt_size;
+    unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
+    uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_size+cert_size+(sgnt_size);
     char* pkt = (char*)malloc(pkt_len);
     pos=0;
     memcpy(pkt,&opcode,sizeof(opcode));
@@ -886,9 +878,9 @@ void server::server_hello(unsigned char* nonce) {
     memcpy(pkt+pos,&cert_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
     uint32_t key_size_s=htonl(key_size);
-    memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
+    memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));g
     pos+=sizeof(uint32_t);
-    uint32_t sgnt_size_s=htonl(*sgnt_size);
+    uint32_t sgnt_size_s=htonl(sgnt_size);
     memcpy(pkt+pos,&sgnt_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
     memcpy(pkt+pos,snonce,nonce_size);

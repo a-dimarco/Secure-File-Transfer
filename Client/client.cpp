@@ -29,8 +29,7 @@ void client::send_clienthello() {
 
     nonce=(unsigned char*)malloc(8);
     c->create_nonce(nonce);
-    char *pkt = this->crt_pkt_hello(nonce);
-
+    char *pkt = this->crt_pkt_hello();
     this->cm->send_packet(pkt, 23);
 
     /*if(this->cm->receive_ack()){
@@ -42,26 +41,25 @@ void client::send_clienthello() {
 
 }
 
-char *client::crt_pkt_hello(unsigned char *nounce) { // Creates first handshake packet
+char *client::crt_pkt_hello() { // Creates first handshake packet
     // PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
 
-
     uint16_t us_size = htons(strlen(user) + 1);
-    uint16_t nonce_size = htons(sizeof(nounce));
-    uint8_t opcode = htons(CHELLO_OPCODE);
+    uint16_t nonce_size = htons(sizeof(nonce));
+    uint8_t opcode = CHELLO_OPCODE;
     int pos = 0;
-    char* pkt=( char*)malloc(CLIENT_HELLO_SIZE);
-
+    int pkt_len=23;
+    char* pkt=(char*)malloc(pkt_len);
     memcpy(pkt, &opcode, sizeof(uint8_t));
     pos += sizeof(uint8_t);
     memcpy(pkt + pos, &us_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     memcpy(pkt + pos, &nonce_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-    memcpy(pkt + pos, user, us_size);
+    memcpy(pkt + pos, user, strlen(user) + 1);
     // pos += sizeof(user);
-    pos += (int)strlen(user) + 1;
-    memcpy(pkt + pos, nounce, 8);
+    pos += strlen(user) + 1;
+    memcpy(pkt + pos, nonce, 8);
     //free(nounce);
     return pkt;
 }

@@ -44,15 +44,15 @@ public:
 
 private:
     int socket;
-    unsigned char* snonce{};
+    unsigned char* snonce;
     uint16_t counter;
     connection_manager *cm;
-    unsigned char *shared_key{};
-    char *file_name{};
+    unsigned char *shared_key;
+    char *file_name;
     void check_file(char *pkt, uint8_t opcode);
-    EVP_PKEY *my_prvkey{};
-    char *logged_user{}; // TEST
-    size_t key_size{};
+    EVP_PKEY *my_prvkey;
+    char *logged_user; // TEST
+    size_t key_size;
     void auth(char *pkt, int pos);
     void client_hello_handler(char *pkt, int pos);
 
