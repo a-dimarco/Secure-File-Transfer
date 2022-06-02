@@ -297,15 +297,16 @@ void server::client_hello_handler(char *pkt, int pos)
     pos += sizeof(nonce_size);
     nonce_size = ntohs(nonce_size);
     unsigned char nonce[nonce_size];
-    //unsigned char* nonce = (unsigned char*)malloc(nonce_size);
 
-    memcpy(&username[0], pkt + pos, us_size); // prelevo l'username
+    memcpy(&username, pkt + pos, us_size); // prelevo l'username
     pos += us_size;
 
-    memcpy(nonce, pkt + pos, nonce_size); // prelevo il nonce
+    memcpy(&nonce, pkt + pos, nonce_size); // prelevo il nonce
 
     // Fine Deserializzazione
 
+    // test andrea
+    printf("username ricevuto %s\n", username);//TEST
     logged_user = username;
 
     server_hello(nonce);
@@ -793,10 +794,11 @@ bool server::file_renamer(char* new_name, char* old_name){
 }
 
 void server::server_hello(unsigned char* nonce) {
-
     uint8_t opcode=SHELLO_OPCODE;
     crypto *c=new crypto();
     c->create_nonce(snonce);
+
+
 
     string cacert_file_name = "./server_file/server/Server_cert.pem";
 
@@ -848,41 +850,31 @@ void server::server_hello(unsigned char* nonce) {
     pos+=key_size;
     uint16_t  nonce_size=sizeof(nonce);
     memcpy(tosign+pos,nonce,nonce_size);
-    unsigned int sgnt_size;
-    unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
-    uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_size+cert_size+(sgnt_size);
-    
+    unsigned int *sgnt_size;
+    unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",sgnt_size);
+    uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_size+cert_size+(*sgnt_size);
     char pkt[pkt_len];
-    
     pos=0;
     memcpy(pkt,&opcode,sizeof(opcode));
     pos+=sizeof(opcode);
-
     uint16_t nonce_size_s=htons(nonce_size);
     memcpy(pkt+pos,&nonce_size_s,sizeof(uint16_t));
     pos+=sizeof(uint16_t);
-
     uint32_t cert_size_s=htonl(cert_size);
     memcpy(pkt+pos,&cert_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-
     uint32_t key_size_s=htonl(key_size);
     memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-
-    uint32_t sgnt_size_s=htonl(sgnt_size);
+    uint32_t sgnt_size_s=htonl(*sgnt_size);
     memcpy(pkt+pos,&sgnt_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
-
-    memcpy(pkt+pos,snonce,ntohs(nonce_size_s));
-    pos+=ntohs(nonce_size_s);
-
-    memcpy(pkt+pos,cert,ntohl(cert_size_s));
-    pos+=ntohl(cert_size_s);
-
-    memcpy(pkt+pos,key,ntohl(key_size_s));
-    pos+=ntohl(key_size_s);
-
+    memcpy(pkt+pos,snonce,nonce_size);
+    pos+=nonce_size;
+    memcpy(pkt+pos,cert,cert_size);
+    pos+=cert_size;
+    memcpy(pkt+pos,key,key_size);
+    pos+=key_size;
     memcpy(pkt+pos,sign,ntohl(sgnt_size_s));
     this->cm->send_packet(pkt,pkt_len);
     free(sign);
