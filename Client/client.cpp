@@ -17,20 +17,19 @@ client::client(char *username) {
     long std_port=rand()%6000+43151;
     this->cm=new connection_manager(addr,std_port);*/
 
-    this->cm = new connection_manager(addr, 8888);
+    this->cm =connection_manager(addr, 8888);
 
-    this->cm->connection(addr, dest_port);
+    this->cm.connection(addr, dest_port);
     this->counter = 0;
 }
 
 void client::send_clienthello() {
-    crypto *c;
-    c = new crypto();
+    crypto c =crypto();
 
     nonce=(unsigned char*)malloc(8);
-    c->create_nonce(nonce);
+    c.create_nonce(nonce);
     char *pkt = this->crt_pkt_hello();
-    this->cm->send_packet(pkt, 23);
+    this->cm.send_packet(pkt, 23);
 
     /*if(this->cm->receive_ack()){
         char * test = new char[10];//TEST -> messa per non far andare il loop il client
@@ -124,9 +123,8 @@ char *client::crt_pkt_upload(char *filename, int *size) {
 }
 
 void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
-    crypto *c;
-    c = new crypto();
-    EVP_PKEY *my_prvkey = c->dh_keygen();
+    crypto c = crypto();
+    EVP_PKEY *my_prvkey = c.dh_keygen();
     uint32_t key_siz;
     //c->serialize_dh_pubkey(this->my_prvkey,key);
     BIO *bio = BIO_new(BIO_s_mem());
@@ -151,7 +149,7 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     memcpy(tosign + pos, nounce, nonce_size);
     unsigned int sgnt_size;
     //unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
-    unsigned char *sign = c->signn(tosign, sign_size, "./client_file/Alice/alice_privkey.pem", &sgnt_size);
+    unsigned char *sign = c.signn(tosign, sign_size, "./client_file/Alice/alice_privkey.pem", &sgnt_size);
     uint8_t opcode = AUTH;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint32_t) * 2 + key_siz + sgnt_size;
     char* pkt=( char *)malloc(pkt_len);
@@ -167,10 +165,10 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     memcpy(pkt + pos, key, ntohl(key_size_s));
     pos += (int)ntohl(key_size_s);
     memcpy(pkt + pos, sign, ntohl(sgnt_size_s));;
-    unsigned char *g = c->dh_sharedkey(my_prvkey, pubkey, &this->key_size);
-    this->shared_key = c->key_derivation(g, this->key_size);
+    unsigned char *g = c.dh_sharedkey(my_prvkey, pubkey, &this->key_size);
+    this->shared_key = c.key_derivation(g, this->key_size);
 
-    this->cm->send_packet(pkt, pkt_len);
+    this->cm.send_packet(pkt, pkt_len);
 
     EVP_PKEY_free(pubkey);
     EVP_PKEY_free(my_prvkey);
@@ -181,7 +179,7 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     //free(nounce);
 }
 
-client::~client() { this->cm->close_socket(); }
+client::~client() { this->cm.close_socket(); }
 
 // Andrea Test
 
@@ -197,7 +195,7 @@ void client::print_commands() {
 }
 
 void client::handle_req() {
-    char* pkt=this->cm->receive_packet();
+    char* pkt=this->cm.receive_packet();
     // Andrea test
     // Deserializzazione
     int pos = 0;
@@ -222,7 +220,7 @@ void client::handle_req() {
         show_menu();
     } else {
         printf("Not a valid opcode\n");
-        cm->close_socket(); // TEST
+        cm.close_socket(); // TEST
         exit(1);            // TEST
     }
     free(pkt);
@@ -245,7 +243,7 @@ void client::show_menu() {
             free(command);
         } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
             char *req = crt_download_request(&size);
-            cm->send_packet(req, size);
+            cm.send_packet(req, size);
             free(command);
 
         } else if (strcmp(command, "!upload") == 0) { // IMPLEMENT
@@ -257,7 +255,7 @@ void client::show_menu() {
             free(command);
             char namefile[] = "a.txt";
             char *pkt = crt_pkt_remove(namefile, sizeof(namefile), &size);
-            this->cm->send_packet(pkt, size);
+            this->cm.send_packet(pkt, size);
 
         } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
             free(command);
@@ -265,7 +263,7 @@ void client::show_menu() {
             cm->send_packet(packet, size);*/
 
             printf("Bye!\n");
-            cm->close_socket();
+            cm.close_socket();
             exit(0);
         } else {
 
@@ -296,18 +294,18 @@ void client::prepare_req_packet(uint8_t opcode) {
     memcpy(packet+pos, &count, sizeof(uint16_t));
     pos += sizeof(uint16_t);
 
-    crypto *c = new crypto(); //IV
+    crypto c =crypto(); //IV
     unsigned char* iv = (unsigned char*)malloc(iv_size);
-    c->create_random_iv(iv);
+    c.create_random_iv(iv);
     memcpy(packet + pos, iv, iv_size);
     pos += iv_size;
 
     int aad_size = sizeof(opcode) + sizeof(uint16_t); // Tag 
     unsigned char* tag = (unsigned char*)malloc(16);
-    c->encrypt_packet((unsigned char *)packet, pt_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, NULL, tag);
+    c.encrypt_packet((unsigned char *)packet, pt_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, NULL, tag);
     memcpy(packet+pos,tag,16);
 
-    cm->send_packet(packet, packet_len);
+    cm.send_packet(packet, packet_len);
 
     free(iv);
     free(tag);
@@ -338,14 +336,14 @@ void client::show_list(char *pkt, int pos) {
     memcpy(iv, pkt + pos, iv_size);
     pos += iv_size;
 
-    crypto *c = new crypto(); //list
+    crypto c =crypto(); //list
     unsigned char* pt = (unsigned char*)malloc(list_size);
     int aad_size= sizeof(uint8_t)+sizeof(uint16_t);
 
     unsigned char* tag = (unsigned char*)malloc(16); //tag
     memcpy(tag, pkt + pos + list_size, 16);
 
-    c->decrypt_message((unsigned char*)pkt+pos, list_size, (unsigned char*)pkt, aad_size, tag, this->shared_key, iv, iv_size, pt);
+    c.decrypt_message((unsigned char*)pkt+pos, list_size, (unsigned char*)pkt, aad_size, tag, this->shared_key, iv, iv_size, pt);
 
     // Fine Deserializzazione
 
@@ -372,16 +370,15 @@ char *client::crt_pkt_remove(char *namefile, int name_size, uint32_t *size) {
     uint16_t size_m = htons(name_size);
     memcpy(packet + pos, &size_m, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-    crypto *c;
-    c = new crypto();
+    crypto c = crypto();
     auto* iv=(unsigned char *)malloc(EVP_CIPHER_iv_length(EVP_aes_128_gcm()));
-    c->create_random_iv(iv);
+    c.create_random_iv(iv);
     memcpy(packet + pos, iv, iv_size);
     pos += iv_size;
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t);
     auto* ct=(unsigned char *)malloc(name_size+16);
     auto* tag=(unsigned char *)malloc(16);
-    c->encrypt_packet((unsigned char *) namefile, name_size, (unsigned char *) packet, aad_size, this->shared_key, iv,
+    c.encrypt_packet((unsigned char *) namefile, name_size, (unsigned char *) packet, aad_size, this->shared_key, iv,
                       iv_size, ct, tag);
     memcpy(packet + pos, ct, name_size + 16);
     pos += name_size + 16;
@@ -417,7 +414,7 @@ char *client::crt_download_request(uint32_t *size) {
 
 char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter, unsigned char *shared_key) {
 
-    crypto *c = new crypto();
+    crypto c=crypto();
 
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) * 2;
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
@@ -429,7 +426,7 @@ char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_
 
     char *pkt = (char *) malloc(*size);
     unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
-    c->create_random_iv(iv);
+    c.create_random_iv(iv);
     unsigned char *tag = (unsigned char *) malloc(16);
     //unsigned char* ciphertext = (unsigned char*)malloc(ptext_size+16);
 
@@ -443,7 +440,7 @@ char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_
     pos += iv_size;
 
 
-    cipherlen = c->encrypt_packet((unsigned char *) filename, strlen(filename) + 1,
+    cipherlen = c.encrypt_packet((unsigned char *) filename, strlen(filename) + 1,
                                   (unsigned char *) pkt, aad_size, shared_key, iv, iv_size,
                                   (unsigned char *) pkt + pos, tag);
 
@@ -457,7 +454,7 @@ void client::create_downloaded_file(char *pkt) {
 
     int ret;
 
-    crypto *c = new crypto();
+    crypto c= crypto();
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
     int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
 
@@ -482,7 +479,7 @@ void client::create_downloaded_file(char *pkt) {
 
     unsigned char *ptext = (unsigned char *) malloc(h_size);
 
-    c->decrypt_message((unsigned char *) ct_pos, ct_len,
+    c.decrypt_message((unsigned char *) ct_pos, ct_len,
                        (unsigned char *) pkt, aad_len,
                        (unsigned char *) tag_pos,
                        this->shared_key,
@@ -531,14 +528,14 @@ void client::rename_file() {//Va testata
             char *packet = prepare_filename_packet(RENAME, &size, file_name, new_name);
             free(new_name);
 
-            cm->send_packet(packet, size);
+            cm.send_packet(packet, size);
 
             printf("Rename request for file %s - sent\n waiting for response...\n", file_name);
             free(file_name);
             //--Receive and analyze server's response
 
             char *response;
-            response = cm->receive_packet();
+            response = cm.receive_packet();
             uint8_t opcode;
 
             memcpy(&opcode, response, sizeof(opcode)); // prelevo opcode

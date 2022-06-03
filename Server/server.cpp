@@ -5,7 +5,7 @@ using namespace std;
 server::server(int sock)
 {
     this->socket = sock;
-    this->cm = new connection_manager(this->socket);
+    cm = connection_manager(this->socket);
     this->counter = 0;
 }
 
@@ -84,7 +84,7 @@ void server::check_file(char *pkt, uint8_t opcode)
         uint32_t *size;
         char msg[] = "Inserisci un nome corretto";
         char *pkt = prepare_ack_packet(size, msg, sizeof(msg));
-        this->cm->send_packet(pkt, *size);
+        cm.send_packet(pkt, *size);
         return;
     }
     bool a;
@@ -94,7 +94,7 @@ void server::check_file(char *pkt, uint8_t opcode)
             uint32_t *size;
             char msg[] = "File già esistente";
             char *pkt = prepare_ack_packet(size, msg, sizeof(msg));
-            this->cm->send_packet(pkt, *size);
+            cm.send_packet(pkt, *size);
             return;
         }
         this->file_name = (char *) malloc(name_size);
@@ -103,9 +103,9 @@ void server::check_file(char *pkt, uint8_t opcode)
         uint32_t *size;
         char msg[] = "Check eseguito correttamente";
         char *p = prepare_ack_packet(size, msg, sizeof(msg));
-        this->cm->send_packet(p, *size);
+        cm.send_packet(p, *size);
         char *packt;
-        packt = this->cm->receive_packet();
+        packt = cm.receive_packet();
         int pos1 = 0;
         uint8_t opcode2;
         memcpy(&opcode2, pkt, sizeof(opcode2)); 
@@ -116,7 +116,7 @@ void server::check_file(char *pkt, uint8_t opcode)
             uint32_t *size;
             char msg[] = "File non esistente";
             char *pkt = prepare_ack_packet(size, msg, sizeof(msg));
-            this->cm->send_packet(pkt, *size);
+            cm.send_packet(pkt, *size);
             return;
         }
         this->file_name = (char *) malloc(name_size);
@@ -130,14 +130,14 @@ void server::check_file(char *pkt, uint8_t opcode)
         	memcpy(file_name, pt, name_size - 1);
        	memcpy(file_name+name_size-1, "\0", 1);
         	char* pkt = crt_file_pkt(file_name, (int*)&size, opcode, this->counter);
-        	this->cm->send_packet(pkt, (int)size);
+        	cm.send_packet(pkt, (int)size);
         	return;
     	}
     	else {
     	     uint32_t *size;
             char msg[] = "File non esistente";
             char *pkt = prepare_ack_packet(size, msg, sizeof(msg));
-            this->cm->send_packet(pkt, *size);
+            cm.send_packet(pkt, *size);
             return;
     	}
     }
@@ -204,7 +204,7 @@ void server::check_file(char *pkt, uint8_t opcode)
 
 server::~server()
 {
-    cm->close_socket();
+    cm.close_socket();
 }
 
 // Andrea
@@ -212,7 +212,7 @@ server::~server()
 void server::handle_req()
 {
 
-    char *pkt = cm->receive_packet();
+    char *pkt = cm.receive_packet();
     int pos = 0;
     uint8_t opcode;
     memcpy(&opcode, pkt, sizeof(uint8_t));
@@ -241,7 +241,7 @@ void server::handle_req()
             uint32_t size;
             packet = prepare_renameAck_pkt(&size, RENAME_ACK);
             
-            cm->send_packet(packet, sizeof(opcode));
+            cm.send_packet(packet, sizeof(opcode));
         }
         else //Rename failure
         {
@@ -249,7 +249,7 @@ void server::handle_req()
             uint32_t size;
             packet = prepare_renameAck_pkt(&size, RENAME_NACK);
             
-            cm->send_packet(packet, sizeof(opcode));
+            cm.send_packet(packet, sizeof(opcode));
         }
         handle_req();
     }
@@ -260,7 +260,7 @@ void server::handle_req()
     else if (opcode == LOGOUT)
     { // IMPLEMENT
         printf("Received logout request. Closing connections.\n Bye!\n");
-        cm->close_socket();
+        cm.close_socket();
         exit(0);
     }
     else if (opcode == ACK)
@@ -430,7 +430,7 @@ void server::store_file(char *pkt)
     uint32_t *siz;
     char msg[] = "Upload completato";
     char *pac = prepare_ack_packet(siz, msg, sizeof(msg));
-    this->cm->send_packet(pac, *siz);
+    cm.send_packet(pac, *siz);
     free(this->file_name);
     
     free(aad);
@@ -550,7 +550,7 @@ void server::send_list(char* pkt)
     pos+=ct_size;
     memcpy(packet+pos,tag,16);
 
-    cm->send_packet(packet, packet_size);
+    cm.send_packet(packet, packet_size);
 
     printf("list sent: size %d\n %s\n", ntohs(list_size), content); // TEST
     
@@ -635,7 +635,7 @@ void server::delete_file() {
     uint32_t *siz;
     char msg[] = "File Removed";
     char *pac = prepare_ack_packet(siz, msg, sizeof(msg));
-    this->cm->send_packet(pac, *siz);
+    cm.send_packet(pac, *siz);
     free(this->file_name);
 }
 
@@ -793,7 +793,7 @@ bool server::rename_file(char* pkt, int pos) {
             char *packet;
             uint8_t code = RENAME_NACK;
             memcpy(packet, &code, sizeof(code));
-            cm->send_packet(packet, sizeof(code));
+            cm.send_packet(packet, sizeof(code));
         }
     } 
     else 
@@ -802,7 +802,7 @@ bool server::rename_file(char* pkt, int pos) {
         char *packet;
         uint8_t code = RENAME_NACK;
         memcpy(packet, &code, sizeof(code));
-        cm->send_packet(packet, sizeof(code));
+        cm.send_packet(packet, sizeof(code));
     }
     free(ct);
     free(iv);
@@ -919,7 +919,7 @@ void server::server_hello(unsigned char* nonce) {
     memcpy(pkt+pos,key,key_size);
     pos+=key_size;
     memcpy(pkt+pos,sign,ntohl(sgnt_size_s));
-    this->cm->send_packet(pkt,pkt_len);
+    cm.send_packet(pkt,pkt_len);
     free(sign);
     free(key);
     
@@ -981,7 +981,7 @@ void server::auth(char *pkt, int pos) {
     uint32_t pkt_len;
     char msg[]="Connection established";
     char* packet=prepare_ack_packet(&pkt_len,msg,sizeof(msg));
-    this->cm->send_packet(packet,pkt_len);
+    cm.send_packet(packet,pkt_len);
     BIO_free(bio);
     EVP_PKEY_free(pubkey);
     EVP_PKEY_free(my_prvkey);

@@ -55,7 +55,7 @@ private:
     unsigned char* nonce;
     char *user;
     char* file_name;
-    connection_manager *cm;
+    connection_manager cm;
     uint16_t counter;
     unsigned char* shared_key;
     size_t key_size;

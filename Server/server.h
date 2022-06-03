@@ -46,7 +46,7 @@ private:
     int socket;
     unsigned char* snonce;
     uint16_t counter;
-    connection_manager *cm;
+    connection_manager cm;
     unsigned char *shared_key;
     char *file_name;
     void check_file(char *pkt, uint8_t opcode);
