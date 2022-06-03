@@ -284,7 +284,6 @@ void server::handle_req()
 
 void server::client_hello_handler(char *pkt, int pos)
 {
-    printf("client_hello_handler\n");
     uint16_t us_size;
     uint16_t nonce_size;
 
@@ -297,13 +296,13 @@ void server::client_hello_handler(char *pkt, int pos)
     memcpy(&nonce_size, pkt + pos, sizeof(nonce_size)); // prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
     pos += sizeof(nonce_size);
     nonce_size = ntohs(nonce_size);
-    printf("nonce size %d\n",nonce_size);
+
     unsigned char* nonce = (unsigned char*)malloc(nonce_size);
     memcpy(this->logged_user, pkt + pos, us_size); // prelevo l'username
     pos += us_size;
     memcpy(nonce, pkt + pos, nonce_size); // prelevo il nonce
-    printf("username ricevuto %s\n", this->logged_user);//TEST
-    printf("nonce: %s\n",nonce);
+
+
     server_hello(nonce);
     free(nonce);
 }
@@ -441,38 +440,6 @@ void server::store_file(char *pkt)
 
 //Prepare list packet and sends it
 
-/*void server::send_list() //TEST MUST BE REMOVED
-{
-    // PACKET FORMAT: OPCODE - COUNTER - LIST_SIZE - IV - CIPHERTEXT - TAG
-
-    printf("start send list\n");
-
-    uint8_t opcode = LIST;
-    string temp = print_folder(SERVER_PATH);
-
-    char content[temp.length() + 1];
-    strcpy(content, temp.c_str());
-
-    printf("List:\n %s\n saved, trying to send it\n", content); // TEST
-
-    uint16_t list_size = htons(sizeof(content) + 1);
-    uint32_t packet_size = sizeof(opcode) + sizeof(list_size) + list_size + 1;
-    int pos = 0;
-    char pkt[packet_size];
-
-    memcpy(pkt, &opcode, sizeof(uint8_t));//Opcode
-    pos += sizeof(uint8_t);
-
-    memcpy(pkt + pos, &list_size, sizeof(uint16_t));//List Size
-    pos += sizeof(uint16_t);
-    
-    memcpy(pkt + pos, content, list_size);//List
-
-    cm->send_packet(pkt, packet_size);
-
-    printf("list sent: size %d\n %s\n", list_size, content); // TEST
-}*/
-
 void server::send_list(char* pkt)
 {
     // PACKET FORMAT: OPCODE - COUNTER - LIST_SIZE - IV - CIPHERTEXT - TAG
@@ -504,15 +471,11 @@ void server::send_list(char* pkt)
 
     //fine scompatta
 
-    printf("start send list\n");
-
     uint8_t opcode = LIST;
     string temp = print_folder(SERVER_PATH);
 
     char* content = (char*)malloc(temp.length() + 1);//Retrieve the list
     strcpy(content, temp.c_str());
-
-    printf("List:\n %s\n saved, trying to send it\n", content); // TEST
 
     uint16_t list_size = htons(strlen(content) + 17);
     
@@ -534,8 +497,8 @@ void server::send_list(char* pkt)
     memcpy(packet + pos, &list_size, sizeof(uint16_t));//List(CipherText) Size
     pos += sizeof(uint16_t);
     
-    //IV
-    unsigned char* iv = (unsigned char*)malloc(EVP_CIPHER_iv_length(EVP_aes_128_gcm()));
+    
+    unsigned char* iv = (unsigned char*)malloc(EVP_CIPHER_iv_length(EVP_aes_128_gcm())); //IV
     c->create_random_iv(iv);
     memcpy(packet + pos, iv, iv_size);
     pos += iv_size;
@@ -543,7 +506,7 @@ void server::send_list(char* pkt)
 
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
     unsigned char* ct = (unsigned char*)malloc(ct_size);
-    //unsigned char tag[16]; 
+
     unsigned char* tag = (unsigned char*)malloc(16); 
     c->encrypt_packet((unsigned char *)content, strlen(content)+1, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
     memcpy(packet+pos,ct,ct_size);
@@ -551,8 +514,6 @@ void server::send_list(char* pkt)
     memcpy(packet+pos,tag,16);
 
     cm.send_packet(packet, packet_size);
-
-    printf("list sent: size %d\n %s\n", ntohs(list_size), content); // TEST
     
     free(iv);
     free(ct);
@@ -574,8 +535,6 @@ string server::print_folder(char *path)
     file_path += "/file";
     path = &file_path[0];
 
-    printf("PATH: %s\n", path); // TEST
-
     int counter = 0;
 
     dir = opendir(path);
@@ -593,7 +552,7 @@ string server::print_folder(char *path)
     while ((ent = readdir(dir)) != NULL)
     {
         char *sel_file = ent->d_name;
-        printf("Examined file: %s\n", sel_file);
+
         if (nameChecker(sel_file, FILENAME))
         {
             string temp = string(sel_file);
@@ -606,7 +565,7 @@ string server::print_folder(char *path)
     {
         file_list += "There are no files in this folder";
     }
-    printf("Cosa ho salvato?\n%s", file_list.c_str()); // TEST
+
     closedir(dir);
 
     return file_list;
@@ -838,13 +797,12 @@ bool server::file_renamer(char* new_name, char* old_name){
 }
 
 void server::server_hello(unsigned char* nonce) {
-    printf("server_hello\n");
 
     uint8_t opcode=SHELLO_OPCODE;
     crypto *c=new crypto();
     this->snonce=(unsigned char*)malloc(8);
     c->create_nonce(snonce);
-    printf("snonce %s\n",snonce);
+
     string cacert_file_name = "./server_file/server/Server_cert.pem";
 
     // open the file to sign:
@@ -861,16 +819,15 @@ void server::server_hello(unsigned char* nonce) {
     unsigned char* cert = (unsigned char*)malloc(clear_size);
     if(!cert) { cerr << "Error: malloc returned NULL (file too big?)\n"; exit(1); }
     int ret = fread(cert, 1, clear_size, cacert_file);
-    ;
     if(ret < clear_size) { cerr << "Error while reading file '" << cacert_file_name << "'\n"; exit(1); }
     fclose(cacert_file);
 
     uint32_t cert_size=(uint32_t)clear_size;
 
     this->my_prvkey= c->dh_keygen();
-    printf("prv key %s\n",my_prvkey);
+ 
     uint32_t key_size;
-    //c->serialize_dh_pubkey(this->my_prvkey,key);
+
     BIO* bio=BIO_new(BIO_s_mem());
     ret= PEM_write_bio_PUBKEY(bio, my_prvkey);
     if (ret == 0) {
@@ -928,7 +885,7 @@ void server::server_hello(unsigned char* nonce) {
 }
 
 void server::auth(char *pkt, int pos) {
-    printf("auth sever\n");
+
     int ret;
     crypto *c=new crypto();
     uint32_t key_siz;

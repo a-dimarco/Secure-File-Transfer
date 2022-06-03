@@ -19,7 +19,7 @@ connection_manager::connection_manager(char *my_addr, long port)
     int ret;
     struct sockaddr_in addr;
     this->sckt = socket(AF_INET, SOCK_STREAM, 0);
-    //printf("ccccccccccc\n");
+    printf("Server - ON\n");
     if(sckt < 0)
     {         
         printf("Error creating the socket\n");         
