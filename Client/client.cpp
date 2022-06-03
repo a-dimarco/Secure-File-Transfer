@@ -241,12 +241,8 @@ void client::show_menu() {
     if (nameChecker(command, COMMAND)) {
         uint32_t size;
         if (strcmp(command, "!list") == 0) {
-            /*char *packet = */prepare_req_packet(&size, LIST);
-            //printf("size %d", size);
-            //cm->send_packet(packet, size);
+            prepare_req_packet(LIST);
             free(command);
-
-            printf("Waiting for the list!\n");
         } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
             char *req = crt_download_request(&size);
             cm->send_packet(req, size);
@@ -256,7 +252,6 @@ void client::show_menu() {
             free(command);
         } else if (strcmp(command, "!rename") == 0) {
             free(command);
-            //show_menu();
             rename_file();
         } else if (strcmp(command, "!delete\n") == 0) {
             free(command);
@@ -283,14 +278,16 @@ void client::show_menu() {
     }
 }
 
-/*char **/void client::prepare_req_packet(uint32_t *size, uint8_t opcode) {
+void client::prepare_req_packet(uint8_t opcode) {
 
     int pos = 0;
 
     int pt_size = sizeof(uint8_t)+sizeof(uint16_t);
-    int packet_len = pt_size+EVP_CIPHER_iv_length(EVP_aes_128_gcm())+16;
+    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    int packet_len = pt_size+iv_size+16;
     char* packet=(char*)malloc(packet_len);
-    memcpy(packet, &opcode, sizeof(uint8_t));
+
+    memcpy(packet, &opcode, sizeof(uint8_t));//opcode
     pos += sizeof(opcode);
 
     this->counter++; //Counter
@@ -300,25 +297,20 @@ void client::show_menu() {
     pos += sizeof(uint16_t);
 
     crypto *c = new crypto(); //IV
-    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
     unsigned char* iv = (unsigned char*)malloc(iv_size);
     c->create_random_iv(iv);
     memcpy(packet + pos, iv, iv_size);
     pos += iv_size;
 
-    int aad_size = sizeof(opcode) + sizeof(uint16_t); // Tag
-    //unsigned char tag[16]; 
+    int aad_size = sizeof(opcode) + sizeof(uint16_t); // Tag 
     unsigned char* tag = (unsigned char*)malloc(16);
     c->encrypt_packet((unsigned char *)packet, pt_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, NULL, tag);
     memcpy(packet+pos,tag,16);
 
-    *size = packet_len;
-
-    cm->send_packet(packet, *size);
+    cm->send_packet(packet, packet_len);
 
     free(iv);
-    
-    //return packet;
+    free(tag);
 }
 
 void client::show_list(char *pkt, int pos) {
@@ -326,8 +318,6 @@ void client::show_list(char *pkt, int pos) {
     uint16_t list_size;
 
     // Deserializzazione
-
-    //scompatta
 
     this->counter++; // Counter
     uint16_t count;
@@ -338,33 +328,32 @@ void client::show_list(char *pkt, int pos) {
         cerr << "counter errato";
     }
 
-    memcpy(&list_size, pkt + pos, sizeof(list_size)); // prelevo list_size inizializzo la variabile che dovrà contenerlo
+    memcpy(&list_size, pkt + pos, sizeof(list_size)); // list_size
     pos += sizeof(list_size);
     list_size = ntohs(list_size);
     printf("List size %d\n",list_size);
-    // char* content /*= &temp[0]*/;
 
-    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm()); // iv
     unsigned char* iv = (unsigned char*)malloc(iv_size);
     memcpy(iv, pkt + pos, iv_size);
     pos += iv_size;
 
-    crypto *c = new crypto();
+    crypto *c = new crypto(); //list
     unsigned char* pt = (unsigned char*)malloc(list_size);
     int aad_size= sizeof(uint8_t)+sizeof(uint16_t);
 
-    unsigned char* tag = (unsigned char*)malloc(16);
+    unsigned char* tag = (unsigned char*)malloc(16); //tag
     memcpy(tag, pkt + pos + list_size, 16);
 
     c->decrypt_message((unsigned char*)pkt+pos, list_size, (unsigned char*)pkt, aad_size, tag, this->shared_key, iv, iv_size, pt);
 
-    //fine scompatta
-
-
     // Fine Deserializzazione
 
     printf("Available files:\n%s", pt);
+
     free(pt);
+    free(tag);
+    free(iv);
 }
 
 

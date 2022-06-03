@@ -1,6 +1,6 @@
 #ifndef SECURE_FILE_TRANSFER_CRYPTO_H
 #define SECURE_FILE_TRANSFER_CRYPTO_H
-#pragma once
+
 #include <string>
 #include <cstring>
 #include <openssl/conf.h>

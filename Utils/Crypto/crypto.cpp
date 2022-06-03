@@ -1,6 +1,5 @@
 #include "crypto.h"
 #include <string.h>
-#pragma once
 using namespace std;
 
 unsigned char *crypto::get_key() {

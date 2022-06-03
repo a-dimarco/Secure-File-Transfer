@@ -1,6 +1,5 @@
 #include "connection_manager.h"
 #include <iostream>
-#pragma once
 using namespace std;
 
 connection_manager::connection_manager() {}
@@ -12,8 +11,6 @@ connection_manager::connection_manager(int sock)
     {         
         printf("Error creating the socket\n");         
         exit(1);    
-    }else{
-        printf("Socket creato\n");
     }
 }
 
@@ -22,12 +19,12 @@ connection_manager::connection_manager(char *my_addr, long port)
     int ret;
     struct sockaddr_in addr;
     this->sckt = socket(AF_INET, SOCK_STREAM, 0);
+    //printf("ccccccccccc\n");
     if(sckt < 0)
     {         
         printf("Error creating the socket\n");         
         exit(1);    
     }
-    printf("socket created\n");
 
     const int trueFlag = 1;
     setsockopt(this->sckt, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int)); // Tells socket to reuse the connection
@@ -35,7 +32,7 @@ connection_manager::connection_manager(char *my_addr, long port)
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
-    inet_pton(AF_INET, my_addr, &addr.sin_addr);
+    inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
     ret = bind(this->sckt, (struct sockaddr *)&addr, sizeof(addr));
     if (ret < 0)
     {
@@ -100,10 +97,10 @@ char *connection_manager::receive_packet()
     uint32_t pkt_len_n;
     size_t received = 0;
     ssize_t ret;
-    printf("Aspetto di ricevere il paccheetto\n");
+
     // Ricevo dimensione dei dati in ingresso
     ret = recv(this->sckt, &pkt_len_n, sizeof(pkt_len_n), 0);
-    printf("Checkpoint1\n");
+
     if (ret < 0)
     {
         cerr << "Error in receiving the size of the packet\n";
