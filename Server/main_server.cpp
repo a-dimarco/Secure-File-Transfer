@@ -17,9 +17,9 @@ void signal_callback_handler(int flag)
 
 void start_session(int sock)
 {
-    server *s = new server(sock);
+    server s = server(sock);
     while(true) {
-        s->handle_req();
+        s.handle_req();
     }
 }
 
@@ -35,19 +35,22 @@ int main()
     while (true)
     {
         sock = cm.accepting();
-        
+        /*
         pid_t pid = fork();
         if (pid == 0)
-        {
+        {*/
             cm.close_socket();
-            server *s = new server(sock);
+            server s = server(sock);
             while(true) {
-                s->handle_req();
+                s.handle_req();
+
             }
-            exit(0);
-        }
-        else
-            cm.close_socket(sock);
+        /*
+        exit(0);
+    }
+    else
+        cm.close_socket(sock);
+             */
         
     }
 }

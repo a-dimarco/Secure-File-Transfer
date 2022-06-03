@@ -18,7 +18,6 @@ int main()
     client *cl = new client(username);
 
     cl->send_clienthello();
-    printf("client_hello inviata\n");
     while(true) {
         cl->handle_req();
     }

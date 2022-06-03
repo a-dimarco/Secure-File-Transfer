@@ -212,6 +212,7 @@ server::~server()
 void server::handle_req()
 {
 
+
     char *pkt = cm.receive_packet();
     int pos = 0;
     uint8_t opcode;
@@ -251,7 +252,6 @@ void server::handle_req()
             
             cm.send_packet(packet, sizeof(opcode));
         }
-        handle_req();
     }
     else if (opcode == DELETE)
     {
@@ -461,28 +461,32 @@ void server::send_list(char* pkt)
     unsigned char* iv2 = (unsigned char*)malloc(iv_size2);
     memcpy(iv2, pkt + pos, iv_size2);
     pos += iv_size2;
-
-    unsigned char tag2[16];
+    unsigned char* ct_text=(unsigned char*)malloc(20);
+    memcpy(ct_text, pkt + pos, 20);
+    pos+=20;
+    unsigned char* tag2=(unsigned char*)malloc(16);
     memcpy(tag2, pkt + pos, 16);
-
     crypto *c = new crypto();
     int aad_size2= sizeof(uint8_t)+sizeof(uint16_t);
-    c->decrypt_message(NULL, 0, (unsigned char*)pkt, aad_size2, tag2, this->shared_key, iv2, iv_size2, NULL);
-
+    unsigned char* pt_text=(unsigned char*)malloc(20);
+    c->decrypt_message(ct_text, 20, (unsigned char*)pkt, aad_size2, tag2, this->shared_key, iv2, iv_size2, pt_text);
+    printf("ptext %s\n",pt_text);
+    free(tag2);
+    free(iv2);
+    free(pt_text);
+    free(ct_text);
     //fine scompatta
 
     uint8_t opcode = LIST;
     string temp = print_folder(SERVER_PATH);
-
-    char* content = (char*)malloc(temp.length() + 1);//Retrieve the list
+    int content_size=temp.length() + 1;
+    char* content = (char*)malloc(content_size);//Retrieve the list
     strcpy(content, temp.c_str());
-
-    uint16_t list_size = htons(strlen(content) + 17);
     
     pos = 0;
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    uint32_t ct_size=strlen(content)+17;
-    uint32_t packet_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+iv_size + ct_size + 16;
+    uint16_t ct_size=content_size+16;
+    int packet_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+iv_size + ct_size + 16;
     char* packet = (char*)malloc(packet_size);
 
     memcpy(packet, &opcode, sizeof(uint8_t));//Opcode
@@ -493,33 +497,29 @@ void server::send_list(char* pkt)
     uint16_t count3=htons(counter2);
     memcpy(packet + pos, &count3, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-
-    memcpy(packet + pos, &list_size, sizeof(uint16_t));//List(CipherText) Size
+    ct_size=htons(ct_size);
+    memcpy(packet + pos, &ct_size, sizeof(uint16_t));//List(CipherText) Size
     pos += sizeof(uint16_t);
-    
-    
     unsigned char* iv = (unsigned char*)malloc(EVP_CIPHER_iv_length(EVP_aes_128_gcm())); //IV
     c->create_random_iv(iv);
     memcpy(packet + pos, iv, iv_size);
     pos += iv_size;
 
-
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
-    unsigned char* ct = (unsigned char*)malloc(ct_size);
+    unsigned char* ct = (unsigned char*)malloc(ntohs(ct_size));
 
     unsigned char* tag = (unsigned char*)malloc(16); 
-    c->encrypt_packet((unsigned char *)content, strlen(content)+1, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
-    memcpy(packet+pos,ct,ct_size);
-    pos+=ct_size;
+    c->encrypt_packet((unsigned char *)content, content_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
+    memcpy(packet+pos,ct,ntohs(ct_size));
+    pos+=ntohs(ct_size);
     memcpy(packet+pos,tag,16);
-
-    cm.send_packet(packet, packet_size);
-    
     free(iv);
     free(ct);
+    free(tag);
     free(content);
-    free(iv2);
-    
+
+    cm.send_packet(packet, packet_size);
+
 }
 
 // Takes all files and saves them into a variable
@@ -879,8 +879,7 @@ void server::server_hello(unsigned char* nonce) {
     cm.send_packet(pkt,pkt_len);
     free(sign);
     free(key);
-    
-    handle_req();
+
 
 }
 
@@ -942,7 +941,6 @@ void server::auth(char *pkt, int pos) {
     BIO_free(bio);
     EVP_PKEY_free(pubkey);
     EVP_PKEY_free(my_prvkey);
-    handle_req();
     
     free(key);
     free(sign);

@@ -279,12 +279,12 @@ void client::show_menu() {
 void client::prepare_req_packet(uint8_t opcode) {
 
     int pos = 0;
-
     int pt_size = sizeof(uint8_t)+sizeof(uint16_t);
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    int packet_len = pt_size+iv_size+16;
+    int packet_len = pt_size+iv_size+16+20;
+    printf("packet_len in prepare %d\n",packet_len);
     char* packet=(char*)malloc(packet_len);
-
+    printf("dopo malloc di packet_len\n");
     memcpy(packet, &opcode, sizeof(uint8_t));//opcode
     pos += sizeof(opcode);
 
@@ -302,13 +302,17 @@ void client::prepare_req_packet(uint8_t opcode) {
 
     int aad_size = sizeof(opcode) + sizeof(uint16_t); // Tag 
     unsigned char* tag = (unsigned char*)malloc(16);
-    c.encrypt_packet((unsigned char *)packet, pt_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, NULL, tag);
+    unsigned char pt[]="PAD";
+    unsigned char* ct_text=(unsigned char*)malloc(20);
+    c.encrypt_packet(pt, 4, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct_text, tag);
+    printf("dopo encrypt\n");
+    memcpy(packet+pos,ct_text,20);
     memcpy(packet+pos,tag,16);
-
-    cm.send_packet(packet, packet_len);
-
     free(iv);
+    free(ct_text);
     free(tag);
+    printf("prima di send\n");
+    cm.send_packet(packet, packet_len);
 }
 
 void client::show_list(char *pkt, int pos) {
@@ -337,19 +341,22 @@ void client::show_list(char *pkt, int pos) {
     pos += iv_size;
 
     crypto c =crypto(); //list
+    unsigned char* ct = (unsigned char*)malloc(list_size);
+    memcpy(ct,pkt+pos,list_size);
     unsigned char* pt = (unsigned char*)malloc(list_size);
-    int aad_size= sizeof(uint8_t)+sizeof(uint16_t);
-
+    pos+=list_size;
+    int aad_size= sizeof(uint8_t)+sizeof(uint16_t)+sizeof(uint16_t);
     unsigned char* tag = (unsigned char*)malloc(16); //tag
-    memcpy(tag, pkt + pos + list_size, 16);
+    memcpy(tag, pkt + pos, 16);
 
-    c.decrypt_message((unsigned char*)pkt+pos, list_size, (unsigned char*)pkt, aad_size, tag, this->shared_key, iv, iv_size, pt);
+    c.decrypt_message(ct, list_size, (unsigned char*)pkt, aad_size, tag, this->shared_key, iv, iv_size, pt);
 
     // Fine Deserializzazione
 
     printf("Available files:\n%s", pt);
-
+    free(pkt);
     free(pt);
+    free(ct);
     free(tag);
     free(iv);
 }
