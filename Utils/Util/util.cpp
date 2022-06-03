@@ -6,7 +6,7 @@ char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter)
 
     int pos1 = 0;
     int ret;
-    crypto *c = new crypto();
+    crypto c = crypto();
     FILE *file;
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
     unsigned char start_packet[aad_size];
@@ -29,12 +29,12 @@ char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter)
     pos1 += sizeof(uint16_t);
     memcpy(start_packet + pos1, &file_size, sizeof(uint32_t));
     unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
-    c->create_random_iv(iv);
+    c.create_random_iv(iv);
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
 
     unsigned char ciphertext[file_size + 16];
     unsigned char tag[16];
-    int cipherlen = c->encrypt_message(file, file_size, start_packet, aad_size, c->get_key(), iv, iv_size, ciphertext, tag);
+    int cipherlen = c.encrypt_message(file, file_size, start_packet, aad_size, c.get_key(), iv, iv_size, ciphertext, tag);
     ret = fclose(file);
     if (ret != 0)
     {
@@ -133,7 +133,7 @@ bool file_opener(char *filename, char *username)
 
 char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counter, unsigned char* shared_key) {
 
-	crypto* c = new crypto();
+	crypto c = crypto();
 	
 	int aad_size = sizeof(uint8_t)+sizeof(uint16_t)*2;
 	int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
@@ -145,7 +145,7 @@ char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counte
 	
 	char* pkt = (char*)malloc(*size);
     unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
-	c->create_random_iv(iv);
+	c.create_random_iv(iv);
 	unsigned char* tag = (unsigned char*)malloc(16);
 	//unsigned char* ciphertext = (unsigned char*)malloc(ptext_size+16);
 	
@@ -159,7 +159,7 @@ char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16_t counte
 	pos += iv_size;
 	 
 	
-	cipherlen = c->encrypt_packet((unsigned char*)filename, strlen(filename)+1,
+	cipherlen = c.encrypt_packet((unsigned char*)filename, strlen(filename)+1,
                            (unsigned char*)pkt, aad_size, shared_key, iv, iv_size,
                            (unsigned char*)pkt+pos, tag);
         
