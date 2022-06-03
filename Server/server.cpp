@@ -222,8 +222,7 @@ void server::handle_req()
 
     if (opcode == LIST)
     {
-        send_list();
-        handle_req();
+        send_list(pkt);
     }
     else if (opcode == DOWNLOAD)
     { // IMPLEMENT
@@ -474,9 +473,36 @@ void server::store_file(char *pkt)
     printf("list sent: size %d\n %s\n", list_size, content); // TEST
 }*/
 
-void server::send_list()
+void server::send_list(char* pkt)
 {
     // PACKET FORMAT: OPCODE - COUNTER - LIST_SIZE - IV - CIPHERTEXT - TAG
+
+    //scompatta
+
+    int pos = sizeof(uint8_t);
+
+    this->counter++; // Counter
+    uint16_t count;
+    memcpy(&count, pkt + pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    count = ntohs(count);
+    if (this->counter != count) {
+        cerr << "counter errato";
+    }
+
+    int iv_size2 = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    unsigned char* iv2 = (unsigned char*)malloc(iv_size2);
+    memcpy(iv2, pkt + pos, iv_size2);
+    pos += iv_size2;
+
+    unsigned char tag2[16];
+    memcpy(tag2, pkt + pos, 16);
+
+    crypto *c = new crypto();
+    int aad_size2= sizeof(uint8_t)+sizeof(uint16_t);
+    c->decrypt_message(NULL, 0, (unsigned char*)pkt, aad_size2, tag2, this->shared_key, iv2, iv_size2, NULL);
+
+    //fine scompatta
 
     printf("start send list\n");
 
@@ -488,11 +514,11 @@ void server::send_list()
 
     printf("List:\n %s\n saved, trying to send it\n", content); // TEST
 
-    uint16_t list_size = htons(sizeof(content) + 1);
+    uint16_t list_size = htons(strlen(content) + 17);
     
-    int pos = 0;
+    pos = 0;
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    uint32_t ct_size=strlen(content);
+    uint32_t ct_size=strlen(content)+17;
     uint32_t packet_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+iv_size + ct_size + 16;
     char* packet = (char*)malloc(packet_size);
 
@@ -501,14 +527,14 @@ void server::send_list()
 
     this->counter++; //Counter
     int counter2=counter;
-    uint16_t count=htons(counter2);
-    memcpy(packet + pos, &count, sizeof(uint16_t));
+    uint16_t count3=htons(counter2);
+    memcpy(packet + pos, &count3, sizeof(uint16_t));
     pos += sizeof(uint16_t);
 
     memcpy(packet + pos, &list_size, sizeof(uint16_t));//List(CipherText) Size
     pos += sizeof(uint16_t);
     
-    crypto *c = new crypto(); //IV
+    //IV
     unsigned char* iv = (unsigned char*)malloc(EVP_CIPHER_iv_length(EVP_aes_128_gcm()));
     c->create_random_iv(iv);
     memcpy(packet + pos, iv, iv_size);
@@ -517,19 +543,21 @@ void server::send_list()
 
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
     unsigned char* ct = (unsigned char*)malloc(ct_size);
-    unsigned char tag[16]; 
-    c->encrypt_packet((unsigned char *)content, list_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
+    //unsigned char tag[16]; 
+    unsigned char* tag = (unsigned char*)malloc(16); 
+    c->encrypt_packet((unsigned char *)content, strlen(content)+1, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
     memcpy(packet+pos,ct,ct_size);
     pos+=ct_size;
     memcpy(packet+pos,tag,16);
 
     cm->send_packet(packet, packet_size);
 
-    printf("list sent: size %d\n %s\n", list_size, content); // TEST
+    printf("list sent: size %d\n %s\n", ntohs(list_size), content); // TEST
     
     free(iv);
     free(ct);
     free(content);
+    free(iv2);
     
 }
 
@@ -543,6 +571,7 @@ string server::print_folder(char *path)
     string file_list;
     string file_path = path;
     file_path += logged_user;
+    file_path += "/file";
     path = &file_path[0];
 
     printf("PATH: %s\n", path); // TEST
@@ -878,7 +907,7 @@ void server::server_hello(unsigned char* nonce) {
     memcpy(pkt+pos,&cert_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
     uint32_t key_size_s=htonl(key_size);
-    memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));g
+    memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
     uint32_t sgnt_size_s=htonl(sgnt_size);
     memcpy(pkt+pos,&sgnt_size_s,sizeof(uint32_t));

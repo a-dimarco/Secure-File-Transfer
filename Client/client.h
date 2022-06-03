@@ -60,9 +60,9 @@ private:
     unsigned char* shared_key;
     size_t key_size;
     char* crt_pkt_hello();
-    static char* prepare_req_packet(uint32_t *size, uint8_t opcode);
+    /*char* */ void prepare_req_packet(uint32_t *size, uint8_t opcode);
     char* prepare_filename_packet(uint8_t opcode, uint32_t *size, char* file_name, char* new_name);
-    static void show_list(char *pkt, int pos);
+    void show_list(char *pkt, int pos);
     void create_downloaded_file(char* pkt);
     void handle_ack(char *pkt,uint8_t opcode);
 };

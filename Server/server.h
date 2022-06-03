@@ -10,7 +10,7 @@ class server
 public:
     server(int sock);
 
-    void send_list();
+    void send_list(char* pkt);
 
     // invia pacchetto generico
     void send_packet(const char *pkt);
