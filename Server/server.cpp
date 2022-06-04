@@ -205,17 +205,19 @@ void server::handle_req()
         {
             unsigned char *packet;
             uint32_t size;
-            packet = prepare_renameAck_pkt(&size, RENAME_ACK);
-            
-            cm.send_packet(packet, sizeof(opcode));
+            char msg[] = "Rename - OK\n";
+            this->counter++;
+            packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);        
+            cm.send_packet(packet, size);
         }
         else //Rename failure
         {
             unsigned char *packet;
             uint32_t size;
-            packet = prepare_renameAck_pkt(&size, RENAME_NACK);
-            
-            cm.send_packet(packet, sizeof(opcode));
+            char msg[] = "Rename - FAIL\n";
+            this->counter++;
+            packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);        
+            cm.send_packet(packet, size);
         }
     }
     else if (opcode == DELETE)
@@ -597,198 +599,6 @@ int server::get_socket() {
 //Deserializes a rename packet and rename
 //the file, if it exists
 
-/*bool server::rename_file(unsigned char* pkt, int pos) {
-
-    //RECEIVED PACKET FORMAT: OPCODE - COUNTER - OLD_NAME_SIZE - NEW_NAME_SIZE - IV - OLDNAME & NEWNAME - TAG
-
-    uint16_t new_size;
-    uint16_t old_size;
-
-    // Deserializzazione
-
-    memcpy(&old_size, pkt + pos, sizeof(old_size)); // Old_size
-    pos += sizeof(old_size);
-    old_size = ntohs(old_size);
-    char filename[old_size];
-
-    memcpy(&new_size, pkt + pos, sizeof(new_size)); // New_size
-    pos += sizeof(new_size);
-    new_size = ntohs(new_size);
-    char newfilename[new_size];
-
-    memcpy(&filename, pkt + pos, old_size); // Old name
-    pos += old_size;
-
-    memcpy(&newfilename, pkt + pos, new_size); // New name
-
-    // Fine Deserializzazione
-
-    if (nameChecker(filename, FILENAME)) //Check if username format is correct
-    {
-        if (file_opener(filename, logged_user)) //Check if the file exists
-        {
-            if(file_renamer(newfilename, filename))
-            {
-                printf("Rename - OK");
-                return true;
-            }
-
-            else
-            {
-                printf("Rename - Error");
-                return false;
-            }
-
-        }
-        else 
-        {
-            printf("file %s - Not Found.\n", filename);
-            char *packet;
-            uint8_t code = RENAME_NACK;
-            memcpy(packet, &code, sizeof(code));
-            cm->send_packet(packet, sizeof(code));
-        }
-    } 
-    else 
-    {
-        printf("filename %s - Error. Format not valid\n", filename);
-        char *packet;
-        uint8_t code = RENAME_NACK;
-        memcpy(packet, &code, sizeof(code));
-        cm->send_packet(packet, sizeof(code));
-    }
-}*/
-
-bool server::rename_file(unsigned char* pkt, int pos) {
-
-    //RECEIVED PACKET FORMAT: OPCODE - COUNTER - CIPHERTEXT_SIZE - OLD_NAME_SIZE - NEW_NAME_SIZE - IV - OLDNAME & NEWNAME - TAG
-
-    uint16_t new_size;
-    uint16_t old_size;
-    uint16_t cipher_size;
-
-    //int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm()); TEST
-
-    // Deserialization
-
-    this->counter++; // Counter
-    uint16_t count;
-    memcpy(&count, pkt + pos, sizeof(uint16_t));
-    pos += sizeof(uint16_t);
-    count = ntohs(count);
-    if (this->counter != count) {
-        cerr << "counter errato";
-    }
-
-    memcpy(&cipher_size, pkt + pos, sizeof(cipher_size)); // Cipher_size
-    pos += sizeof(cipher_size);
-    old_size = ntohs(cipher_size);
-    unsigned char* ct = (unsigned char*)malloc(cipher_size);
-
-    memcpy(&old_size, pkt + pos, sizeof(old_size)); // Old_size
-    pos += sizeof(old_size);
-    old_size = ntohs(old_size);
-    char* filename = (char*)malloc(old_size);
-
-    memcpy(&new_size, pkt + pos, sizeof(new_size)); // New_size
-    pos += sizeof(new_size);
-    new_size = ntohs(new_size);
-    char* newfilename = (char*)malloc(new_size);
-
-    crypto *c;  // IV
-    c = new crypto();
-    //unsigned char* iv = (unsigned char*)malloc(iv_size);TEST
-    unsigned char iv[IVSIZE];
-    memcpy(iv, pkt + pos, IVSIZE);
-    pos += IVSIZE;
-
-    memcpy(ct, pkt + pos, cipher_size);
-    pos += cipher_size;
-    unsigned char tag[TAGSIZE];
-    memcpy(tag, pkt + pos, TAGSIZE);
-    int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t);
-    unsigned char* pt = (unsigned char*)malloc(cipher_size);
-    unsigned char* aad = (unsigned char*)malloc(aad_size);
-    memcpy(aad, pkt, aad_size);
-    c->decrypt_message(ct, cipher_size, aad, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
-    printf("%s\n", pt);
-
-    pos = 0;
-
-    memcpy(filename, pt, old_size); // Old name
-    pos += old_size;
-
-    memcpy(newfilename, pt+pos, new_size); // New name
-
-    // End Deserialization
-
-    if (nameChecker(filename, FILENAME)) //Check if username format is correct
-    {
-        if (file_opener(filename, logged_user, this->file_name)) //Check if the file exists
-        {
-            if(file_renamer(newfilename, filename))
-            {
-                printf("Rename - OK");
-                return true;
-            }
-
-            else
-            {
-                printf("Rename - Error");
-                return false;
-            }
-
-        }
-        else 
-        {
-            printf("file %s - Not Found.\n", filename);
-            unsigned char* packet;
-            uint8_t code = RENAME_NACK;
-            memcpy(packet, &code, sizeof(code));
-            cm.send_packet(packet, sizeof(code));
-        }
-    } 
-    else 
-    {
-        printf("filename %s - Error. Format not valid\n", filename);
-        unsigned char *packet;
-        uint8_t code = RENAME_NACK;
-        memcpy(packet, &code, sizeof(code));
-        cm.send_packet(packet, sizeof(code));
-    }
-    free(ct);
-    
-    free(newfilename);
-    free(filename);
-    free(aad);
-}
-
-bool server::file_renamer(char* new_name, char* old_name){
-
-    string newnamepath = SERVER_PATH; //    ../server_file/client/
-    newnamepath += logged_user; //          ../server_file/client/username
-    newnamepath += "/"; //                  ../server_file/client/username/
-    newnamepath += new_name; //             ../server_file/client/username/newname.extension
-    
-    string oldnamepath = SERVER_PATH; //    ../server_file/client/
-    oldnamepath += logged_user; //          ../server_file/client/username
-    oldnamepath += "/"; //                  ../server_file/client/username/
-    oldnamepath += old_name; //             ../server_file/client/username/oldname.extension
-
-    old_name = &oldnamepath[0];
-    new_name = &newnamepath[0];
-	
-	if (rename(old_name, new_name) != 0)
-    {
-        return false;
-    }
-	else
-    {
-        return true;
-    }
-		
-}
-
 void server::server_hello(unsigned char* nonce) {
 
     uint8_t opcode=SHELLO_OPCODE;
@@ -960,40 +770,164 @@ void server::auth(unsigned char* pkt, int pos) {
     free(to_verify);
 }
 
-//Serializes a rename ACK-NACK packet
-
-unsigned char* server::prepare_renameAck_pkt(uint32_t *size, uint8_t opcode){
-
-    // PACKET FORMAT: OPCODE - COUNTER (- IV - TAG)
-
-    int pos = 0;
-    //int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)/*+iv_size*/;
-    //uint32_t ct_size=msg_size;
-    
-    unsigned char* packet=(unsigned char *)malloc(pkt_len);
-    *size = pkt_len;
-    
-    memcpy(packet, &opcode, sizeof(opcode)); //OPCode
-    pos += sizeof(opcode);
-
-    this->counter++; //Counter
-    int counter2=counter;
-    uint16_t count=htons(counter2);
-    memcpy(packet + pos, &count, sizeof(uint16_t));
-    pos += sizeof(uint16_t);
-
-    /*crypto *c = new crypto(); //IV
-    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
-    c->create_random_iv(iv);
-    memcpy(packet + pos, iv, iv_size);*/
-
-    return packet;
-
-}
 unsigned char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size){
     printf("ciao");
     unsigned char* ciao;
     return ciao;
 }
 //~Andrea
+
+//Deserializes a rename packet and rename
+//the file, if it exists
+
+bool server::rename_file(unsigned char* pkt, int pos) {
+
+    //PACKET FORMAT  OPCODE - COUNTER - OLD_NAME_SIZE - NEW_NAME_SIZE - CTSIZE - IV - OLDNAME & NEWNAME - TAG
+
+    uint16_t new_size;
+    uint16_t old_size;
+    uint32_t cipher_size;
+
+    // Deserialization
+
+    this->counter++; // Counter
+    uint16_t count;
+    memcpy(&count, pkt + pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    count = ntohs(count);
+    if (this->counter != count) {
+        cerr << "counter errato";
+    }
+
+    memcpy(&old_size, pkt + pos, sizeof(old_size)); // Old_size
+    pos += sizeof(old_size);
+    old_size = ntohs(old_size);
+    int old_sizer = old_size+1;
+    char* filename = (char*)malloc(old_sizer);
+
+    memcpy(&new_size, pkt + pos, sizeof(new_size)); // New_size
+    pos += sizeof(new_size);
+    new_size = ntohs(new_size);
+    int new_sizer = new_size + 1;
+    char* newfilename = (char*)malloc(new_sizer);
+
+    memcpy(&cipher_size, pkt + pos, sizeof(cipher_size)); // Cipher_size
+    pos += sizeof(cipher_size);
+    cipher_size = ntohl(cipher_size);
+    unsigned char* ct = (unsigned char*)malloc(cipher_size);
+
+    crypto c = crypto(); // IV
+    unsigned char iv[IVSIZE];
+    memcpy(iv, pkt + pos, IVSIZE);
+    pos += IVSIZE;
+
+    memcpy(ct, pkt + pos, cipher_size); //CT & TAG
+    pos += cipher_size;
+    unsigned char tag[TAGSIZE];
+    memcpy(tag, pkt + pos, TAGSIZE);
+    int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t);
+    unsigned char* pt = (unsigned char*)malloc(cipher_size);
+    unsigned char* aad = (unsigned char*)malloc(aad_size);
+    memcpy(aad, pkt, aad_size);
+    c.decrypt_message(ct, cipher_size, aad, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
+
+    string temp = (char*)pt;
+    string old = temp.substr(0, old_size);
+    string news = temp.substr(old_size, new_size);
+
+    strcpy(filename ,old.c_str()); // Old name
+    strcpy(newfilename, news.c_str()); // New name
+
+    // End Deserialization
+
+    if (nameChecker(filename, FILENAME)) //Check if username format is correct
+    {
+        if (file_opener(filename, logged_user)) //Check if the file exists
+        {
+            bool b = file_renamer(newfilename, filename);
+            if(b)
+            {
+                printf("Rename - OK\n");
+                free(ct);
+                free(newfilename);
+                free(filename);
+                free(aad);
+                free(pt);
+                return true;
+            }
+
+            else
+            {
+                printf("Rename - Error\n");
+                free(ct);
+                free(newfilename);
+                free(filename);
+                free(aad);
+                free(pt);
+                return false;
+            }
+
+        }
+        else 
+        {
+            printf("file %s - Not Found.\n", filename);
+            /*unsigned char* packet;
+            uint8_t code = RENAME_NACK;
+            memcpy(packet, &code, sizeof(code));
+            cm.send_packet(packet, sizeof(code));*/
+            free(ct);
+            free(newfilename);
+            free(filename);
+            free(aad);
+            free(pt);
+            return false;
+        }
+    } 
+    else 
+    {
+        printf("filename %s - Error. Format not valid\n", filename);
+        /*unsigned char *packet;
+        uint8_t code = RENAME_NACK;
+        memcpy(packet, &code, sizeof(code));
+        cm.send_packet(packet, sizeof(code));*/
+        free(ct);
+        free(newfilename);
+        free(filename);
+        free(aad);
+        free(pt);
+
+        return false;
+    }
+
+    /*free(ct);
+    free(newfilename);
+    free(filename);
+    free(aad);
+    free(pt);*/
+}
+
+bool server::file_renamer(char* new_name, char* old_name){
+
+    string newnamepath = SERVER_PATH; //    ../server_file/client/
+    newnamepath += logged_user; //          ../server_file/client/username
+    newnamepath += "/file/"; //             ../server_file/client/username/file/
+    newnamepath += new_name; //             ../server_file/client/username/file/newname.extension
+    
+    string oldnamepath = SERVER_PATH; //    ../server_file/client/
+    oldnamepath += logged_user; //          ../server_file/client/username
+    oldnamepath += "/file/"; //             ../server_file/client/username/file/
+    oldnamepath += old_name; //             ../server_file/client/username/file/oldname.extension
+
+    old_name = &oldnamepath[0];
+    new_name = &newnamepath[0];
+	
+	if (rename(old_name, new_name) != 0)
+    {
+        return false;
+    }
+	else
+    {
+        return true;
+    }
+		
+}
