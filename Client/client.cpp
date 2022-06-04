@@ -63,9 +63,9 @@ unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
     return pkt;
 }
 
-unsigned char *client::crt_pkt_upload(char *filename, int *size) {
+unsigned char *client::crt_pkt_upload(char *filename, uint32_t *size) {
 
-    unsigned char *pkt = crt_file_pkt(filename, size, UPLOAD, this->counter);
+    unsigned char *pkt = crt_file_pkt(filename, reinterpret_cast<int *>(size), UPLOAD, this->counter);
     this->counter++;
     return pkt;
     // static char pkt[23];
@@ -247,24 +247,36 @@ void client::show_menu() {
             cm.send_packet(req, size);
             free(command);
 
-        } else if (strcmp(command, "!upload") == 0) { // IMPLEMENT
+        } else if (strcmp(command, "!upload") == 0) {
+            cout << "Please, type your file: ";
+            char file[30];
+            fgets(file, 11, stdin);
+            file[strcspn(file,"\n")] = 0;
+            nameChecker(file,FILENAME);
+            uint32_t size;
+            unsigned char* pkt=crt_pkt_upload(file,&size);
+            cm.send_packet(pkt,size);
             free(command);
         } else if (strcmp(command, "!rename") == 0) {
             free(command);
             rename_file();
         } else if (strcmp(command, "!delete\n") == 0) {
+
             free(command);
-            /*
-            char namefile[] = "a.txt";
-            char *pkt = crt_pkt_remove(namefile, sizeof(namefile), &size);
-            this->cm.send_packet(pkt, size);
-             */
+            cout << "Please, type your file: ";
+            char file[30];
+            fgets(file, 11, stdin);
+            file[strcspn(file,"\n")] = 0;
+            nameChecker(file,FILENAME);
+            uint32_t size;
+            unsigned char* pkt= crt_request_pkt(file,&size,DELETE,this->counter,this->shared_key);
+
 
         } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
             free(command);
-            /*char *packet = prepare_req_packet(&size, LOGOUT);
-            cm->send_packet(packet, size);*/
-
+            uint32_t size;
+            char msg[]="Logout";
+            unsigned char *packet = prepare_msg_packet(&size,msg,sizeof(msg),LOGOUT,this->counter,this->shared_key);
             printf("Bye!\n");
             cm.close_socket();
             exit(0);

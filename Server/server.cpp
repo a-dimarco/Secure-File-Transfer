@@ -207,11 +207,11 @@ void server::handle_req()
     }
     else if (opcode == DELETE)
     {
-
+        check_file(pkt,DELETE);
     }
     else if (opcode == LOGOUT)
     { // IMPLEMENT
-        printf("Received logout request. Closing connections.\n Bye!\n");
+        printf("Received logout request. Closing connection.\n Bye!\n");
         cm.close_socket();
         exit(0);
     }

@@ -31,7 +31,7 @@ public:
 
     unsigned char *crt_pkt_rename(char *namefile, char *ext, char *new_name, char *new_ext);
 
-    unsigned char *crt_pkt_upload(char *file, int *size);
+    unsigned char *crt_pkt_upload(char *file, uint32_t *size);
 
     unsigned char *crt_pkt_remove(char *namefile, int name_size, int *size);
 
