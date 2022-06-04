@@ -345,9 +345,9 @@ unsigned char * client::prepare_list_req(uint32_t* size){
     crypto *c;
     c = new crypto(); //IV
     unsigned char iv[IVSIZE];
-    RAND_poll();
-    RAND_bytes(iv, IVSIZE);
-    //c->create_random_iv(iv);
+    /*RAND_poll();
+    RAND_bytes(iv, IVSIZE);*/
+    c->create_random_iv(iv);
     memcpy(packet + pos, iv, IVSIZE);
     pos += IVSIZE;
 
