@@ -223,7 +223,19 @@ void server::handle_req()
 
     if (opcode == LIST)
     {
+<<<<<<< Updated upstream
         send_list(pkt);
+=======
+        handle_list(pkt);
+        uint32_t size;
+        this->counter++;
+        string temp = print_folder(SERVER_PATH);
+        int msg_size=temp.length() + 1;
+        char msg[msg_size];//Retrieve the list
+        strcpy(msg, temp.c_str());
+        unsigned char* pkto= prepare_msg_packet(&size,msg,msg_size,LIST,this->counter,this->shared_key);
+        this->cm.send_packet(pkto,size);
+>>>>>>> Stashed changes
     }
     else if (opcode == DOWNLOAD)
     { // IMPLEMENT
@@ -304,7 +316,6 @@ void server::client_hello_handler(char *pkt, int pos)
 
 
     server_hello(nonce);
-    free(nonce);
 }
 
 //Prepare Generic Ack Packet
@@ -439,8 +450,48 @@ void server::store_file(char *pkt)
 }
 
 //Prepare list packet and sends it
+<<<<<<< Updated upstream
 
 void server::send_list(char* pkt)
+=======
+void server::handle_list(unsigned char* pkt){
+    uint8_t opcod=LIST;
+    //int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
+    int pos = sizeof(opcod);
+    this->counter++;
+    uint16_t count;
+    memcpy(&count, pkt + pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    count = ntohs(count);
+    if (this->counter != count) {
+        cerr << "counter errato";
+    }
+    uint16_t size_m;
+    memcpy(&size_m, pkt + pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    size_m = ntohs(size_m);
+    crypto *c;
+    c = new crypto();
+    unsigned char iv[IVSIZE];
+    memcpy(iv, pkt + pos, IVSIZE);
+    pos += IVSIZE;
+    unsigned char* ct=(unsigned char*)malloc(size_m);
+    memcpy(ct, pkt + pos, size_m);
+    pos += size_m;
+    unsigned char tag[TAGSIZE];
+    memcpy(tag, pkt + pos, TAGSIZE);
+    int aad_size = sizeof(opcod) + sizeof(uint16_t) + sizeof(uint16_t);
+    unsigned char* pt=(unsigned char*)malloc(size_m);
+    pos = 0;
+    unsigned char* aad=(unsigned char*)malloc(aad_size);
+    memcpy(aad, pkt, aad_size);
+    c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
+    free(aad);
+    free(ct);
+    free(pt);
+}
+unsigned char *server::prepare_list_packet(int *size)
+>>>>>>> Stashed changes
 {
     // PACKET FORMAT: OPCODE - COUNTER - LIST_SIZE - IV - CIPHERTEXT - TAG
 
@@ -519,6 +570,53 @@ void server::send_list(char* pkt)
     free(content);
 
     cm.send_packet(packet, packet_size);
+<<<<<<< Updated upstream
+=======
+    */
+    uint8_t opcode = LIST;
+    string temp = print_folder(SERVER_PATH);
+    int msg_size=temp.length() + 1;
+    char* msg = (char*)malloc(msg_size);//Retrieve the list
+    strcpy(msg, temp.c_str());
+    int pos = 0;
+    //int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm()); TEST
+    uint32_t ct_size=msg_size;
+    int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+IVSIZE + ct_size + 16;
+    unsigned char* packet=(unsigned char *)malloc(pkt_len);
+    *size = pkt_len;
+    memcpy(packet, &opcode, sizeof(opcode)); //OPCode
+    pos += sizeof(opcode);
+
+
+    this->counter++; //Counter
+    int counter2=counter;
+    uint16_t count=htons(counter2);
+    memcpy(packet + pos, &count, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+
+
+    uint16_t size_m = htons(ct_size); //CipherText Size
+    memcpy(packet + pos, &size_m, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+
+
+    crypto *c = new crypto(); //IV
+    unsigned char iv[IVSIZE];
+    c->create_random_iv(iv);
+    memcpy(packet + pos, iv, IVSIZE);
+    pos += IVSIZE;
+
+
+    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
+    unsigned char ct[ct_size];
+    unsigned char tag[TAGSIZE];
+    c->encrypt_packet((unsigned char *)msg, msg_size, (unsigned char *)packet, aad_size, this->shared_key, iv, IVSIZE, ct, tag);
+    memcpy(packet+pos,ct,ct_size);
+    pos+=ct_size;
+    memcpy(packet+pos,tag,TAGSIZE);
+
+    return packet;
+>>>>>>> Stashed changes
 
 }
 
@@ -877,6 +975,10 @@ void server::server_hello(unsigned char* nonce) {
     pos+=key_size;
     memcpy(pkt+pos,sign,ntohl(sgnt_size_s));
     cm.send_packet(pkt,pkt_len);
+<<<<<<< Updated upstream
+=======
+    free(tosign);
+>>>>>>> Stashed changes
     free(sign);
     free(key);
 
@@ -978,5 +1080,13 @@ char* server::prepare_renameAck_pkt(uint32_t *size, uint8_t opcode){
     return packet;
 
 }
+<<<<<<< Updated upstream
 
+=======
+unsigned char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size){
+    printf("ciao");
+    unsigned char* ciao;
+    return ciao;
+}
+>>>>>>> Stashed changes
 //~Andrea

@@ -234,12 +234,17 @@ void client::show_menu() {
     fgets(command, 30, stdin);
     command[strcspn(command, "\n")] = 0;
 
-    printf("command : %s \n", command);
-
     if (nameChecker(command, COMMAND)) {
         uint32_t size;
         if (strcmp(command, "!list") == 0) {
+<<<<<<< Updated upstream
             prepare_req_packet(LIST);
+=======
+            char msg[]="PAD";
+            this->counter++;
+            unsigned char* pkto= prepare_msg_packet(&size,msg,sizeof(msg),LIST,counter,this->shared_key);
+            this->cm.send_packet(pkto,size);
+>>>>>>> Stashed changes
             free(command);
         } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
             char *req = crt_download_request(&size);
@@ -314,6 +319,52 @@ void client::prepare_req_packet(uint8_t opcode) {
     printf("prima di send\n");
     cm.send_packet(packet, packet_len);
 }
+<<<<<<< Updated upstream
+=======
+*/
+unsigned char * client::prepare_list_req(uint32_t* size){
+    // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG)
+    char msg[]="PAD";
+    int msg_size=sizeof(msg);
+    int pos = 0;
+    uint8_t opcode = LIST;
+    uint32_t pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+IVSIZE + msg_size+16 + TAGSIZE;
+    auto* packet=(unsigned char *)malloc(pkt_len);
+    *size = pkt_len;
+    memcpy(packet, &opcode, sizeof(opcode)); //OPCode
+    pos += sizeof(opcode);
+
+    this->counter++; //Counter
+    int counter2=counter;
+    uint16_t count=htons(counter2);
+    memcpy(packet + pos, &count, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+
+
+    uint16_t size_m = htons(msg_size+16); //CipherText Size
+    memcpy(packet + pos, &size_m, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+
+
+    crypto *c;
+    c = new crypto(); //IV
+    unsigned char iv[IVSIZE];
+    RAND_poll();
+    RAND_bytes(iv, IVSIZE);
+    //c->create_random_iv(iv);
+    memcpy(packet + pos, iv, IVSIZE);
+    pos += IVSIZE;
+
+
+    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
+    int ct_size=ntohs(size_m);
+    auto* ct = (unsigned char*)malloc(ct_size);
+    unsigned char tag[TAGSIZE];
+    c->encrypt_packet((unsigned char *)msg, ct_size-16, (unsigned char *)packet, aad_size, this->shared_key, iv, IVSIZE, ct, tag);
+    memcpy(packet+pos,ct,ct_size);
+    pos+=ct_size;
+    memcpy(packet+pos,tag,16);
+>>>>>>> Stashed changes
 
 void client::show_list(char *pkt, int pos) {
 
@@ -333,7 +384,6 @@ void client::show_list(char *pkt, int pos) {
     memcpy(&list_size, pkt + pos, sizeof(list_size)); // list_size
     pos += sizeof(list_size);
     list_size = ntohs(list_size);
-    printf("List size %d\n",list_size);
 
     int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm()); // iv
     unsigned char* iv = (unsigned char*)malloc(iv_size);
@@ -353,7 +403,7 @@ void client::show_list(char *pkt, int pos) {
 
     // Fine Deserializzazione
 
-    printf("Available files:\n%s", pt);
+    printf("\nAvailable files:\n%s", pt);
     free(pkt);
     free(pt);
     free(ct);
@@ -504,7 +554,7 @@ void client::create_downloaded_file(char *pkt) {
         printf("Errore nella fwrite\n");
         exit(-1);
     }
-    ret = fclose(file);
+    fclose(file);
 
 #pragma optimize("", off);
     memset(ptext, 0, h_size);
@@ -587,7 +637,10 @@ char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, char *file
     memcpy(pkt + pos, new_name, strlen(new_name) + 1);//new_name
 
     *size = sizeof(pkt);
+<<<<<<< Updated upstream
     printf("request packet codice:%d ha size %d", opcode, size);
+=======
+>>>>>>> Stashed changes
 
     return pkt;
 }

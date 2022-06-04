@@ -10,7 +10,12 @@ class server
 public:
     server(int sock);
 
+<<<<<<< Updated upstream
     void send_list(char* pkt);
+=======
+    unsigned char * prepare_list_packet(int *size);
+    void handle_list(unsigned char *pkt);
+>>>>>>> Stashed changes
 
     // invia pacchetto generico
     void send_packet(const char *pkt);
@@ -49,17 +54,17 @@ private:
     connection_manager cm;
     unsigned char *shared_key;
     char *file_name;
-    void check_file(char *pkt, uint8_t opcode);
+    void check_file(unsigned char *pkt, uint8_t opcode);
     EVP_PKEY *my_prvkey;
     char *logged_user; // TEST
     size_t key_size;
-    void auth(char *pkt, int pos);
-    void client_hello_handler(char *pkt, int pos);
+    void auth(unsigned char *pkt, int pos);
+    void client_hello_handler(unsigned char *pkt, int pos);
 
-    char *prepare_ack_packet(uint32_t *size, char *msg, int msg_size);
-    static char *prepare_ack_packet(uint32_t *size);
+    unsigned char *prepare_ack_packet(uint32_t *size, char *msg, int msg_size);
+    unsigned char *prepare_ack_packet(uint32_t *size);
 
-    char *crt_pkt_download(char *file, int *size);
+    unsigned char *crt_pkt_download(char *file, int *size);
 
     void store_file(char *pkt, uint8_t opcode);
 
@@ -67,7 +72,7 @@ private:
 
     bool file_renamer(char* new_name, char* old_name);
 
-    void store_file(char *pkt);
+    void store_file(unsigned char *pkt);
 };
 
 #endif // SECURE_FILE_TRANSFER_SERVER_H

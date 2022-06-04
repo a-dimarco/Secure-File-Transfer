@@ -1,7 +1,53 @@
 #include "util.h"
 using namespace std;
+<<<<<<< Updated upstream
 
 char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter)
+=======
+unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int counter2, unsigned char* shared_key)
+{
+    // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG)
+
+    int pos = 0;
+    uint16_t ct_size=msg_size+16;
+    int pkt_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t)+12 + ct_size + 16;
+    unsigned char* packet=(unsigned char *)malloc(pkt_len);
+    *size = pkt_len;
+
+    memcpy(packet, &opcode, sizeof(opcode)); //OPCode
+    pos += sizeof(opcode);
+
+    uint16_t count=htons(counter2);
+    memcpy(packet + pos, &count, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+
+    ct_size = htons(ct_size); //CipherText Size
+    memcpy(packet + pos, &ct_size, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    ct_size=ntohs(ct_size);
+    int ret;
+    crypto *c = new crypto(); //IV
+    unsigned char iv[12];
+    ret=sodium_init();
+    if(ret<0){
+        cerr << "error";
+    }
+    randombytes_buf(iv, 12);
+    memcpy(packet + pos, iv, 12);
+    pos += 12;
+
+
+    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
+    unsigned char ct[ct_size];
+    unsigned char tag[16];
+    c->encrypt_packet((unsigned char *)msg, msg_size, (unsigned char *)packet, aad_size, shared_key, iv, 12, ct, tag);
+    memcpy(packet+pos,ct,ct_size);
+    pos+=ct_size;
+    memcpy(packet+pos,tag,16);
+    return packet;
+}
+unsigned char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter)
+>>>>>>> Stashed changes
 {
 
     int pos1 = 0;

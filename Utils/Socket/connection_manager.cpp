@@ -106,7 +106,6 @@ char *connection_manager::receive_packet()
         cerr << "Error in receiving the size of the packet\n";
         exit(1);
     }
-    printf("size prima di conversione %d\n",pkt_len_n);
     pkt_len = ntohl(pkt_len_n);
     printf("ho ricevuto la size: %d\n", pkt_len);
     /*
@@ -135,7 +134,7 @@ char *connection_manager::receive_packet()
         received += ret;
         //printf("ho ricevuto %zu bytes\n", received);
     }
-    // printf("ho ricevuto tutto il pacchetto\n");
+    printf("ho ricevuto tutto il pacchetto %zu bytes\n", received);
 
     /*
         //Deserializzazione
@@ -170,7 +169,6 @@ void connection_manager::send_packet(char *packet, uint32_t pkt_len)
 {
     size_t sent = 0;
     ssize_t ret;
-    printf("packet len: %d\n",pkt_len);
     pkt_len = htonl(pkt_len);
     ret = send(this->sckt, &pkt_len, sizeof(pkt_len), 0);
     if (ret < 0)
