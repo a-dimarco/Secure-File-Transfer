@@ -45,30 +45,27 @@ public:
 
     EVP_PKEY *dh_keygen(); // genera coppia di chiavi dh
 
-
-    void serialize_dh_pubkey(EVP_PKEY *dh_key, char* pubkey); // genera public key - edo
+    void serialize_dh_pubkey(EVP_PKEY *dh_key, char *pubkey); // genera public key - edo
     EVP_PKEY *deserialize_dh_pubkey(unsigned char *dh_key, long size);
-    unsigned char *signn(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, unsigned int* sgnt_size);
+    unsigned char *signn(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, unsigned int *sgnt_size);
     unsigned char *dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, size_t *size); // edo
 
     bool
     verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned char *clear_buf, long int clear_size,
-                EVP_PKEY* pk); // lore
+                EVP_PKEY *pk); // lore
 
     bool verify_cert(X509 *cert); // lore
 
     unsigned char *get_key();
 
-    void create_random_iv(unsigned char* iv);
+    void create_random_iv(unsigned char *iv);
 
-    //unsigned char *create_nonce();
-    void create_nonce(unsigned char * p);
+    // unsigned char *create_nonce();
+    void create_nonce(unsigned char *p);
     // EVP_PKEY *extract_pubkey(X509_STORE *cert);//lore
 
 private:
-    void handleError(char *s); // lore
     unsigned char *shared_key; // free it when the session is finished
-
 };
 
 #endif

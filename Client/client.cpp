@@ -1,4 +1,5 @@
 #include "client.h"
+#include <cstdlib>
 #include <openssl/rand.h>
 
 using namespace std;
@@ -12,20 +13,17 @@ client::client(char *username) {
     this->user = new char[10];
     // this->username = username;
     memcpy((void *) this->user, (void *) username, sizeof(username));
-    /*int seed=atoi(username);
-    srand(seed);
+    //int seed=atoi(username);
+    srand(time(nullptr));
     long std_port=rand()%6000+43151;
-    this->cm=new connection_manager(addr,std_port);*/
-
-    this->cm =connection_manager(addr, 8888);
-
+    printf("porta: %li\n",std_port);
+    this->cm =connection_manager(addr, std_port);
     this->cm.connection(addr, dest_port);
     this->counter = 0;
 }
 
 void client::send_clienthello() {
     crypto c =crypto();
-
     nonce=(unsigned char*)malloc(NONCESIZE);
     c.create_nonce(nonce);
     unsigned char *pkt = this->crt_pkt_hello();
@@ -91,12 +89,12 @@ unsigned char *client::crt_pkt_upload(char *filename, uint32_t *size) {
      pos1 += sizeof(uint16_t);
      memcpy(start_packet + pos1, &file_size, sizeof(uint32_t));
 
-     unsigned char* iv = c->create_random_iv();
+     unsigned char* iv = c.create_random_iv();
      int IVSIZE = IVSIZE;
 
      unsigned char ciphertext[file_size+16];
      unsigned char tag[16];
-     int cipherlen = c->encrypt_message(file,file_size,start_packet,aad_size,c->get_key(), iv, IVSIZE, ciphertext,tag);
+     int cipherlen = c.encrypt_message(file,file_size,start_packet,aad_size,c.get_key(), iv, IVSIZE, ciphertext,tag);
      ret = fclose(file);
      if (ret != 0) {
          printf("Errore\n");
@@ -126,7 +124,7 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     crypto c = crypto();
     EVP_PKEY *my_prvkey = c.dh_keygen();
     uint32_t key_siz;
-    //c->serialize_dh_pubkey(this->my_prvkey,key);
+    //c.serialize_dh_pubkey(this->my_prvkey,key);
     BIO *bio = BIO_new(BIO_s_mem());
     int ret = PEM_write_bio_PUBKEY(bio, my_prvkey);
     if (ret == 0) {
@@ -148,7 +146,7 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     uint16_t nonce_size = NONCESIZE;
     memcpy(tosign + pos, nounce, nonce_size);
     unsigned int sgnt_size;
-    //unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
+    //unsigned char* sign=c.signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
     unsigned char *sign = c.signn(tosign, sign_size, "./client_file/Alice/alice_privkey.pem", &sgnt_size);
     uint8_t opcode = AUTH;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint32_t) * 2 + key_siz + sgnt_size;
@@ -269,14 +267,16 @@ void client::show_menu() {
             file[strcspn(file,"\n")] = 0;
             nameChecker(file,FILENAME);
             uint32_t size;
-            unsigned char* pkt= crt_request_pkt(file,&size,DELETE,this->counter,this->shared_key);
+            //unsigned char* pkt= crt_request_pkt(file,&size,DELETE,this->counter,this->shared_key);
 
 
         } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
             free(command);
             uint32_t size;
             char msg[]="Logout";
+            this->counter++;
             unsigned char *packet = prepare_msg_packet(&size,msg,sizeof(msg),LOGOUT,this->counter,this->shared_key);
+            cm.send_packet(packet,size);
             printf("Bye!\n");
             cm.close_socket();
             exit(0);
@@ -354,12 +354,11 @@ unsigned char * client::prepare_list_req(uint32_t* size){
     pos += sizeof(uint16_t);
 
 
-    crypto *c;
-    c = new crypto(); //IV
+    crypto c =crypto(); //IV
     unsigned char iv[IVSIZE];
     /*RAND_poll();
     RAND_bytes(iv, IVSIZE);*/
-    c->create_random_iv(iv);
+    c.create_random_iv(iv);
     memcpy(packet + pos, iv, IVSIZE);
     pos += IVSIZE;
 
@@ -368,7 +367,7 @@ unsigned char * client::prepare_list_req(uint32_t* size){
     int ct_size=ntohs(size_m);
     auto* ct = (unsigned char*)malloc(ct_size);
     unsigned char tag[TAGSIZE];
-    c->encrypt_packet((unsigned char *)msg, ct_size-16, (unsigned char *)packet, aad_size, this->shared_key, iv, IVSIZE, ct, tag);
+    c.encrypt_packet((unsigned char *)msg, ct_size-16, (unsigned char *)packet, aad_size, this->shared_key, iv, IVSIZE, ct, tag);
     memcpy(packet+pos,ct,ct_size);
     pos+=ct_size;
     memcpy(packet+pos,tag,16);
@@ -644,8 +643,7 @@ unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, c
 }
 
 void client::server_hello_handler(unsigned char *pkt, int pos) {
-    crypto *c;
-    c = new crypto();
+    crypto c=crypto();
     int ret;
     uint16_t nonce_size;
     memcpy(&nonce_size, pkt + pos, sizeof(uint16_t));
@@ -685,7 +683,7 @@ void client::server_hello_handler(unsigned char *pkt, int pos) {
         cerr << "PEM_read_bio_X509 error";
         exit(1);
     }
-    bool b = c->verify_cert(certificate);
+    bool b = c.verify_cert(certificate);
     if (!b) {
         cerr << "certificate not valid";
         exit(1);
@@ -709,7 +707,7 @@ void client::server_hello_handler(unsigned char *pkt, int pos) {
         cerr << "PEM_read_bio_PUBKEY error";
         exit(1);
     }
-    b = c->verify_sign(sign, sgnt_size, to_verify, key_siz + nonce_size, X509_get_pubkey(certificate));
+    b = c.verify_sign(sign, sgnt_size, to_verify, key_siz + nonce_size, X509_get_pubkey(certificate));
     free(nonce);
     if (!b) {
         cerr << "signature not valid";
@@ -742,8 +740,7 @@ void client::handle_ack(unsigned char *pkt) {
     memcpy(&size_m, pkt + pos, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     size_m = ntohs(size_m);
-    crypto *c;
-    c = new crypto();
+    crypto c=crypto();
     unsigned char iv[IVSIZE];
     memcpy(iv, pkt + pos, IVSIZE);
     pos += IVSIZE;
@@ -756,7 +753,7 @@ void client::handle_ack(unsigned char *pkt) {
     auto* pt=(unsigned char*)malloc(size_m);
     auto* aad=(unsigned char*)malloc(aad_size);
     memcpy(aad, pkt, aad_size);
-    c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
+    c.decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
     printf("%s\n", pt);
     free(aad);
     free(ct);

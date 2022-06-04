@@ -14,11 +14,11 @@ int main()
     username[strcspn(username,"\n")] = 0;
 
 
-    client *cl = new client(username);
+    client cl = client(username);
 
-    cl->send_clienthello();
+    cl.send_clienthello();
     while(true) {
-        cl->handle_req();
+        cl.handle_req();
     }
 
     // cl->auth(pkt);
