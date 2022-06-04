@@ -33,6 +33,18 @@ int main() {
     // Initializing socket structure with NULL
     memset(&cliAddr, '\0', sizeof(cliAddr));
 
+    /*
+    cliAddr.sin_family = AF_INET;
+    cliAddr.sin_port = htons(6666);
+    inet_pton(AF_INET, "127.0.0.1", &cliAddr.sin_addr);
+    ret = bind(clientSocket, (struct sockaddr *)&cliAddr, sizeof(cliAddr));
+    if (ret < 0)
+    {
+        cerr << "Binding Error\n";
+
+        exit(1);
+    }
+    */
     struct sockaddr_in serverAddr;
     // Assigning port number and IP address
     serverAddr.sin_family = AF_INET;

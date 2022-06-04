@@ -36,16 +36,22 @@ int main()
     // Child process id
     pid_t childpid;
 
+    /*
     // Creates a TCP socket id from IPV4 family
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    const int trueFlag = 1;
-    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int));
-
     // Error handling if socket id is not valid
     if (sockfd < 0) {
-        printf("Error in connection.\n");
+        printf("Error in creating the socket.\n");
         exit(1);
     }
+     */
+    int sockfd=-1;
+    while(sockfd<0){
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    }
+
+    const int trueFlag = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int));
 
     printf("Server Socket is created.\n");
 
@@ -91,6 +97,7 @@ int main()
 
         // Error handling
         if (clientSocket < 0) {
+            printf("Error in connection");
             exit(1);
         }
 
