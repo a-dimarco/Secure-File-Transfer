@@ -97,10 +97,8 @@ unsigned char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t 
     memcpy(final_packet + pos, tag, 16);
     pos += 16;
 
-    free(tag);
     free(ciphertext);
     free(start_packet);
-    free(iv);
 
     *size = pos;
     return final_packet;
@@ -210,7 +208,6 @@ unsigned char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16
         
         pos += cipherlen;
         memcpy(pkt+pos, tag, 16);
-        free(tag);
         return pkt;  
 }
 
