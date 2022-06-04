@@ -62,8 +62,8 @@ unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
     //free(nounce);
     return pkt;
 }
-
-unsigned char *client::crt_pkt_upload(char *filename, int *size) {
+/*
+unsigned char *client::crt_pkt_upload(char *filename, uint32_t *size) {
 
     unsigned char *pkt = crt_file_pkt(filename, size, UPLOAD, this->counter);
     this->counter++;
@@ -120,7 +120,7 @@ unsigned char *client::crt_pkt_upload(char *filename, int *size) {
 
      *size = pos;
      return final_packet;*/
-}
+//}
 
 void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     crypto c = crypto();
