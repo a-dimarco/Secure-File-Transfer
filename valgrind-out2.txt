@@ -1,0 +1,643 @@
+==4530== Memcheck, a memory error detector
+==4530== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==4530== Using Valgrind-3.13.0 and LibVEX; rerun with -h for copyright info
+==4530== Command: ./server_app
+==4530== Parent PID: 4499
+==4530== 
+--4530-- 
+--4530-- Valgrind options:
+--4530--    --leak-check=full
+--4530--    --show-leak-kinds=all
+--4530--    --track-origins=yes
+--4530--    --verbose
+--4530--    --log-file=valgrind-out2.txt
+--4530-- Contents of /proc/version:
+--4530--   Linux version 5.4.0-113-generic (buildd@lcy02-amd64-053) (gcc version 7.5.0 (Ubuntu 7.5.0-3ubuntu1~18.04)) #127~18.04.1-Ubuntu SMP Wed May 18 15:40:23 UTC 2022
+--4530-- 
+--4530-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-avx-avx2-bmi
+--4530-- Page sizes: currently 4096, max supported 4096
+--4530-- Valgrind library directory: /usr/lib/valgrind
+--4530-- Reading syms from /home/mirawara/CLionProjects/Secure-File-Transfer/server_app
+--4530-- Reading syms from /lib/x86_64-linux-gnu/ld-2.27.so
+--4530--   Considering /lib/x86_64-linux-gnu/ld-2.27.so ..
+--4530--   .. CRC mismatch (computed 2977d8b2 wanted c64f09ed)
+--4530--   Considering /usr/lib/debug/lib/x86_64-linux-gnu/ld-2.27.so ..
+--4530--   .. CRC is valid
+--4530-- Reading syms from /usr/lib/valgrind/memcheck-amd64-linux
+--4530--   Considering /usr/lib/valgrind/memcheck-amd64-linux ..
+--4530--   .. CRC mismatch (computed 41ddb025 wanted 9972f546)
+--4530--    object doesn't have a symbol table
+--4530--    object doesn't have a dynamic symbol table
+--4530-- Scheduler: using generic scheduler lock implementation.
+--4530-- Reading suppressions file: /usr/lib/valgrind/default.supp
+==4530== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-4530-by-mirawara-on-???
+==4530== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-4530-by-mirawara-on-???
+==4530== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-4530-by-mirawara-on-???
+==4530== 
+==4530== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==4530== don't want to do, unless you know exactly what you're doing,
+==4530== or are doing some strange experiment):
+==4530==   /usr/lib/valgrind/../../bin/vgdb --pid=4530 ...command...
+==4530== 
+==4530== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==4530==   /path/to/gdb ./server_app
+==4530== and then give GDB the following command
+==4530==   target remote | /usr/lib/valgrind/../../bin/vgdb --pid=4530
+==4530== --pid is optional if only one valgrind process is running
+==4530== 
+--4530-- REDIR: 0x4020d20 (ld-linux-x86-64.so.2:strlen) redirected to 0x580608c1 (???)
+--4530-- REDIR: 0x4020b00 (ld-linux-x86-64.so.2:index) redirected to 0x580608db (???)
+--4530-- Reading syms from /usr/lib/valgrind/vgpreload_core-amd64-linux.so
+--4530--   Considering /usr/lib/valgrind/vgpreload_core-amd64-linux.so ..
+--4530--   .. CRC mismatch (computed 50df1b30 wanted 4800a4cf)
+--4530--    object doesn't have a symbol table
+--4530-- Reading syms from /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so
+--4530--   Considering /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so ..
+--4530--   .. CRC mismatch (computed f893b962 wanted 95ee359e)
+--4530--    object doesn't have a symbol table
+==4530== WARNING: new redirection conflicts with existing -- ignoring it
+--4530--     old: 0x04020d20 (strlen              ) R-> (0000.0) 0x580608c1 ???
+--4530--     new: 0x04020d20 (strlen              ) R-> (2007.0) 0x04c34db0 strlen
+--4530-- REDIR: 0x401d540 (ld-linux-x86-64.so.2:strcmp) redirected to 0x4c35ee0 (strcmp)
+--4530-- REDIR: 0x4021260 (ld-linux-x86-64.so.2:mempcpy) redirected to 0x4c394f0 (mempcpy)
+--4530-- Reading syms from /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+--4530--    object doesn't have a symbol table
+--4530-- Reading syms from /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.25
+--4530--    object doesn't have a symbol table
+--4530-- Reading syms from /lib/x86_64-linux-gnu/libgcc_s.so.1
+--4530--    object doesn't have a symbol table
+--4530-- Reading syms from /lib/x86_64-linux-gnu/libc-2.27.so
+--4530--   Considering /lib/x86_64-linux-gnu/libc-2.27.so ..
+--4530--   .. CRC mismatch (computed f250d419 wanted 4aacab51)
+--4530--   Considering /usr/lib/debug/lib/x86_64-linux-gnu/libc-2.27.so ..
+--4530--   .. CRC is valid
+--4530-- Reading syms from /lib/x86_64-linux-gnu/libdl-2.27.so
+--4530--   Considering /lib/x86_64-linux-gnu/libdl-2.27.so ..
+--4530--   .. CRC mismatch (computed 56b0b30d wanted 7867693f)
+--4530--   Considering /usr/lib/debug/lib/x86_64-linux-gnu/libdl-2.27.so ..
+--4530--   .. CRC is valid
+--4530-- Reading syms from /lib/x86_64-linux-gnu/libpthread-2.27.so
+--4530--   Considering /usr/lib/debug/.build-id/1f/06001733b9be9478b105faf0dac6bdf36c85de.debug ..
+--4530--   .. build-id is valid
+--4530-- Reading syms from /lib/x86_64-linux-gnu/libm-2.27.so
+--4530--   Considering /lib/x86_64-linux-gnu/libm-2.27.so ..
+--4530--   .. CRC mismatch (computed 4e7cf542 wanted 8d27f134)
+--4530--   Considering /usr/lib/debug/lib/x86_64-linux-gnu/libm-2.27.so ..
+--4530--   .. CRC is valid
+--4530-- REDIR: 0x5948a50 (libc.so.6:memmove) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5947d60 (libc.so.6:strncpy) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948d30 (libc.so.6:strcasecmp) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x59477b0 (libc.so.6:strcat) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5947d90 (libc.so.6:rindex) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x594a480 (libc.so.6:rawmemchr) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948bc0 (libc.so.6:mempcpy) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x59489f0 (libc.so.6:bcmp) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5947d20 (libc.so.6:strncmp) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5947820 (libc.so.6:strcmp) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948b20 (libc.so.6:memset) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5965db0 (libc.so.6:wcschr) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5947cc0 (libc.so.6:strnlen) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5947890 (libc.so.6:strcspn) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948d80 (libc.so.6:strncasecmp) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5947860 (libc.so.6:strcpy) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948ec0 (libc.so.6:memcpy@@GLIBC_2.14) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5947dc0 (libc.so.6:strpbrk) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x59477e0 (libc.so.6:index) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5947c90 (libc.so.6:strlen) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5952380 (libc.so.6:memrchr) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948dd0 (libc.so.6:strcasecmp_l) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x59489c0 (libc.so.6:memchr) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5966b70 (libc.so.6:wcslen) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948070 (libc.so.6:strspn) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948d00 (libc.so.6:stpncpy) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948cd0 (libc.so.6:stpcpy) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x594a4b0 (libc.so.6:strchrnul) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948e20 (libc.so.6:strncasecmp_l) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x59db700 (libc.so.6:__memcpy_chk) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5948900 (libc.so.6:strstr) redirected to 0x4a2c6e0 (_vgnU_ifunc_wrapper)
+--4530-- REDIR: 0x5a38280 (libc.so.6:__strrchr_avx2) redirected to 0x4c34730 (rindex)
+--4530-- REDIR: 0x5941020 (libc.so.6:malloc) redirected to 0x4c31aa0 (malloc)
+--4530-- REDIR: 0x5a38450 (libc.so.6:__strlen_avx2) redirected to 0x4c34cf0 (strlen)
+--4530-- REDIR: 0x5a34a60 (libc.so.6:__memcmp_avx2_movbe) redirected to 0x4c37e00 (bcmp)
+--4530-- REDIR: 0x5953b30 (libc.so.6:__strcmp_sse2_unaligned) redirected to 0x4c35da0 (strcmp)
+--4530-- REDIR: 0x5a38e10 (libc.so.6:__memset_avx2_unaligned_erms) redirected to 0x4c385d0 (memset)
+==4530== Syscall param socketcall.accept(addrlen_in) points to uninitialised byte(s)
+==4530==    at 0x59CC574: accept (accept.c:26)
+==4530==    by 0x111F80: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==    by 0x10E927: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==  Address 0x1ffefffc98 is on thread 1's stack
+==4530==  in frame #1, created by connection_manager::accepting() (???:)
+==4530==  Uninitialised value was created by a stack allocation
+==4530==    at 0x111F4E: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530== 
+==4530== Syscall param socketcall.accept(addr) points to unaddressable byte(s)
+==4530==    at 0x59CC574: accept (accept.c:26)
+==4530==    by 0x111F80: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==    by 0x10E927: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==  Address 0x1fff001000 is not stack'd, malloc'd or (recently) free'd
+==4530== 
+==4530== Syscall param socketcall.accept(addrlen_out) points to uninitialised byte(s)
+==4530==    at 0x59CC574: accept (accept.c:26)
+==4530==    by 0x111F80: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==    by 0x10E927: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==  Address 0x1ffefffc98 is on thread 1's stack
+==4530==  in frame #1, created by connection_manager::accepting() (???:)
+==4530==  Uninitialised value was created by a stack allocation
+==4530==    at 0x111F4E: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530== 
+--4532-- REDIR: 0x539c280 (libstdc++.so.6:operator new(unsigned long)) redirected to 0x4c32110 (operator new(unsigned long))
+--4532-- REDIR: 0x5a38090 (libc.so.6:__strchrnul_avx2) redirected to 0x4c39020 (strchrnul)
+--4532-- REDIR: 0x5a38970 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c39130 (mempcpy)
+--4532-- REDIR: 0x5a38990 (libc.so.6:__memcpy_avx_unaligned_erms) redirected to 0x4c386e0 (memmove)
+--4532-- REDIR: 0x5941910 (libc.so.6:free) redirected to 0x4c32cd0 (free)
+==4532== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-4532-by-mirawara-on-???
+==4532== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-4532-by-mirawara-on-???
+==4532== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-4532-by-mirawara-on-???
+==4532== 
+==4532== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==4532== don't want to do, unless you know exactly what you're doing,
+==4532== or are doing some strange experiment):
+==4532==   /usr/lib/valgrind/../../bin/vgdb --pid=4532 ...command...
+==4532== 
+==4532== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==4532==   /path/to/gdb ./server_app
+==4532== and then give GDB the following command
+==4532==   target remote | /usr/lib/valgrind/../../bin/vgdb --pid=4532
+==4532== --pid is optional if only one valgrind process is running
+==4532== 
+--4532-- REDIR: 0x59485a0 (libc.so.6:__GI_strstr) redirected to 0x4c39760 (__strstr_sse2)
+--4532-- REDIR: 0x5a342e0 (libc.so.6:__memchr_avx2) redirected to 0x4c35f80 (memchr)
+--4532-- REDIR: 0x5a2f3d0 (libc.so.6:__strncmp_sse42) redirected to 0x4c35570 (__strncmp_sse42)
+--4532-- REDIR: 0x5a364b0 (libc.so.6:__strncasecmp_avx) redirected to 0x4c356d0 (strncasecmp)
+--4532-- REDIR: 0x539a390 (libstdc++.so.6:operator delete(void*)) redirected to 0x4c331d0 (operator delete(void*))
+--4532-- REDIR: 0x5942c50 (libc.so.6:realloc) redirected to 0x4c33cb0 (realloc)
+--4532-- REDIR: 0x5961810 (libc.so.6:__stpcpy_sse2_unaligned) redirected to 0x4c38200 (__stpcpy_sse2_unaligned)
+==4532== Invalid read of size 8
+==4532==    at 0x4C387EE: memmove (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x1127D4: crypto::key_derivation(unsigned char*, unsigned long) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A37: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x64d9ed0 is 0 bytes after a block of size 32 alloc'd
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x1126AB: crypto::key_derivation(unsigned char*, unsigned long) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A37: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid read of size 8
+==4532==    at 0x4C387E0: memmove (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x1127D4: crypto::key_derivation(unsigned char*, unsigned long) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A37: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x64d9ed8 is 8 bytes after a block of size 32 alloc'd
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x1126AB: crypto::key_derivation(unsigned char*, unsigned long) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A37: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid read of size 4
+==4532==    at 0x4FAFBEA: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9a8 is 8 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid read of size 8
+==4532==    at 0x4FAEFF1: ??? (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAFC08: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9b0 is 16 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid read of size 8
+==4532==    at 0x4F43670: ??? (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF00A: ??? (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAFC08: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9c8 is 40 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid write of size 8
+==4532==    at 0x4FAF00B: ??? (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAFC08: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9c8 is 40 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid read of size 8
+==4532==    at 0x4FAF013: ??? (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAFC08: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9b8 is 24 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid read of size 8
+==4532==    at 0x4FAF01C: ??? (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAFC08: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9c0 is 32 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid write of size 8
+==4532==    at 0x4FAF020: ??? (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAFC08: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9b8 is 24 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid write of size 8
+==4532==    at 0x4FAF02D: ??? (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAFC08: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9c0 is 32 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid read of size 8
+==4532==    at 0x4FAFC09: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9e0 is 64 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid free() / delete / delete[] / realloc()
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FAFC11: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647aa30 is 0 bytes inside a block of size 56 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FAFC11: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x501DBF6: CRYPTO_THREAD_lock_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF38B: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid read of size 8
+==4532==    at 0x4FAFC12: EVP_PKEY_free (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9d8 is 56 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Invalid free() / delete / delete[] / realloc()
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x111AE6: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x647a9a0 is 0 bytes inside a block of size 72 free'd
+==4532==    at 0x4C32D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x112643: crypto::dh_sharedkey(evp_pkey_st*, evp_pkey_st*, unsigned long*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111A12: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Block was alloc'd at
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x4FB91C8: CRYPTO_zalloc (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FAF366: EVP_PKEY_new (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x4FB1F69: EVP_PKEY_keygen (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532==    by 0x1124A4: crypto::dh_keygen() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x1110CD: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+--4532-- REDIR: 0x5a37e60 (libc.so.6:__strchr_avx2) redirected to 0x4c34950 (index)
+--4532-- REDIR: 0x539c330 (libstdc++.so.6:operator new[](unsigned long)) redirected to 0x4c32830 (operator new[](unsigned long))
+--4532-- REDIR: 0x5961ec0 (libc.so.6:__stpncpy_sse2_unaligned) redirected to 0x4c384a0 (stpncpy)
+--4532-- REDIR: 0x539a3c0 (libstdc++.so.6:operator delete[](void*)) redirected to 0x4c336d0 (operator delete[](void*))
+--4532-- REDIR: 0x5960200 (libc.so.6:__strcpy_sse2_unaligned) redirected to 0x4c34dd0 (strcpy)
+==4532== Syscall param socketcall.sendto(msg) points to uninitialised byte(s)
+==4532==    at 0x59CC9DD: send (send.c:28)
+==4532==    by 0x1121B4: connection_manager::send_packet(char*, unsigned int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x110343: server::send_list(char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F395: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111AF5: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x657a4f6 is 70 bytes inside a block of size 102 alloc'd
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x1100E6: server::send_list(char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F395: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111AF5: server::auth(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F511: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x111566: server::server_hello(unsigned char*) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F64D: server::client_hello_handler(char*, int) (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F4F1: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Uninitialised value was created by a stack allocation
+==4532==    at 0x5009363: ??? (in /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1)
+==4532== 
+==4532== Argument 'size' of function malloc has a fishy (possibly negative) value: -1059043834
+==4532==    at 0x4C31B0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4532==    by 0x11206B: connection_manager::receive_packet() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F35C: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532== 
+==4532== Syscall param socketcall.recvfrom(buf) points to unaddressable byte(s)
+==4532==    at 0x59CC7AD: recv (recv.c:28)
+==4532==    by 0x1120A4: connection_manager::receive_packet() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10F35C: server::handle_req() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==    by 0x10E96E: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4532==  Address 0x0 is not stack'd, malloc'd or (recently) free'd
+==4532== 
+==4532== Warning: set address range perms: large range [0x0, 0xffffffffc0e04606) (defined)
+--4530-- REDIR: 0x5a38970 (libc.so.6:__mempcpy_avx_unaligned_erms) redirected to 0x4c39130 (mempcpy)
+--4530-- REDIR: 0x5941910 (libc.so.6:free) redirected to 0x4c32cd0 (free)
+==4530== 
+==4530== HEAP SUMMARY:
+==4530==     in use at exit: 0 bytes in 0 blocks
+==4530==   total heap usage: 2 allocs, 2 frees, 73,728 bytes allocated
+==4530== 
+==4530== All heap blocks were freed -- no leaks are possible
+==4530== 
+==4530== ERROR SUMMARY: 4 errors from 3 contexts (suppressed: 0 from 0)
+==4530== 
+==4530== 1 errors in context 1 of 3:
+==4530== Syscall param socketcall.accept(addrlen_out) points to uninitialised byte(s)
+==4530==    at 0x59CC574: accept (accept.c:26)
+==4530==    by 0x111F80: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==    by 0x10E927: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==  Address 0x1ffefffc98 is on thread 1's stack
+==4530==  in frame #1, created by connection_manager::accepting() (???:)
+==4530==  Uninitialised value was created by a stack allocation
+==4530==    at 0x111F4E: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530== 
+==4530== 
+==4530== 1 errors in context 2 of 3:
+==4530== Syscall param socketcall.accept(addr) points to unaddressable byte(s)
+==4530==    at 0x59CC574: accept (accept.c:26)
+==4530==    by 0x111F80: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==    by 0x10E927: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==  Address 0x1fff001000 is not stack'd, malloc'd or (recently) free'd
+==4530== 
+==4530== 
+==4530== 2 errors in context 3 of 3:
+==4530== Syscall param socketcall.accept(addrlen_in) points to uninitialised byte(s)
+==4530==    at 0x59CC574: accept (accept.c:26)
+==4530==    by 0x111F80: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==    by 0x10E927: main (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530==  Address 0x1ffefffc98 is on thread 1's stack
+==4530==  in frame #1, created by connection_manager::accepting() (???:)
+==4530==  Uninitialised value was created by a stack allocation
+==4530==    at 0x111F4E: connection_manager::accepting() (in /home/mirawara/CLionProjects/Secure-File-Transfer/server_app)
+==4530== 
+==4530== ERROR SUMMARY: 4 errors from 3 contexts (suppressed: 0 from 0)
