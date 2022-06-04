@@ -10,7 +10,7 @@ class client
 public:
     client();
 
-    explicit client(char *usernmame);
+    explicit client(char *usernmame, int sock);
 
     void send_clienthello();
 

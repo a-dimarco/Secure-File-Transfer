@@ -4,23 +4,70 @@
 #include "client.h"
 
 using namespace std;
-int main()
-{
+
+// PORT number
+#define PORT 4444
+
+int main() {
+    // Socket id
+    int clientSocket, ret;
+
+    // Client socket structure
+    struct sockaddr_in cliAddr;
+
+    // char array to store incoming message
+
+    // Creating socket id
+    clientSocket = socket(AF_INET,
+                          SOCK_STREAM, 0);
+
+    const int trueFlag = 1;
+    setsockopt(clientSocket, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int));
+
+    if (clientSocket < 0) {
+        printf("Error in connection.\n");
+        exit(1);
+    }
+    printf("Client Socket is created.\n");
+
+    // Initializing socket structure with NULL
+    memset(&cliAddr, '\0', sizeof(cliAddr));
+
+    struct sockaddr_in serverAddr;
+    // Assigning port number and IP address
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(PORT);
+
+    // 127.0.0.1 is Loopback IP
+    serverAddr.sin_addr.s_addr
+            = inet_addr("127.0.0.1");
+
+    // connect() to connect to the server
+    ret = connect(clientSocket,
+                  (struct sockaddr *) &serverAddr,
+                  sizeof(serverAddr));
+
+    if (ret < 0) {
+        printf("Error in connection.\n");
+        exit(1);
+    }
+
+    printf("Connected to Server.\n");
 
     cout << "Please, type your username: ";
     char username[11];
     fgets(username, 11, stdin);
 
-    username[strcspn(username,"\n")] = 0;
+    username[strcspn(username, "\n")] = 0;
 
 
-    client cl = client(username);
+    client cl = client(username, clientSocket);
 
     cl.send_clienthello();
-    while(true) {
+    while (true) {
         cl.handle_req();
     }
 
-    // cl->auth(pkt);
-    // cl->show_menu();
+    return 0;
 }
+
