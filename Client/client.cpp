@@ -5,22 +5,23 @@ using namespace std;
 
 client::client() = default;;
 
-client::client(char *username) {
+client::client(char *username, int sock) {
+    /*
     char addr[] = "127.0.0.1";
     // long dest_port = 49151;
     long dest_port = 6666;
+    */
     this->user = new char[10];
     // this->username = username;
     memcpy((void *) this->user, (void *) username, sizeof(username));
-    /*int seed=atoi(username);
-    srand(seed);
+    //int seed=atoi(username);
+    /*
+    srand(time(nullptr));
     long std_port=rand()%6000+43151;
-    this->cm=new connection_manager(addr,std_port);*/
-
-    this->cm =connection_manager(addr, 8888);
-
-    this->cm.connection(addr, dest_port);
+    printf("porta: %li\n",std_port);*/
+    this->cm =connection_manager(sock);
     this->counter = 0;
+
 }
 
 void client::send_clienthello() {
