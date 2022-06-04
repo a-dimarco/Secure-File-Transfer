@@ -15,6 +15,9 @@ public:
 =======
     unsigned char * prepare_list_packet(int *size);
     void handle_list(unsigned char *pkt);
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
     // invia pacchetto generico

@@ -638,7 +638,10 @@ char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, char *file
 
     *size = sizeof(pkt);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     printf("request packet codice:%d ha size %d", opcode, size);
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 

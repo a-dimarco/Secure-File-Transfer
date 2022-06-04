@@ -976,6 +976,10 @@ void server::server_hello(unsigned char* nonce) {
     memcpy(pkt+pos,sign,ntohl(sgnt_size_s));
     cm.send_packet(pkt,pkt_len);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    free(tosign);
+>>>>>>> Stashed changes
 =======
     free(tosign);
 >>>>>>> Stashed changes
