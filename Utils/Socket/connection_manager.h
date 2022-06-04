@@ -36,7 +36,7 @@
 
 //--FILE PATHS
 #define SERVER_PATH "server_file/client/"
-#define CLIENT_PATH "client_folders/"
+#define CLIENT_PATH "client_file/"
 
 //--COMMANDS
 #define FILENAME 1111

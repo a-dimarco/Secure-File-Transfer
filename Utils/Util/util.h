@@ -14,5 +14,5 @@ using namespace std;
 
 unsigned char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter);
 bool nameChecker(char *name, int mode);
-bool file_opener(char *filename, char *username);
+bool file_opener(char *filename, char *username, char* complete_path);
 unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size,uint8_t opcode, int counter2, unsigned char* shared_key);

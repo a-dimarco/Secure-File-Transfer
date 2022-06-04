@@ -121,10 +121,10 @@ bool nameChecker(char *name, int mode)
     return ret;
 }
 
-bool file_opener(char *filename, char *username)
+bool file_opener(char *filename, char *username, char* complete_path)
 {
 
-    char *path = CLIENT_PATH;
+    char *path = SERVER_PATH;
     string file_path = path;
     file_path += username;
     path = &file_path[0];
@@ -146,27 +146,42 @@ bool file_opener(char *filename, char *username)
 
     closedir(dir);
     // printf("Selected Directory : %s \n" , path);
-
+    file_path += "/file/";
+    //printf("Filepath %s\n", file_path);
     // Add Filename to path
-    strcpy(path + strlen(path), filename);
-    size_t len = strlen(path) - 1;
-    char *filePath = (char *)malloc(len);
-    memcpy(filePath, path, len);
-
+    //strcpy(path + strlen(path), "/");
+    //strcpy(path + strlen(path), filename);
+    file_path += filename;
+    //printf("Filepath %s\n", file_path);
+    printf("fileopener1\n");
+    size_t len = file_path.length()+1;//strlen(path) - 1;
+    printf("%d\n", len);
+    printf("fileopener2\n");
+    char *filePath = &file_path[0];
+    //memcpy(filePath, path, len);
+    printf("fileopener3\n");
+    printf("filepath %s\n", filePath);
     // Open the file
     source = fopen(filePath, "rb");
+    printf("fileopener4\n");
     if (source == NULL)
     {
-        fclose(source);
-        free(filePath);
+    	printf("boh\n");
+        //fclose(source);
+        //free(filePath);
         printf("File not found\n");
         return true;
     }
     else
     {
+    	char* pth = (char*)malloc(len);
+    	strcpy(pth, file_path.c_str());
+    	complete_path = pth;
+    	//printf("%s\n", complete_path);
+    	//complete_path[len-1] = '\0';
         printf("File found\n");
         fclose(source);
-        free(filePath);
+        //free(filePath);
         return false;
     }
 }

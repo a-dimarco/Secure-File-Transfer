@@ -441,7 +441,7 @@ unsigned char *client::crt_pkt_remove(char *namefile, int name_size, int *size) 
 
 unsigned char *client::crt_download_request(uint32_t *size) {
     printf("Inserisci file\n");
-    char *filename=( char *)malloc(31);
+    char filename[31];
     fgets(filename, 31, stdin);
 
     for(int i=0;i<31;i++) {
@@ -458,6 +458,7 @@ unsigned char *client::crt_download_request(uint32_t *size) {
     }
     this->file_name = filename;
     this->counter++;
+    //printf("prima di crt_req_pkt\n");
     unsigned char *packet = crt_request_pkt(filename, (int *) size, DOWNLOAD, this->counter, this->shared_key);
     return packet;
 }
@@ -467,11 +468,12 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
     crypto c=crypto();
 
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) * 2;
-    uint16_t ptext_size = htons(strlen(filename) + 1);
+    uint16_t ptext_size = strlen(filename)+1;
+    //uint16_t ptext_size_n = htons(ptext_size);
     int pos = 0;
     int cipherlen;
     uint16_t n_counter = htons(counter);
-    *size = aad_size + IVSIZE + ptext_size + 2 * 16;
+    *size = aad_size + IVSIZE + ptext_size + 16;
 
     auto *pkt = (unsigned char *) malloc(*size);
     unsigned char iv[IVSIZE];
@@ -495,6 +497,9 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
 
     pos += cipherlen;
     memcpy(pkt + pos, tag, TAGSIZE);
+    pos += TAGSIZE;
+    
+    //printf("pos a fine reqpkt, %d\n", pos);
     return pkt;
 }
 
