@@ -402,7 +402,6 @@ void client::show_list(unsigned char *pkt, int pos) {
     // Fine Deserializzazione
 
     printf("\nAvailable files:\n%s", pt);
-    free(pkt);
     free(pt);
     free(ct);
 

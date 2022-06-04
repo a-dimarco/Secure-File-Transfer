@@ -10,7 +10,7 @@ unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8
 
     int pos = 0;
     uint16_t ct_size=msg_size+16;
-    int pkt_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t)+12 + ct_size + 16;
+    int pkt_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t)+IVSIZE + ct_size + TAGSIZE;
     unsigned char* packet=(unsigned char *)malloc(pkt_len);
     *size = pkt_len;
 
@@ -27,7 +27,8 @@ unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8
     ct_size=ntohs(ct_size);
     int ret;
     crypto *c = new crypto(); //IV
-    unsigned char iv[12];
+    unsigned char iv[IVSIZE];
+
     ret=sodium_init();
     if(ret<0){
         cerr << "error";
@@ -35,7 +36,6 @@ unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8
     randombytes_buf(iv, 12);
     memcpy(packet + pos, iv, 12);
     pos += 12;
-
 
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
     unsigned char ct[ct_size];
@@ -96,9 +96,6 @@ unsigned char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t 
     pos += cipherlen;
     memcpy(final_packet + pos, tag, 16);
     pos += 16;
-
-    free(ciphertext);
-    free(start_packet);
 
     *size = pos;
     return final_packet;
