@@ -153,7 +153,7 @@ bool file_opener(char *filename, char *username)
     size_t len = file_path.length()+1;//strlen(path) - 1;
     
     char *filepath = &file_path[0];
-    //printf("test: %s\n", filepath);
+    printf("test: %s\n", filepath);
 
     // Open the file
     source = fopen(filepath, "rb");
@@ -166,6 +166,7 @@ bool file_opener(char *filename, char *username)
     {
         printf("File found\n");
         fclose(source);
+        printf("ok\n");
         return true;
     }
 }

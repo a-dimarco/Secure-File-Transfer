@@ -11,35 +11,6 @@ server::server(int sock)
 
 void server::check_file(unsigned char* pkt, uint8_t opcode)
 {
-/*
-    int pos = 8;
-    uint16_t count;
-    memcpy(&count, pkt + pos, sizeof(uint16_t));
-    pos += sizeof(uint16_t);
-    count = ntohs(count);
-    if (count != this->counter)
-    {
-        cerr << "Probable replay attack";
-    }
-    int name_size;
-    memcpy(&name_size, pkt + pos, sizeof(uint16_t));
-    pos += sizeof(uint16_t);
-    name_size = ntohs(name_size);
-    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    unsigned char iv[iv_size];
-    memcpy(iv, pkt + pos, iv_size);
-    pos += iv_size;
-    unsigned char ct[name_size];
-    memcpy(ct, pkt + pos, name_size);
-    pos += name_size;
-    int aad_size = sizeof(uint8_t) + sizeof(uint16_t) * 2;
-    unsigned char aad[aad_size];
-    memcpy(aad, pkt, aad_size);
-    unsigned char tag[16];
-    memcpy(tag, pkt + pos, 16);
-    crypto *c = new crypto();
-    unsigned char pt[name_size - 16];
-    c->decrypt_message(ct, name_size, aad, aad_size, tag, this->shared_key, iv, iv_size, pt);*/
     printf("ch1\n");
     int pos = sizeof(uint8_t);
     uint16_t count;
@@ -47,7 +18,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     this->counter++;
     count = ntohs(count);
     printf("ch2\n");
-    
+
     pos += sizeof(uint16_t);
     if (count != this->counter)
     {
@@ -64,11 +35,11 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     unsigned char iv[IVSIZE];
     memcpy(iv, pkt + pos, IVSIZE);
     pos += IVSIZE;
-    
+
     int cipherlen = name_size;
-    
+
     unsigned char* ct = (unsigned char*)malloc(cipherlen);
-    
+
     memcpy(ct, pkt + pos, name_size);
     pos += name_size;
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) * 2;
@@ -78,11 +49,11 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     memcpy(tag, pkt + pos, TAGSIZE);
     crypto *c = new crypto();
     unsigned char* pt = (unsigned char*)malloc(name_size);
-    	
+
     c->decrypt_message(ct, cipherlen, pkt, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
-    
+
     printf("ptext %s\n", pt);
-    
+
     printf("Dopo decrypt di request\n");
     bool b = nameChecker((char *)pt, FILENAME);
     printf("Ckpoint1\n");
@@ -97,10 +68,10 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     bool a;
     printf("Ckpoint2\n");
     a = file_opener((char *) pt, this->logged_user);
-    printf("%s\n", this->file_name);
+    //printf("%s\n", this->file_name);
     printf("Dopo file opener\n");
     if(opcode==UPLOAD) {
-        if (!a) {
+        if (a) {
             uint32_t *size;
             char msg[] = "File già esistente";
             unsigned char* pkt = prepare_ack_packet(size, msg, sizeof(msg));
@@ -122,7 +93,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         pos += sizeof(opcode2);
         store_file(packt);
     }else if(opcode==DELETE){
-        if(a){
+        if(!a){
             uint32_t *size;
             char msg[] = "File non esistente";
             unsigned char* pkt = prepare_ack_packet(size, msg, sizeof(msg));
@@ -134,7 +105,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         memcpy(file_name+name_size-1, "\0", 1);
         delete_file();
     } else if(opcode == DOWNLOAD) {
-    	if (!a) {
+    	if (a) {
     		printf("Sono prima di crt_file_pkt\n");
     		uint32_t size;
     		printf("%s\n", this->file_name);
