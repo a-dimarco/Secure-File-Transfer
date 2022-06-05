@@ -561,83 +561,6 @@ void client::create_downloaded_file(unsigned char *pkt) {
 
 }
 
-void client::rename_file() {//Va testata
-
-    cout << "Rename - Which file?\n";
-    char* file_name=( char *)malloc(11);
-    fgets(file_name, 11, stdin);
-
-    file_name[strcspn(file_name, "\n")] = 0;
-
-    if (nameChecker(file_name, FILENAME)) {
-        printf("Filename %s - ok, please specify a new filename\n", file_name);
-
-        char* new_name=(char *)malloc(11);
-        fgets(new_name, 11, stdin);
-
-        new_name[strcspn(new_name, "\n")] = 0;
-
-        if (nameChecker(new_name, FILENAME)) {
-            uint32_t size;
-            unsigned char *packet = prepare_filename_packet(RENAME, &size, file_name, new_name);
-            free(new_name);
-
-            cm.send_packet(packet, size);
-
-            printf("Rename request for file %s - sent\n waiting for response...\n", file_name);
-            free(file_name);
-            //--Receive and analyze server's response
-
-            unsigned char *response;
-            response = cm.receive_packet();
-            uint8_t opcode;
-
-            memcpy(&opcode, response, sizeof(opcode)); // prelevo opcode
-
-            if (opcode ==
-                RENAME_ACK)//renametest: devo rimandargli old_name e new_name per verificare, mi pare basti il counter - dubbio
-            {
-                printf("Rename - OK\n");
-            } else {
-                printf("Rename - FAIL\n");
-            }
-        } else {
-
-            printf("Filename %s - not accepted, please use filename.extension format\n", new_name);
-            free(new_name);
-        }
-
-    } else {
-        printf("Filename %s - not accepted, please use filename.extension format\n", file_name);
-        free(file_name);
-    }
-
-}
-
-unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, char *file_name, char *new_name) {
-
-    uint16_t old_size = htons(strlen(file_name) + 1);
-    uint16_t new_size = htons(strlen(new_name) + 1);
-
-    int pos = 0;
-    uint32_t pkt_len=sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t) + strlen(file_name) + 1 + strlen(new_name) + 1;
-    auto* pkt=(unsigned char *)malloc(pkt_len);
-
-    memcpy(pkt, &opcode, sizeof(uint8_t));//opcode
-    pos += sizeof(uint8_t);
-    memcpy(pkt + pos, &old_size, sizeof(uint16_t));//strlen old_name
-    pos += sizeof(uint16_t);
-    memcpy(pkt + pos, &new_size, sizeof(uint16_t));//strlen new_name
-    pos += sizeof(uint16_t);
-    memcpy(pkt + pos, file_name, strlen(file_name) + 1);//old_name
-    pos += strlen(file_name) + 1;
-    memcpy(pkt + pos, new_name, strlen(new_name) + 1);//new_name
-
-    *size = sizeof(pkt);
-
-    return pkt;
-}
-
 void client::server_hello_handler(unsigned char *pkt, int pos) {
     crypto *c;
     c = new crypto();
@@ -756,4 +679,103 @@ void client::handle_ack(unsigned char *pkt) {
     free(aad);
     free(ct);
     free(pt);
+}
+
+void client::rename_file() {//Va testata
+
+    cout << "Rename - Which file?\n";
+    char* file_name=(char*)malloc(11);
+    fgets(file_name, 11, stdin);
+
+    file_name[strcspn(file_name, "\n")] = 0;
+
+    if (nameChecker(file_name, FILENAME)) {
+        printf("Filename %s - ok, please specify a new filename\n", file_name);
+
+        char* new_name=(char*)malloc(11);
+        fgets(new_name, 11, stdin);
+
+        new_name[strcspn(new_name, "\n")] = 0;
+
+        if (nameChecker(new_name, FILENAME)) {
+            uint32_t size;
+            unsigned char *packet = prepare_filename_packet(RENAME, &size, file_name, new_name);
+            free(new_name);
+
+            cm.send_packet(packet, size);
+
+            printf("Rename request for file %s - sent\n waiting for response...\n", file_name);
+            free(file_name);
+
+        } else {
+
+            printf("Filename %s - not accepted, please use filename.extension format\n", new_name);
+            free(new_name);
+        }
+
+    } else {
+        printf("Filename %s - not accepted, please use filename.extension format\n", file_name);
+        free(file_name);
+    }
+
+}
+
+unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, char *file_name, char *new_name) {
+
+    //PACKET FORMAT  OPCODE - COUNTER - OLD_NAME_SIZE - NEW_NAME_SIZE - CTSIZE - IV - OLDNAME & NEWNAME - TAG
+
+    uint16_t old_size = htons(strlen(file_name));
+    uint16_t new_size = htons(strlen(new_name));
+    
+    string temp; //Merge the two names as plaintext
+    temp += file_name;
+    temp += new_name;
+    int pt_size=temp.length();
+    char* pt = (char*)malloc(pt_size);
+    strcpy(pt, temp.c_str());
+
+    uint32_t ct_size=pt_size;//ct_size
+    int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint16_t) + IVSIZE + ct_size + TAGSIZE;
+    unsigned char* pkt=(unsigned char *)malloc(pkt_len);
+    *size = pkt_len;
+
+    int pos = 0;
+
+    memcpy(pkt, &opcode, sizeof(uint8_t));//opcode
+    pos += sizeof(uint8_t);
+
+    this->counter++; //Counter
+    int counter2=counter;
+    uint16_t count=htons(counter2);
+    memcpy(pkt + pos, &count, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+
+    memcpy(pkt + pos, &old_size, sizeof(uint16_t));//strlen old_name
+    pos += sizeof(uint16_t);
+
+    memcpy(pkt + pos, &new_size, sizeof(uint16_t));//strlen new_name
+    pos += sizeof(uint16_t);
+
+    uint32_t size_m = htonl(ct_size); //CipherText Size
+    memcpy(pkt + pos, &size_m, sizeof(uint32_t));
+    pos += sizeof(uint32_t);
+
+    crypto *c = new crypto(); //IV
+    unsigned char iv[IVSIZE];
+    c->create_random_iv(iv);
+    memcpy(pkt + pos, iv, IVSIZE);
+    pos += IVSIZE;
+
+    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+ sizeof(uint16_t); //CipherText & Tag
+    unsigned char* ct= (unsigned char*)malloc(ct_size);
+    unsigned char tag[TAGSIZE];
+    c->encrypt_packet((unsigned char *)pt, pt_size, (unsigned char *)pkt, aad_size, this->shared_key, iv, IVSIZE, ct, tag);
+    
+    memcpy(pkt+pos,ct,ct_size);
+    pos+=ct_size;
+    memcpy(pkt+pos,tag,TAGSIZE);
+
+    free(pt);
+
+    return pkt;
 }

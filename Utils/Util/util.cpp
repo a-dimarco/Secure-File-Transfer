@@ -121,14 +121,15 @@ bool nameChecker(char *name, int mode)
     return ret;
 }
 
-bool file_opener(char *filename, char *username, char* complete_path)
+bool file_opener(char *filename, char *username)
 {
 
     char *path = SERVER_PATH;
-    string file_path = path;
-    file_path += username;
+    string file_path = path; // ../server_file/client/
+    file_path += username;   // ../server_file/client/Alice
+    
     path = &file_path[0];
-    printf("%s", path);
+    //printf("%s", path);
     FILE *source;
 
     // Checks if directory exists
@@ -145,44 +146,27 @@ bool file_opener(char *filename, char *username, char* complete_path)
     }
 
     closedir(dir);
-    // printf("Selected Directory : %s \n" , path);
-    file_path += "/file/";
-    //printf("Filepath %s\n", file_path);
-    // Add Filename to path
-    //strcpy(path + strlen(path), "/");
-    //strcpy(path + strlen(path), filename);
-    file_path += filename;
-    //printf("Filepath %s\n", file_path);
-    printf("fileopener1\n");
+    file_path += "/file/";     // ../server_file/client/Alice/file/
+
+    file_path += filename;     // ../server_file/client/Alice/file/filename.extension
+    
     size_t len = file_path.length()+1;//strlen(path) - 1;
-    printf("%d\n", len);
-    printf("fileopener2\n");
-    char *filePath = &file_path[0];
-    //memcpy(filePath, path, len);
-    printf("fileopener3\n");
-    printf("filepath %s\n", filePath);
+    
+    char *filepath = &file_path[0];
+    //printf("test: %s\n", filepath);
+
     // Open the file
-    source = fopen(filePath, "rb");
-    printf("fileopener4\n");
+    source = fopen(filepath, "rb");
     if (source == NULL)
     {
-    	printf("boh\n");
-        //fclose(source);
-        //free(filePath);
         printf("File not found\n");
-        return true;
+        return false;
     }
     else
     {
-    	char* pth = (char*)malloc(len);
-    	strcpy(pth, file_path.c_str());
-    	complete_path = pth;
-    	//printf("%s\n", complete_path);
-    	//complete_path[len-1] = '\0';
         printf("File found\n");
         fclose(source);
-        //free(filePath);
-        return false;
+        return true;
     }
 }
 
