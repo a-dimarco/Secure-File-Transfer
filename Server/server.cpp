@@ -79,8 +79,9 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         closedir(dir);
         file_path += "/file/";
         file_path += (char*)pt;
-        this->file_name = &file_path[0];
-        printf("filename %s\n",this->file_name);
+        size_t len = file_path.length() + 1;
+        this->file_name=(char *)malloc(len);
+        memcpy(this->file_name,&file_path[0],len);
     }
     if(opcode==UPLOAD) {
         if (a) {
@@ -124,8 +125,9 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     		/*this->file_name = (char *) malloc(name_size);
         	memcpy(file_name, pt, name_size - 1);
        	memcpy(file_name+name_size-1, "\0", 1);*/
-        	unsigned char* pkt = crt_file_pkt(file_name, (int*)&size, opcode, this->counter);
-        	cm.send_packet(pkt, (int)size);
+            this->counter++;
+        	unsigned char* pkto = crt_file_pkt(file_name, &size, opcode, this->counter);
+        	cm.send_packet(pkto, size);
         	return;
     	}
     	else {
