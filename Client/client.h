@@ -65,7 +65,7 @@ private:
 
     static void print_commands();
 
-    unsigned char *crt_download_request(uint32_t *size);
+    unsigned char *crt_download_request(uint32_t *size, uint8_t opcode);
 
     unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter);
 

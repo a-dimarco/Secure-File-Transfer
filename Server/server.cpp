@@ -11,13 +11,11 @@ server::server(int sock)
 
 void server::check_file(unsigned char* pkt, uint8_t opcode)
 {
-    printf("ch1\n");
     int pos = sizeof(uint8_t);
     uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t));
     this->counter++;
     count = ntohs(count);
-    printf("ch2\n");
 
     pos += sizeof(uint16_t);
     if (count != this->counter)
@@ -25,7 +23,6 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         cerr << "Probable replay attack";
         exit(-1);
     }
-    printf("ch3\n");
     uint16_t name_size;
     memcpy(&name_size, pkt + pos, sizeof(uint16_t));
     pos += sizeof(uint16_t);
@@ -77,8 +74,8 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         DIR *dir;
         dir = opendir(path);
         closedir(dir);
-        file_path += "/file/";
-        file_path += (char*)pt;
+        file_path += "/file/"; // ../server_file/client/Alice/file/
+        file_path += (char*)pt; // ../server_file/client/Alice/file/filename.extension
         size_t len = file_path.length() + 1;
         this->file_name=(char *)malloc(len);
         memcpy(this->file_name,&file_path[0],len);
@@ -105,19 +102,27 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         memcpy(&opcode2, pkt, sizeof(opcode2)); 
         pos += sizeof(opcode2);
         store_file(packt);
-    }else if(opcode==DELETE){
-        if(!a){
-            uint32_t *size;
-            char msg[] = "File non esistente";
-            unsigned char* pkt = prepare_ack_packet(size, msg, sizeof(msg));
-            cm.send_packet(pkt, *size);
-            return;
+    }
+    else if(opcode==DELETE)
+    {
+        if(!a)
+        {
+            cerr << "DELETE - FILE NOT FOUND\n";
+            char msg[] = "DELETE - FILE NOT FOUND\n";
+            unsigned char *pac;
+            uint32_t siz;
+            this->counter++;
+            pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);        
+            cm.send_packet(pac, siz);
+            printf("Packet sent\n");
         }
         this->file_name = (char *) malloc(name_size);
         memcpy(file_name, pt, name_size - 1);
         memcpy(file_name+name_size-1, "\0", 1);
         delete_file();
-    } else if(opcode == DOWNLOAD) {
+    }
+    else if(opcode == DOWNLOAD) 
+    {
     	if (a) {
     		printf("Sono prima di crt_file_pkt\n");
     		uint32_t size;
@@ -208,7 +213,7 @@ void server::handle_req()
     }
     else if (opcode == DELETE)
     {
-
+        check_file(pkt, opcode);
     }
     else if (opcode == LOGOUT)
     { // IMPLEMENT
@@ -556,26 +561,34 @@ string server::print_folder(char *path)
 
 void server::delete_file() {
 
-    char *path = CLIENT_PATH;
-    string file_path = path;
-    file_path += this->logged_user;
-    path = &file_path[0];
-    strcpy(path + strlen(path), this->file_name);
-    size_t len = strlen(path) - 1;
-    char *filePath = (char *)malloc(len);
-    memcpy(filePath, path, len);
-    int ret;
-    ret = remove(filePath);
+    string file_path = SERVER_PATH; //  ../server_file/client/
+    file_path += this->logged_user; //  ../server_file/client/Alice
+    file_path += "/file/"; //           ../server_file/client/Alice/file/
+    file_path += file_name; //          ../server_file/client/Alice/file/filename.extension
+    char* filePath = &file_path[0];
+    
+    int ret = remove(filePath);
+    uint32_t siz;
+    free(this->file_name);
     if (ret != 0)
     {
         cerr << "DELETE - ERROR\n";
+        char msg[] = "DELETE - ERROR\n";
+        unsigned char *pac;
+        this->counter++;
+        pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);        
+        cm.send_packet(pac, siz);
+        printf("Packet sent\n");
     }
-    free(filePath);
-    uint32_t *siz;
-    char msg[] = "File Removed";
-    unsigned char *pac = prepare_ack_packet(siz, msg, sizeof(msg));
-    cm.send_packet(pac, *siz);
-    free(this->file_name);
+    else{
+        printf("DELETE - OK\n");
+        char msg[] = "DELETE - OK\n";
+        unsigned char *pac;
+        this->counter++;
+        pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);        
+        cm.send_packet(pac, siz);
+        printf("Packet sent\n");
+    }
 }
 
 int server::get_socket() {

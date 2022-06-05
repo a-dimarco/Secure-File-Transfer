@@ -46,6 +46,7 @@ unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8
     memcpy(packet+pos,tag,16);
     return packet;
 }
+
 unsigned char *crt_file_pkt(char *filename, uint32_t *size, uint8_t opcode, uint16_t counter, unsigned char* shared_key)
 {
     int pos1 = 0;

@@ -244,7 +244,7 @@ void client::show_menu() {
             this->cm.send_packet(pkto,size);
             free(command);
         } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
-            unsigned char *req = crt_download_request(&size);
+            unsigned char *req = crt_download_request(&size, DOWNLOAD);
             cm.send_packet(req, size);
             free(command);
 
@@ -254,7 +254,7 @@ void client::show_menu() {
             free(command);
             rename_file();
         } else if (strcmp(command, "!delete") == 0) {
-            unsigned char* req = crt_download_request(&size);
+            unsigned char* req = crt_download_request(&size, DELETE);
             cm.send_packet(req, size);
             free(command);
             /*
@@ -411,7 +411,7 @@ void client::show_list(unsigned char *pkt, int pos) {
 }
 
 
-unsigned char *client::crt_pkt_remove(char *namefile, int name_size, int *size) {
+/*unsigned char *client::crt_pkt_remove(char *namefile, int name_size, int *size) {
     int pos = 0;
     uint8_t opcode = DELETE;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t) + name_size + 16+TAGSIZE;
@@ -440,9 +440,9 @@ unsigned char *client::crt_pkt_remove(char *namefile, int name_size, int *size) 
     memcpy(packet + pos, tag, TAGSIZE);
     free(ct);
     return packet;
-}
+}*/
 
-unsigned char *client::crt_download_request(uint32_t *size) {
+unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //TEST SHOULD BE RENAMED
     printf("Inserisci file\n");
     char filename[31];
     fgets(filename, 31, stdin);
@@ -463,7 +463,8 @@ unsigned char *client::crt_download_request(uint32_t *size) {
     this->file_name=(char *)malloc(strlen(filename)+1);
     memcpy(this->file_name,&filename[0],strlen(filename)+1);
     this->counter++;
-    unsigned char *packet = crt_request_pkt(filename, (int *) size, DOWNLOAD, this->counter);
+    //unsigned char *packet = crt_request_pkt(filename, (int *) size, DOWNLOAD, this->counter, this->shared_key); TEST
+    unsigned char *packet = crt_request_pkt(filename, (int *) size, opcode, this->counter);
     return packet;
 }
 
