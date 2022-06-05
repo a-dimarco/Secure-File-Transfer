@@ -493,16 +493,17 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
 
 
     cipherlen = c.encrypt_packet((unsigned char *) filename, strlen(filename) + 1,
-                                  (unsigned char *) pkt, aad_size, shared_key, iv, IVSIZE,
-                                  (unsigned char *) pkt + pos, tag);
+                                 (unsigned char *) pkt, aad_size, shared_key, iv, IVSIZE,
+                                 (unsigned char *) pkt + pos, tag);
 
     pos += cipherlen;
     memcpy(pkt + pos, tag, TAGSIZE);
     pos += TAGSIZE;
-    
+
     //printf("pos a fine reqpkt, %d\n", pos);
     return pkt;
 }
+
 
 void client::create_downloaded_file(unsigned char *pkt) {
 
