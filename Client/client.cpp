@@ -253,7 +253,9 @@ void client::show_menu() {
         } else if (strcmp(command, "!rename") == 0) {
             free(command);
             rename_file();
-        } else if (strcmp(command, "!delete\n") == 0) {
+        } else if (strcmp(command, "!delete") == 0) {
+            unsigned char* req = crt_download_request(&size);
+            cm.send_packet(req, size);
             free(command);
             /*
             char namefile[] = "a.txt";
