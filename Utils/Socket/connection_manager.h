@@ -24,8 +24,9 @@
 #define RENAME 14
 #define DELETE 15
 #define LOGOUT 16
-#define RENAME_ACK 17
-#define RENAME_NACK 18
+#define UPLOAD2 17
+#define CHUNK 18
+#define FINAL_CHUNK 19
 
 //--PACKET SIZES
 #define CLIENT_HELLO_SIZE 23

@@ -195,6 +195,7 @@ void connection_manager::send_packet(unsigned char *packet, uint32_t pkt_len)
     printf("ho inviato tutto il pacchetto %zu\n", sent);
 }
 
+
 connection_manager::~connection_manager(){}
 
 //---Andrea TEST---

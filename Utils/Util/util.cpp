@@ -7,7 +7,6 @@ using namespace std;
 unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int counter2, unsigned char* shared_key)
 {
     // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG)
-
     int pos = 0;
     uint16_t ct_size=msg_size+16;
     int pkt_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t)+IVSIZE + ct_size + TAGSIZE;
@@ -47,52 +46,36 @@ unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8
     return packet;
 }
 
-unsigned char *crt_file_pkt(char *filename, uint32_t *size, uint8_t opcode, uint16_t counter, unsigned char* shared_key)
+unsigned char *crt_file_pkt(uint32_t clear_size,unsigned char* clear,uint32_t *size, uint8_t opcode, uint16_t counter, unsigned char* shared_key)
 {
-    int pos1 = 0;
-    int ret;
-    crypto c = crypto();
-    FILE *file;
-    int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
-    unsigned char start_packet[aad_size];
-    file = fopen(filename, "rb");
-    if (file == NULL)
-    {
-        printf("Errore nell'apertura del file\n");
-        exit(-1);
+    if(opcode==UPLOAD){
+        opcode=UPLOAD2;
     }
-    fseek(file, 0L, SEEK_END);
-    uint32_t file_size = htonl(ftell(file));
-    fseek(file, 0L, SEEK_SET);
-    uint16_t n_counter = htons(counter);
-    memcpy(start_packet, &opcode, sizeof(uint8_t));
+    int pos1 = 0;
+    crypto c = crypto();
+    int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
+    uint32_t pkt_len=aad_size + IVSIZE + clear_size + TAGSIZE;
+    unsigned char* final_packet=(unsigned char*)malloc(pkt_len);
+    memcpy(final_packet, &opcode, sizeof(uint8_t));
     pos1 += sizeof(uint8_t);
-    memcpy(start_packet + pos1, &n_counter, sizeof(uint16_t));
+    uint16_t n_counter= htons(counter);
+    memcpy(final_packet + pos1, &n_counter, sizeof(uint16_t));
     pos1 += sizeof(uint16_t);
-    memcpy(start_packet + pos1, &file_size, sizeof(uint32_t));
-    file_size=ntohl(file_size);
+    clear_size=htonl(clear_size);
+    memcpy(final_packet + pos1, &clear_size, sizeof(uint32_t));
+    clear_size=ntohl(clear_size);
+    pos1+=sizeof(uint32_t);
     unsigned char iv[IVSIZE];
     c.create_random_iv(iv);
-    unsigned char ciphertext[file_size];
+    unsigned char ciphertext[clear_size];
     unsigned char tag[TAGSIZE];
-    c.encrypt_message(file, file_size, start_packet, aad_size,shared_key , iv, IVSIZE, ciphertext, tag);
-    ret = fclose(file);
-    if (ret != 0)
-    {
-        printf("Errore\n");
-        exit(1);
-    }
-    unsigned char* final_packet=(unsigned char*)malloc(aad_size + IVSIZE + file_size + TAGSIZE);
-    int pos = 0;
-    memcpy(final_packet, start_packet, aad_size);
-    pos += aad_size;
-    memcpy(final_packet + pos, iv, IVSIZE);
-    pos += IVSIZE;
-    memcpy(final_packet + pos, ciphertext, file_size);
-    pos += file_size;
-    memcpy(final_packet + pos, tag,TAGSIZE);
-    pos += TAGSIZE;
-    *size = pos;
+    c.encrypt_packet(clear, clear_size, final_packet, aad_size,shared_key , iv, IVSIZE, ciphertext, tag);
+    memcpy(final_packet + pos1, iv, IVSIZE);
+    pos1+= IVSIZE;
+    memcpy(final_packet + pos1, ciphertext, clear_size);
+    pos1 += clear_size;
+    memcpy(final_packet + pos1, tag,TAGSIZE);
+    *size = pkt_len;
     return final_packet;
 }
 
@@ -201,6 +184,131 @@ unsigned char* crt_request_pkt(char* filename, int* size, uint8_t opcode, uint16
         pos += cipherlen;
         memcpy(pkt+pos, tag, 16);
         return pkt;  
+}
+
+int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char* shared_key, connection_manager* cm){
+    int ret;
+    FILE *file;
+    file = fopen(filename, "rb");
+    printf("filenmae %s\n",filename);
+    if (file == NULL)
+    {
+        printf("Errore nell'apertura del file\n");
+        exit(-1);
+    }
+    fseek(file, 0L, SEEK_END);
+    uint32_t file_size = ftell(file);
+    fseek(file, 0L, SEEK_SET);
+    printf("filesize %d\n",file_size);
+    if(file_size<CHUNK_SIZE){
+        unsigned char clear[file_size];
+        ret= fread(clear,sizeof(unsigned char),file_size,file);
+        if(ret<file_size){
+            cerr<<"error in reading the file";
+            exit(1);
+        }
+        uint32_t size;
+        counter++;
+        unsigned char* pkt= crt_file_pkt(file_size,clear,&size,opcode, counter, shared_key);
+        cm->send_packet(pkt,size);
+    }else {
+        opcode= CHUNK;
+        int sent = 0;
+        int current_len=0;
+        uint32_t size;
+        unsigned char* fragment;
+            while (sent < file_size)
+            {
+                current_len = (file_size - sent < CHUNK_SIZE) ? file_size - sent : CHUNK_SIZE;
+                if(sent+current_len==file_size){
+                    opcode=FINAL_CHUNK;
+                }
+                fragment = (unsigned char *)malloc(current_len);
+                ret = fread(fragment, sizeof(unsigned char), current_len, file);
+                counter++;
+                printf("counter %d\n",counter);
+                unsigned char* pkt= crt_file_pkt(current_len,fragment,&size,opcode, counter, shared_key);
+                cm->send_packet(pkt,size);
+                sent += current_len;
+                free(fragment);
+            };
+    }
+    return counter;
+}
+
+int rcv_file(unsigned char* pkt, char *filename, uint16_t counter, unsigned char* shared_key, connection_manager* cm){
+    printf("filename %s\n",filename);
+    FILE *file = fopen(filename, "wb");
+    if (file == nullptr) {
+        printf("Errore nella fopen\n");
+        exit(-1);
+    }
+    write_chunk(pkt, file,  counter,  shared_key);
+    uint8_t opcode=CHUNK;
+    unsigned char* pkto;
+    while(opcode==CHUNK){
+        pkto=cm->receive_packet();
+        int pos = 0;
+        memcpy(&opcode, pkto, sizeof(opcode));
+        pos += sizeof(opcode);
+        /*
+        memcpy(&count, pkto+pos, sizeof(uint16_t));
+        if(count!=counter){
+            cerr << "counter errato";
+            exit(1);
+        }*/
+        counter++;
+        write_chunk(pkto, file,  counter,  shared_key);
+
+    }
+    fclose(file);
+    free(filename);
+    return counter;
+}
+
+void write_chunk(unsigned char* pkt, FILE* file, uint16_t counter, unsigned char* shared_key){
+    int ret;
+    crypto c= crypto();
+    int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
+    uint16_t count;
+    uint32_t file_size;
+    int pos=sizeof(uint8_t);
+    memcpy(&count, pkt+pos, sizeof(uint16_t));
+    pos+=sizeof(uint16_t);
+    count = ntohs(count);
+    printf("count %d\n",count);
+    printf("counter %d\n",counter);
+    if(counter!=count){
+        cerr<<"Counter errato";
+        exit(0);
+    }
+    memcpy(&file_size, pkt+pos, sizeof(uint32_t));
+    file_size = ntohl(file_size);
+    pos+=sizeof(uint32_t);
+    unsigned char iv[IVSIZE];
+    memcpy(iv,pkt+pos,IVSIZE);
+    pos+=IVSIZE;
+    unsigned char ctext[file_size];
+    memcpy(ctext, pkt+pos,file_size);
+    pos+=file_size;
+    unsigned char tag[TAGSIZE];
+    memcpy(tag,pkt+pos,TAGSIZE);
+    unsigned char ptext[file_size+1];
+    c.decrypt_message(ctext, file_size,
+                      pkt, aad_len,
+                      tag,
+                      shared_key,
+                      iv, IVSIZE,
+                      ptext);
+    ptext[file_size]='\0';
+    ret = fwrite(ptext, sizeof(unsigned char), file_size, file);
+    if (ret < file_size) {
+        printf("Errore nella fwrite\n");
+        exit(-1);
+    }
+#pragma optimize("", off);
+    memset(ptext, 0, file_size);
+#pragma optimize("", on);
 }
 
 

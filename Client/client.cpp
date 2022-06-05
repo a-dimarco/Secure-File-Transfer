@@ -219,6 +219,34 @@ void client::handle_req() {
     } else if (opcode == DOWNLOAD) {
         create_downloaded_file(pkt);
         show_menu();
+    }else if (opcode == CHUNK) {
+        char *path = CLIENT_PATH;
+        string file_path = path;
+        file_path += this->user;
+        path = &file_path[0];
+        FILE *source;
+        file_path += "/file/";
+        file_path += this->file_name;
+        size_t len = file_path.length()+1;
+        char *filepath = &file_path[0];
+        this->counter++;
+        this->counter=rcv_file(pkt,filepath,this->counter,this->shared_key,&this->cm);
+        show_menu();
+    } else if (opcode == UPLOAD) {
+        uint32_t size;
+        handle_ack(pkt);
+        char *path = CLIENT_PATH;
+        string file_path = path; // ../server_file/client/
+        file_path += this->user;   // ../server_file/client/Alice
+        path = &file_path[0];
+        FILE *source;
+        file_path += "/file/";     // ../server_file/client/Alice/file/
+        file_path += this->file_name;     // ../server_file/client/Alice/file/filename.extension
+        size_t len = file_path.length()+1;//strlen(path) - 1;
+        char *filepath = &file_path[0];
+        printf("test: %s\n", filepath);
+        this->counter=send_file(filepath,opcode,this->counter,this->shared_key,&this->cm);
+        show_menu();
     } else {
         printf("Not a valid opcode\n");
         cm.close_socket(); // TEST
@@ -249,6 +277,8 @@ void client::show_menu() {
             free(command);
 
         } else if (strcmp(command, "!upload") == 0) { // IMPLEMENT
+            unsigned char *req = crt_download_request(&size, UPLOAD);
+            cm.send_packet(req, size);
             free(command);
         } else if (strcmp(command, "!rename") == 0) {
             free(command);
@@ -471,7 +501,6 @@ unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //
 unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter) {
 
     crypto c=crypto();
-
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) * 2;
     uint16_t ptext_size = strlen(filename)+1;
     //uint16_t ptext_size_n = htons(ptext_size);
