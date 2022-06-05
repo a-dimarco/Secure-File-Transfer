@@ -126,8 +126,9 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         	memcpy(file_name, pt, name_size - 1);
        	memcpy(file_name+name_size-1, "\0", 1);*/
             this->counter++;
-        	unsigned char* pkto = crt_file_pkt(file_name, &size, opcode, this->counter);
+        	unsigned char* pkto = crt_file_pkt(file_name, &size, opcode, this->counter,this->shared_key);
         	cm.send_packet(pkto, size);
+            free(this->file_name);
         	return;
     	}
     	else {
@@ -271,10 +272,10 @@ unsigned char *server::prepare_ack_packet(uint32_t *size) //TEST - UNUSED
     return packet;
 }
 
-unsigned char *server::crt_pkt_download(char *file, int *size)
+unsigned char *server::crt_pkt_download(char *file, uint32_t *size)
 {
 
-    unsigned char* pkt = crt_file_pkt(file, size, DOWNLOAD, this->counter);
+    unsigned char* pkt = crt_file_pkt(file, size, DOWNLOAD, this->counter, this->shared_key);
     this->counter++;
     return pkt;
 }

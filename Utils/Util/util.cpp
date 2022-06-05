@@ -46,16 +46,14 @@ unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8
     memcpy(packet+pos,tag,16);
     return packet;
 }
-unsigned char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter)
+unsigned char *crt_file_pkt(char *filename, uint32_t *size, uint8_t opcode, uint16_t counter, unsigned char* shared_key)
 {
-
     int pos1 = 0;
     int ret;
     crypto c = crypto();
     FILE *file;
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
     unsigned char start_packet[aad_size];
-
     file = fopen(filename, "rb");
     if (file == NULL)
     {
@@ -65,38 +63,34 @@ unsigned char *crt_file_pkt(char *filename, int *size, uint8_t opcode, uint16_t 
     fseek(file, 0L, SEEK_END);
     uint32_t file_size = htonl(ftell(file));
     fseek(file, 0L, SEEK_SET);
-
     uint16_t n_counter = htons(counter);
-
     memcpy(start_packet, &opcode, sizeof(uint8_t));
     pos1 += sizeof(uint8_t);
     memcpy(start_packet + pos1, &n_counter, sizeof(uint16_t));
     pos1 += sizeof(uint16_t);
     memcpy(start_packet + pos1, &file_size, sizeof(uint32_t));
-    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+    file_size=ntohl(file_size);
+    unsigned char iv[IVSIZE];
     c.create_random_iv(iv);
-    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-
-    unsigned char ciphertext[file_size + 16];
-    unsigned char tag[16];
-    int cipherlen = c.encrypt_message(file, file_size, start_packet, aad_size, c.get_key(), iv, iv_size, ciphertext, tag);
+    unsigned char ciphertext[file_size];
+    unsigned char tag[TAGSIZE];
+    c.encrypt_message(file, file_size, start_packet, aad_size,shared_key , iv, IVSIZE, ciphertext, tag);
     ret = fclose(file);
     if (ret != 0)
     {
         printf("Errore\n");
         exit(1);
     }
-    unsigned char final_packet[aad_size + iv_size + cipherlen + 16];
+    unsigned char* final_packet=(unsigned char*)malloc(aad_size + IVSIZE + file_size + TAGSIZE);
     int pos = 0;
     memcpy(final_packet, start_packet, aad_size);
     pos += aad_size;
-    memcpy(final_packet + pos, iv, iv_size);
-    pos += iv_size;
-    memcpy(final_packet + pos, ciphertext, cipherlen);
-    pos += cipherlen;
-    memcpy(final_packet + pos, tag, 16);
-    pos += 16;
-
+    memcpy(final_packet + pos, iv, IVSIZE);
+    pos += IVSIZE;
+    memcpy(final_packet + pos, ciphertext, file_size);
+    pos += file_size;
+    memcpy(final_packet + pos, tag,TAGSIZE);
+    pos += TAGSIZE;
     *size = pos;
     return final_packet;
 }

@@ -449,6 +449,7 @@ unsigned char *client::crt_download_request(uint32_t *size) {
 
     for(int i=0;i<31;i++) {
         if (filename[i] == '\n') {
+
             filename[i] = '\0';
             break;
         }
@@ -459,14 +460,14 @@ unsigned char *client::crt_download_request(uint32_t *size) {
         printf("Inserisci un nome corretto\n");
         return nullptr;
     }
-    this->file_name = filename;
+    this->file_name=(char *)malloc(strlen(filename)+1);
+    memcpy(this->file_name,&filename[0],strlen(filename)+1);
     this->counter++;
-    //printf("prima di crt_req_pkt\n");
-    unsigned char *packet = crt_request_pkt(filename, (int *) size, DOWNLOAD, this->counter, this->shared_key);
+    unsigned char *packet = crt_request_pkt(filename, (int *) size, DOWNLOAD, this->counter);
     return packet;
 }
 
-unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter, unsigned char *shared_key) {
+unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter) {
 
     crypto c=crypto();
 
@@ -510,56 +511,65 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
 void client::create_downloaded_file(unsigned char *pkt) {
 
     int ret;
-
     crypto c= crypto();
     int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
-
-    char *counter_pos = (char*)pkt + sizeof(uint8_t);
-    char *size_pos = counter_pos + sizeof(uint16_t);
-    char *iv_pos = size_pos + sizeof(uint32_t);
-    char *ct_pos = iv_pos + IVSIZE;
-
-    uint16_t h_counter;
-    uint32_t h_size;
-
-    memcpy(&h_counter, counter_pos, sizeof(uint16_t));
-    h_counter = ntohs(h_counter);
-    memcpy(&h_size, size_pos, sizeof(uint32_t));
-    h_size = ntohl(h_size);
-
-    int ct_len = h_size + (16 - h_size % 16);
-    if (h_size % 16 == 0)
-        ct_len += 16;
-
-    char *tag_pos = ct_pos + ct_len;
-
-    auto *ptext = (unsigned char *) malloc(h_size);
-
-    c.decrypt_message((unsigned char *) ct_pos, ct_len,
-                       (unsigned char *) pkt, aad_len,
-                       (unsigned char *) tag_pos,
+    uint16_t count;
+    uint32_t file_size;
+    int pos=sizeof(uint8_t);
+    memcpy(&count, pkt+pos, sizeof(uint16_t));
+    pos+=sizeof(uint16_t);
+    count = ntohs(count);
+    this->counter++;
+    if(counter!=count){
+        cerr<<"Counter errato";
+        exit(0);
+    }
+    memcpy(&file_size, pkt+pos, sizeof(uint32_t));
+    file_size = ntohl(file_size);
+    pos+=sizeof(uint32_t);
+    unsigned char iv[IVSIZE];
+    memcpy(iv,pkt+pos,IVSIZE);
+    pos+=IVSIZE;
+    unsigned char ctext[file_size];
+    memcpy(ctext, pkt+pos,file_size);
+    pos+=file_size;
+    unsigned char tag[TAGSIZE];
+    memcpy(tag,pkt+pos,TAGSIZE);
+    unsigned char ptext[file_size+1];
+    c.decrypt_message(ctext, file_size,
+                       pkt, aad_len,
+                       tag,
                        this->shared_key,
-                       (unsigned char *) iv_pos, IVSIZE,
+                       iv, IVSIZE,
                        ptext);
-
-    FILE *file = fopen(this->file_name, "wb");
+    ptext[file_size]='\0';
+    char *path = CLIENT_PATH;
+    string file_path = path; // ../server_file/client/
+    file_path += this->user;   // ../server_file/client/Alice
+    path = &file_path[0];
+    //printf("%s", path);
+    FILE *source;
+    file_path += "/file/";     // ../server_file/client/Alice/file/
+    file_path += this->file_name;     // ../server_file/client/Alice/file/filename.extension
+    size_t len = file_path.length()+1;//strlen(path) - 1;
+    char *filepath = &file_path[0];
+    FILE *file = fopen(filepath, "wb");
     if (file == nullptr) {
         printf("Errore nella fopen\n");
         exit(-1);
     }
-
-    ret = fwrite(ptext, sizeof(unsigned char), h_size, file);
-    if (ret < h_size) {
+    printf("ptext %s\n",ptext);
+    ret = fwrite(ptext, sizeof(unsigned char), file_size, file);
+    if (ret < file_size) {
         printf("Errore nella fwrite\n");
         exit(-1);
     }
     fclose(file);
 
 #pragma optimize("", off);
-    memset(ptext, 0, h_size);
+    memset(ptext, 0, file_size);
 #pragma optimize("", on);
-
-    free(ptext);
+    free(this->file_name);
 
 }
 

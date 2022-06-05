@@ -33,7 +33,7 @@ private:
 
     unsigned char *prepare_ack_packet(uint32_t *size);
 
-    unsigned char *crt_pkt_download(char *file, int *size);
+    unsigned char *crt_pkt_download(char *file, uint32_t *size);
 
     void store_file(unsigned char *pkt, uint8_t opcode);
 

@@ -67,7 +67,7 @@ private:
 
     unsigned char *crt_download_request(uint32_t *size);
 
-    unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter, unsigned char *shared_key);
+    unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter);
 
     void rename_file();
 };
