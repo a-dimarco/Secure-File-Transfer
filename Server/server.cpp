@@ -96,7 +96,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     }
     bool a;
     printf("Ckpoint2\n");
-    a = file_opener((char *) pt, this->logged_user, this->file_name);
+    a = file_opener((char *) pt, this->logged_user);
     printf("%s\n", this->file_name);
     printf("Dopo file opener\n");
     if(opcode==UPLOAD) {
