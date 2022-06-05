@@ -33,7 +33,7 @@
 #define IVSIZE 12
 #define TAGSIZE 16
 #define NONCESIZE 8
-#define CHUNK_SIZE 256000
+#define CHUNK_SIZE 1024000 //1 Mb
 
 //--FILE PATHS
 //#define SERVER_PATH "server_file/client/"

@@ -28,7 +28,7 @@ int main() {
         printf("Error in connection.\n");
         exit(1);
     }
-    printf("Client Socket is created.\n");
+    printf("[+] Socket created.\n");
 
     // Initializing socket structure with NULL
     memset(&cliAddr, '\0', sizeof(cliAddr));
@@ -64,7 +64,7 @@ int main() {
         exit(1);
     }
 
-    printf("Connected to Server.\n");
+    printf("[+] Connected to the Server!\n");
 
     cout << "Please, type your username: ";
     char username[11];

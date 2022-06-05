@@ -8,9 +8,8 @@ using namespace std;
 
 int sockfd;
 
-
 void signal_callback_handler(int flag) {
-    cout << "Server shutting down " << endl;
+    printf("\n[+] Process %d shutting down...\n",getpid());
     close(sockfd);
 // Terminate program
     exit(1);
@@ -72,7 +71,7 @@ exit(1);
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &trueFlag, sizeof(int));
 
 
-    printf("Server Socket is created.\n");
+    printf("[+] Socket created.\n");
 
 
 
@@ -113,11 +112,10 @@ exit(1);
 
 // Listening for connections (upto 10)
     if (listen(sockfd, 10) == 0) {
-        printf("Listening...\n\n");
+        printf("[+] Server - ON\n");
     }
 
-
-    int cnt = 0;
+    int cnt=0;
     signal(SIGINT, signal_callback_handler);
     while (1) {
 
@@ -132,6 +130,7 @@ exit(1);
 
 
 // Error handling
+
         if (clientSocket < 0) {
             printf("Error in connection");
             exit(1);
@@ -139,19 +138,13 @@ exit(1);
 
 
 
-// Displaying information of
-// connected client
+/*
         printf("Connection accepted from %s:%d\n",
                inet_ntoa(cliAddr.sin_addr),
-               ntohs(cliAddr.sin_port));
+               ntohs(cliAddr.sin_port));*/
 
 
-
-// Print number of clients
-// connected till now
-        printf("Clients connected: %d\n\n",
-               ++cnt);
-
+        printf("[+] Client connected!\n\n");
 
 
 // Creates a child process
@@ -164,7 +157,6 @@ exit(1);
             server s = server(clientSocket);
             while (true) {
                 s.handle_req();
-
 
             }
 

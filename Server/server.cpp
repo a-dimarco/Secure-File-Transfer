@@ -48,12 +48,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     unsigned char* pt = (unsigned char*)malloc(name_size);
 
     c->decrypt_message(ct, cipherlen, pkt, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
-
-    printf("ptext %s\n", pt);
-
-    printf("Dopo decrypt di request\n");
     bool b = nameChecker((char *)pt, FILENAME);
-    printf("Ckpoint1\n");
     if (!b)
     {
         uint32_t size;
@@ -64,9 +59,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         return;
     }
     bool a;
-    printf("Ckpoint2\n");
     a = file_opener((char *) pt, this->logged_user);
-    printf("opcode %d\n",opcode);
     if(a or (opcode==UPLOAD)) {
 
         char path[] = "server_file/client/";
@@ -87,11 +80,9 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
             cm.send_packet(pkto, size);
             return;
         }
-        printf("fraccazzo\n");
         uint32_t size;
         char msg[] = "Check eseguito correttamente";
         this->counter++;
-        printf("counter %d",counter);
         unsigned char *p = prepare_msg_packet(&size, msg, sizeof(msg),UPLOAD,counter,this->shared_key);
         cm.send_packet(p, size);
     }
@@ -106,7 +97,6 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
             this->counter++;
             pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);        
             cm.send_packet(pac, siz);
-            printf("Packet sent\n");
         }else {
             this->file_name = (char *) malloc(name_size);
             memcpy(file_name, pt, name_size - 1);
@@ -117,9 +107,6 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     else if(opcode == DOWNLOAD) 
     {
     	if (a) {
-    		printf("Sono prima di crt_file_pkt\n");
-    		printf("%s\n", this->file_name);
-            this->counter++;
         	this->counter= send_file(this->file_name,opcode,this->counter,this->shared_key,&this->cm);
             free(this->file_name);
         	return;
@@ -147,13 +134,11 @@ server::~server()
 
 void server::handle_req()
 {
-    printf("in hreq\n");
     unsigned char* pkt = cm.receive_packet();
     int pos = 0;
     uint8_t opcode;
     memcpy(&opcode, pkt, sizeof(uint8_t));
     pos += sizeof(uint8_t);
-    printf("opcode %d\n",opcode);
     // Opcode Handle
 
     if (opcode == LIST)
@@ -171,7 +156,6 @@ void server::handle_req()
     }
     else if (opcode == DOWNLOAD)
     { // IMPLEMENT
-    	printf("prima di check_file\n");
     	check_file(pkt, opcode);
     }
     else if (opcode == UPLOAD)
@@ -215,8 +199,12 @@ void server::handle_req()
     }
     else if (opcode == LOGOUT)
     { // IMPLEMENT
-        printf("Received logout request. Closing connections.\n Bye!\n");
+        printf("[-] Client disconnected :(\n");
         cm.close_socket();
+#pragma optimize "off"
+        memset(this->shared_key,0,this->key_size);
+#pragma optimize "on"
+        free(this->shared_key);
         exit(0);
     }
     else if (opcode == ACK)
@@ -507,13 +495,8 @@ string server::print_folder(char *path)
     int counter2 = 0;
 
     dir = opendir(path);
-    if (dir)
+    if (!dir)
     {
-        printf("Directory - OK\n");
-    }
-    else
-    {
-        printf("Directory NOT found\n");
         exit(-1);
     }
 
@@ -571,7 +554,6 @@ void server::delete_file() {
         this->counter++;
         pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);        
         cm.send_packet(pac, siz);
-        printf("Packet sent\n");
     }
 }
 
@@ -737,7 +719,6 @@ void server::auth(unsigned char* pkt, int pos) {
         cerr << "signature not valid";
         exit(1);
     }
-    
     EVP_PKEY_free(user_pk);
     unsigned char* g=c->dh_sharedkey(this->my_prvkey,pubkey,&this->key_size);
     this->shared_key=c->key_derivation(g,this->key_size);
@@ -746,6 +727,7 @@ void server::auth(unsigned char* pkt, int pos) {
     this->counter++;
     unsigned char* packet= prepare_msg_packet(&pkt_len,msg,sizeof(msg),ACK,counter,this->shared_key);
     cm.send_packet(packet,pkt_len);
+    fclose(file);
     BIO_free(bio);
     EVP_PKEY_free(pubkey);
     free(key);
