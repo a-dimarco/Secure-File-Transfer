@@ -68,8 +68,20 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     bool a;
     printf("Ckpoint2\n");
     a = file_opener((char *) pt, this->logged_user);
-    //printf("%s\n", this->file_name);
-    printf("Dopo file opener\n");
+    if(a) {
+        char *path = SERVER_PATH;
+        string file_path = path; // ../server_file/client/
+        file_path += this->logged_user;   // ../server_file/client/Alice
+        path = &file_path[0];
+        FILE *source;
+        DIR *dir;
+        dir = opendir(path);
+        closedir(dir);
+        file_path += "/file/";
+        file_path += (char*)pt;
+        this->file_name = &file_path[0];
+        printf("filename %s\n",this->file_name);
+    }
     if(opcode==UPLOAD) {
         if (a) {
             uint32_t *size;
