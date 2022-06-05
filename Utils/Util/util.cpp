@@ -1,9 +1,11 @@
 #include "util.h"
 #include "sodium.h"
+#include <sys/stat.h>
 #include "sodium/randombytes.h"
 #include "sodium/core.h"
-#include "../Crypto/crypto.h"
 using namespace std;
+
+
 unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int counter2, unsigned char* shared_key)
 {
     // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG)
@@ -102,8 +104,8 @@ bool nameChecker(char *name, int mode)
 bool file_opener(char *filename, char *username)
 {
 
-    char *path = SERVER_PATH;
-    string file_path = path; // ../server_file/client/
+    char* path;
+    string file_path = "server_file/client/"; // ../server_file/client/
     file_path += username;   // ../server_file/client/Alice
     
     path = &file_path[0];
@@ -127,8 +129,7 @@ bool file_opener(char *filename, char *username)
     file_path += "/file/";     // ../server_file/client/Alice/file/
 
     file_path += filename;     // ../server_file/client/Alice/file/filename.extension
-    
-    size_t len = file_path.length()+1;//strlen(path) - 1;
+
     
     char *filepath = &file_path[0];
     printf("test: %s\n", filepath);
@@ -196,10 +197,21 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char* s
         printf("Errore nell'apertura del file\n");
         exit(-1);
     }
-    fseek(file, 0L, SEEK_END);
-    uint32_t file_size = ftell(file);
-    fseek(file, 0L, SEEK_SET);
-    printf("filesize %d\n",file_size);
+    printf("prima di fseek\n");
+    /*
+    ret=fseek(file, 0L, SEEK_END);
+    if(ret<0){
+        cerr<<"fseek error";
+    }
+    long file_size = ftell(file);
+    ret=fseek(file, 0L, SEEK_SET);
+     */
+    struct stat st;
+    if(stat(filename, &st) != 0) {
+        return 0;
+    }
+    size_t file_size =st.st_size;
+    printf("filesize %li\n",file_size);
     if(file_size<CHUNK_SIZE){
         unsigned char clear[file_size];
         ret= fread(clear,sizeof(unsigned char),file_size,file);
@@ -208,14 +220,16 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char* s
             exit(1);
         }
         uint32_t size;
+        uint32_t file_siz=(uint32_t)file_size;
         counter++;
-        unsigned char* pkt= crt_file_pkt(file_size,clear,&size,opcode, counter, shared_key);
+        unsigned char* pkt= crt_file_pkt(file_siz,clear,&size,opcode, counter, shared_key);
         cm->send_packet(pkt,size);
     }else {
         opcode= CHUNK;
-        int sent = 0;
-        int current_len=0;
+        uint32_t sent = 0;
+        uint32_t current_len;
         uint32_t size;
+
         unsigned char* fragment;
             while (sent < file_size)
             {
@@ -223,14 +237,23 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char* s
                 if(sent+current_len==file_size){
                     opcode=FINAL_CHUNK;
                 }
-                fragment = (unsigned char *)malloc(current_len);
-                ret = fread(fragment, sizeof(unsigned char), current_len, file);
+                printf("prima di malloc, current len %d\n",current_len);
+
+                if(current_len==CHUNK_SIZE){
+                    fragment = (unsigned char *)malloc(256000);
+                }else{
+                    size_t c=file_size-sent;
+                    fragment = (unsigned char *)malloc(c);
+                }
+
+                //unsigned char fragment[current_len];
+                fread(fragment, sizeof(unsigned char), current_len, file);
                 counter++;
                 printf("counter %d\n",counter);
                 unsigned char* pkt= crt_file_pkt(current_len,fragment,&size,opcode, counter, shared_key);
                 cm->send_packet(pkt,size);
                 sent += current_len;
-                free(fragment);
+                //free(fragment);
             };
     }
     return counter;
@@ -248,9 +271,7 @@ int rcv_file(unsigned char* pkt, char *filename, uint16_t counter, unsigned char
     unsigned char* pkto;
     while(opcode==CHUNK){
         pkto=cm->receive_packet();
-        int pos = 0;
         memcpy(&opcode, pkto, sizeof(opcode));
-        pos += sizeof(opcode);
         /*
         memcpy(&count, pkto+pos, sizeof(uint16_t));
         if(count!=counter){

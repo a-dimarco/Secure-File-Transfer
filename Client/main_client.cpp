@@ -80,6 +80,5 @@ int main() {
         cl.handle_req();
     }
 
-    return 0;
 }
 

@@ -1,7 +1,7 @@
 #include "server.h"
 
 using namespace std;
-
+//char SERVER_PATH[]="server_file/client/";
 server::server(int sock)
 {
     this->socket = sock;
@@ -56,11 +56,11 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     printf("Ckpoint1\n");
     if (!b)
     {
-        uint32_t *size;
+        uint32_t size;
         char msg[] = "Inserisci un nome corretto";
         this->counter++;
-        unsigned char* pkt = prepare_ack_packet(size, msg, sizeof(msg));
-        cm.send_packet(pkt, *size);
+        unsigned char* pkto = prepare_msg_packet(&size,msg,sizeof(msg),ACK,this->counter,this->shared_key);
+        cm.send_packet(pkto, size);
         return;
     }
     bool a;
@@ -69,14 +69,9 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     printf("opcode %d\n",opcode);
     if(a or (opcode==UPLOAD)) {
 
-        char *path = SERVER_PATH;
+        char path[] = "server_file/client/";
         string file_path = path; // ../server_file/client/
         file_path += this->logged_user;   // ../server_file/client/Alice
-        path = &file_path[0];
-        FILE *source;
-        DIR *dir;
-        dir = opendir(path);
-        closedir(dir);
         file_path += "/file/"; // ../server_file/client/Alice/file/
         file_path += (char*)pt; // ../server_file/client/Alice/file/filename.extension
         size_t len = file_path.length() + 1;
@@ -85,11 +80,11 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     }
     if(opcode==UPLOAD) {
         if (a) {
-            uint32_t *size;
+            uint32_t size;
             char msg[] = "File già esistente";
             this->counter++;
-            unsigned char* pkt = prepare_msg_packet(size, msg, sizeof(msg),ACK,counter,this->shared_key);
-            cm.send_packet(pkt, *size);
+            unsigned char* pkto = prepare_msg_packet(&size, msg, sizeof(msg),ACK,counter,this->shared_key);
+            cm.send_packet(pkto, size);
             return;
         }
         printf("fraccazzo\n");
@@ -123,7 +118,6 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     {
     	if (a) {
     		printf("Sono prima di crt_file_pkt\n");
-    		uint32_t size;
     		printf("%s\n", this->file_name);
             this->counter++;
         	this->counter= send_file(this->file_name,opcode,this->counter,this->shared_key,&this->cm);
@@ -132,10 +126,10 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     	}
     	else {
     	     printf("File non esistente\n");
-    	     uint32_t *size;
+    	     uint32_t size;
             char msg[] = "File non esistente";
-            unsigned char* pkt = prepare_ack_packet(size, msg, sizeof(msg));
-            cm.send_packet(pkt, *size);
+            unsigned char* pkto= prepare_msg_packet(&size,msg,sizeof(msg),ACK,this->counter,this->shared_key);
+            cm.send_packet(pkto, size);
             return;
     	}
     }
@@ -167,7 +161,8 @@ void server::handle_req()
         handle_list(pkt);
         uint32_t size;
         this->counter++;
-        string temp = print_folder(SERVER_PATH);
+        char s[]="server_file/client/";
+        string temp = print_folder(s);
         int msg_size=temp.length() + 1;
         char msg[msg_size];//Retrieve the list
         strcpy(msg, temp.c_str());
@@ -267,18 +262,7 @@ void server::client_hello_handler(unsigned char* pkt, int pos)
     server_hello(nonce);
 }
 
-//Prepare Generic Ack Packet
 
-
-unsigned char *server::prepare_ack_packet(uint32_t *size) //TEST - UNUSED
-{
-    unsigned char *packet;
-    uint8_t opcode = ACK;
-    *size = sizeof(opcode);
-    memcpy(packet, &opcode, sizeof(opcode));
-
-    return packet;
-}
 /*
 unsigned char *server::crt_pkt_download(char *file, uint32_t *size)
 {
@@ -349,9 +333,9 @@ void server::store_file(unsigned char* pkt)
 
 //Prepare list packet and sends it
 void server::handle_list(unsigned char* pkt){
-    uint8_t opcod=LIST;
+
     //int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    int pos = sizeof(opcod);
+    int pos = sizeof(uint8_t);
     this->counter++;
     uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t));
@@ -374,9 +358,8 @@ void server::handle_list(unsigned char* pkt){
     pos += size_m;
     unsigned char tag[TAGSIZE];
     memcpy(tag, pkt + pos, TAGSIZE);
-    int aad_size = sizeof(opcod) + sizeof(uint16_t) + sizeof(uint16_t);
+    int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t);
     unsigned char* pt=(unsigned char*)malloc(size_m);
-    pos = 0;
     unsigned char* aad=(unsigned char*)malloc(aad_size);
     memcpy(aad, pkt, aad_size);
     c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
@@ -462,7 +445,8 @@ unsigned char *server::prepare_list_packet(int *size)
     cm.send_packet(packet, packet_size);
     */
     uint8_t opcode = LIST;
-    string temp = print_folder(SERVER_PATH);
+    char s[]="server_file/client/";
+    string temp = print_folder(s);
     int msg_size=temp.length() + 1;
     char* msg = (char*)malloc(msg_size);//Retrieve the list
     strcpy(msg, temp.c_str());
@@ -520,7 +504,7 @@ string server::print_folder(char *path)
     file_path += "/file";
     path = &file_path[0];
 
-    int counter = 0;
+    int counter2 = 0;
 
     dir = opendir(path);
     if (dir)
@@ -543,10 +527,10 @@ string server::print_folder(char *path)
             string temp = string(sel_file);
             file_list += temp;
             file_list += "\n";
-            counter++;
+            counter2++;
         }
     }
-    if (counter == 0)
+    if (counter2 == 0)
     {
         file_list += "There are no files in this folder";
     }
@@ -561,7 +545,7 @@ string server::print_folder(char *path)
 
 void server::delete_file() {
 
-    string file_path = SERVER_PATH; //  ../server_file/client/
+    string file_path = "server_file/client/"; //  ../server_file/client/
     file_path += this->logged_user; //  ../server_file/client/Alice
     file_path += "/file/"; //           ../server_file/client/Alice/file/
     file_path += file_name; //          ../server_file/client/Alice/file/filename.extension
@@ -628,7 +612,7 @@ void server::server_hello(unsigned char* nonce) {
 
     this->my_prvkey= c->dh_keygen();
  
-    uint32_t key_size;
+    uint32_t key_siz;
 
     BIO* bio=BIO_new(BIO_s_mem());
     ret= PEM_write_bio_PUBKEY(bio, my_prvkey);
@@ -643,20 +627,20 @@ void server::server_hello(unsigned char* nonce) {
     char* key = (char*)malloc(bptr->length);
     memcpy(key,bptr->data,bptr->length);
     BIO_free(bio);
-    key_size=bptr->length;
+    key_siz=bptr->length;
 
-    int sign_size=key_size+sizeof(nonce);
+    int sign_size=key_siz+sizeof(nonce);
     unsigned char* tosign=(unsigned char*)malloc(sign_size);
     int pos=0;
-    memcpy(tosign,key,key_size);
-    pos+=key_size;
+    memcpy(tosign,key,key_siz);
+    pos+=key_siz;
 
     uint16_t  nonce_size=sizeof(nonce);
     memcpy(tosign+pos,nonce,nonce_size);
 
     unsigned int sgnt_size;
     unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
-    uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_size+cert_size+(sgnt_size);
+    uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_siz+cert_size+(sgnt_size);
     unsigned char* pkt = (unsigned char*)malloc(pkt_len);
 
     pos=0;
@@ -671,7 +655,7 @@ void server::server_hello(unsigned char* nonce) {
     memcpy(pkt+pos,&cert_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
 
-    uint32_t key_size_s=htonl(key_size);
+    uint32_t key_size_s=htonl(key_siz);
     memcpy(pkt+pos,&key_size_s,sizeof(uint32_t));
     pos+=sizeof(uint32_t);
 
@@ -685,8 +669,8 @@ void server::server_hello(unsigned char* nonce) {
     memcpy(pkt+pos,cert,cert_size);
     pos+=cert_size;
 
-    memcpy(pkt+pos,key,key_size);
-    pos+=key_size;
+    memcpy(pkt+pos,key,key_siz);
+    pos+=key_siz;
 
     memcpy(pkt+pos,sign,ntohl(sgnt_size_s));
     cm.send_packet(pkt,pkt_len);
@@ -737,7 +721,7 @@ void server::auth(unsigned char* pkt, int pos) {
     pos+=key_siz;
     memcpy(to_verify+pos,this->snonce,sizeof(snonce));
 
-    string newnamepath = SERVER_PATH; //    ../server_file/client/
+    string newnamepath = "server_file/client/"; //    ../server_file/client/
     newnamepath += logged_user; //          ../server_file/client/username
     newnamepath += "/"; //                  ../server_file/client/username/
     newnamepath += "pubkey";
@@ -769,11 +753,6 @@ void server::auth(unsigned char* pkt, int pos) {
     free(to_verify);
 }
 
-unsigned char *server::prepare_ack_packet(uint32_t *size, char *msg, int msg_size){
-    printf("ciao");
-    unsigned char* ciao;
-    return ciao;
-}
 //~Andrea
 
 //Deserializes a rename packet and rename
@@ -907,12 +886,12 @@ bool server::rename_file(unsigned char* pkt, int pos) {
 
 bool server::file_renamer(char* new_name, char* old_name){
 
-    string newnamepath = SERVER_PATH; //    ../server_file/client/
+    string newnamepath = "server_file/client/"; //    ../server_file/client/
     newnamepath += logged_user; //          ../server_file/client/username
     newnamepath += "/file/"; //             ../server_file/client/username/file/
     newnamepath += new_name; //             ../server_file/client/username/file/newname.extension
     
-    string oldnamepath = SERVER_PATH; //    ../server_file/client/
+    string oldnamepath = "server_file/client/"; //    ../server_file/client/
     oldnamepath += logged_user; //          ../server_file/client/username
     oldnamepath += "/file/"; //             ../server_file/client/username/file/
     oldnamepath += old_name; //             ../server_file/client/username/file/oldname.extension

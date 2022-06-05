@@ -63,65 +63,6 @@ unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
     //free(nounce);
     return pkt;
 }
-/*
-unsigned char *client::crt_pkt_upload(char *filename, uint32_t *size) {
-
-    unsigned char *pkt = crt_file_pkt(filename, size, UPLOAD, this->counter);
-    this->counter++;
-    return pkt;
-    // static char pkt[23];
-    /* int pos1 = 0;
-     int ret;
-     crypto *c=new crypto();
-     FILE *file;
-     uint8_t opcode = htons(UPLOAD);
-     int aad_size=sizeof(uint8_t)+sizeof(uint16_t)+sizeof(uint32_t);
-     unsigned char start_packet[aad_size];
-
-     file = fopen(filename, "rb");
-     if (file == NULL) {
-         printf("Errore nell'apertura del file\n");
-         exit(-1);
-     }
-     fseek(file, 0L, SEEK_END);
-     uint32_t file_size = ftell(file);
-     fseek(file, 0L, SEEK_SET);
-     memcpy(start_packet, &opcode, sizeof(uint8_t));
-     pos1 += sizeof(uint8_t);
-     memcpy(start_packet + pos1, &this.counter, sizeof(uint16_t));
-     pos1 += sizeof(uint16_t);
-     memcpy(start_packet + pos1, &file_size, sizeof(uint32_t));
-
-     unsigned char* iv = c->create_random_iv();
-     int IVSIZE = IVSIZE;
-
-     unsigned char ciphertext[file_size+16];
-     unsigned char tag[16];
-     int cipherlen = c->encrypt_message(file,file_size,start_packet,aad_size,c->get_key(), iv, IVSIZE, ciphertext,tag);
-     ret = fclose(file);
-     if (ret != 0) {
-         printf("Errore\n");
-         exit(1);
-     }
-     char final_packet[aad_size+IVSIZE+file_size+16+16];
-     int pos = 0;
-     memcpy(final_packet, start_packet, aad_size);
-     pos += aad_size;
-     memcpy(final_packet+pos, iv, IVSIZE);
-     pos += IVSIZE;
-     memcpy(final_packet+pos, ciphertext, cipherlen);
-     pos += cipherlen;
-     memcpy(final_packet+pos, tag, 16);
-     pos += 16;
-
-     free(tag);
-     free(ciphertext);
-     free(start_packet);
-     free(iv);
-
-     *size = pos;
-     return final_packet;*/
-//}
 
 void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     crypto c = crypto();
@@ -220,29 +161,22 @@ void client::handle_req() {
         create_downloaded_file(pkt);
         show_menu();
     }else if (opcode == CHUNK) {
-        char *path = CLIENT_PATH;
+        char path[]="client_file/";
         string file_path = path;
         file_path += this->user;
-        path = &file_path[0];
-        FILE *source;
         file_path += "/file/";
         file_path += this->file_name;
-        size_t len = file_path.length()+1;
         char *filepath = &file_path[0];
         this->counter++;
         this->counter=rcv_file(pkt,filepath,this->counter,this->shared_key,&this->cm);
         show_menu();
     } else if (opcode == UPLOAD) {
-        uint32_t size;
         handle_ack(pkt);
-        char *path = CLIENT_PATH;
+        char path[]="client_file/";
         string file_path = path; // ../server_file/client/
         file_path += this->user;   // ../server_file/client/Alice
-        path = &file_path[0];
-        FILE *source;
         file_path += "/file/";     // ../server_file/client/Alice/file/
         file_path += this->file_name;     // ../server_file/client/Alice/file/filename.extension
-        size_t len = file_path.length()+1;//strlen(path) - 1;
         char *filepath = &file_path[0];
         printf("test: %s\n", filepath);
         this->counter=send_file(filepath,opcode,this->counter,this->shared_key,&this->cm);
@@ -498,7 +432,7 @@ unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //
     return packet;
 }
 
-unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter) {
+unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter2) {
 
     crypto c=crypto();
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) * 2;
@@ -506,7 +440,7 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
     //uint16_t ptext_size_n = htons(ptext_size);
     int pos = 0;
     int cipherlen;
-    uint16_t n_counter = htons(counter);
+    uint16_t n_counter = htons(counter2);
     *size = aad_size + IVSIZE + ptext_size + 16;
 
     auto *pkt = (unsigned char *) malloc(*size);
@@ -573,15 +507,12 @@ void client::create_downloaded_file(unsigned char *pkt) {
                        iv, IVSIZE,
                        ptext);
     ptext[file_size]='\0';
-    char *path = CLIENT_PATH;
+    char path[]="client_file/";
     string file_path = path; // ../server_file/client/
     file_path += this->user;   // ../server_file/client/Alice
-    path = &file_path[0];
     //printf("%s", path);
-    FILE *source;
     file_path += "/file/";     // ../server_file/client/Alice/file/
     file_path += this->file_name;     // ../server_file/client/Alice/file/filename.extension
-    size_t len = file_path.length()+1;//strlen(path) - 1;
     char *filepath = &file_path[0];
     FILE *file = fopen(filepath, "wb");
     if (file == nullptr) {
@@ -726,13 +657,13 @@ void client::handle_ack(unsigned char *pkt) {
 void client::rename_file() {//Va testata
 
     cout << "Rename - Which file?\n";
-    char* file_name=(char*)malloc(11);
-    fgets(file_name, 11, stdin);
+    char* file_nam=(char*)malloc(11);
+    fgets(file_nam, 11, stdin);
 
-    file_name[strcspn(file_name, "\n")] = 0;
+    file_nam[strcspn(file_nam, "\n")] = 0;
 
-    if (nameChecker(file_name, FILENAME)) {
-        printf("Filename %s - ok, please specify a new filename\n", file_name);
+    if (nameChecker(file_nam, FILENAME)) {
+        printf("Filename %s - ok, please specify a new filename\n", file_nam);
 
         char* new_name=(char*)malloc(11);
         fgets(new_name, 11, stdin);
@@ -741,13 +672,13 @@ void client::rename_file() {//Va testata
 
         if (nameChecker(new_name, FILENAME)) {
             uint32_t size;
-            unsigned char *packet = prepare_filename_packet(RENAME, &size, file_name, new_name);
+            unsigned char *packet = prepare_filename_packet(RENAME, &size, file_nam, new_name);
             free(new_name);
 
             cm.send_packet(packet, size);
 
-            printf("Rename request for file %s - sent\n waiting for response...\n", file_name);
-            free(file_name);
+            printf("Rename request for file %s - sent\n waiting for response...\n", file_nam);
+            free(file_nam);
 
         } else {
 
@@ -756,21 +687,21 @@ void client::rename_file() {//Va testata
         }
 
     } else {
-        printf("Filename %s - not accepted, please use filename.extension format\n", file_name);
-        free(file_name);
+        printf("Filename %s - not accepted, please use filename.extension format\n", file_nam);
+        free(file_nam);
     }
 
 }
 
-unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, char *file_name, char *new_name) {
+unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, char *file_nam, char *new_name) {
 
     //PACKET FORMAT  OPCODE - COUNTER - OLD_NAME_SIZE - NEW_NAME_SIZE - CTSIZE - IV - OLDNAME & NEWNAME - TAG
 
-    uint16_t old_size = htons(strlen(file_name));
+    uint16_t old_size = htons(strlen(file_nam));
     uint16_t new_size = htons(strlen(new_name));
     
     string temp; //Merge the two names as plaintext
-    temp += file_name;
+    temp += file_nam;
     temp += new_name;
     int pt_size=temp.length();
     char* pt = (char*)malloc(pt_size);
