@@ -22,7 +22,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     pos += sizeof(uint16_t);
     if (count != this->counter)
     {
-        throw Exception("Counter errato\n");
+        throw Exception("Counter Error\n");
     }
     uint16_t name_size;
     memcpy(&name_size, pkt + pos, sizeof(uint16_t));

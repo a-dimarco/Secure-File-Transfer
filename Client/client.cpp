@@ -5,7 +5,8 @@ using namespace std;
 
 client::client() = default;;
 
-client::client(char *username, int sock) {
+client::client(char *username, int sock) 
+{
     /*
     char addr[] = "127.0.0.1";
     // long dest_port = 49151;
@@ -13,7 +14,7 @@ client::client(char *username, int sock) {
     */
     this->user = new char[USERNAMESIZE];
     // this->username = username;
-    memcpy((void *) this->user, (void *) username, sizeof(username));
+    memcpy((void *) this->user, (void *) username, sizeof(USERNAMESIZE));
     //int seed=atoi(username);
     /*
     srand(time(nullptr));
@@ -24,11 +25,13 @@ client::client(char *username, int sock) {
 
 }
 
-void client::send_clienthello() {
+void client::send_clienthello() 
+{
     crypto c = crypto();
 
     nonce = (unsigned char *) malloc(NONCESIZE);
-    if (nonce == NULL) {
+    if (nonce == NULL) 
+    {
         cerr << "Malloc return NULL";
         exit(1);
     }
@@ -42,21 +45,20 @@ void client::send_clienthello() {
         //cm->close_socket();//TEST
         return test;//TEST -> messa per non far andare il loop il client
     }*/
-
-
 }
 
-unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
-    
+unsigned char *client::crt_pkt_hello() // Creates first handshake packet
+{ 
     // PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
-
+    
     uint16_t us_size = htons(strlen(user) + 1);
     uint16_t nonce_size = htons(sizeof(nonce));
     uint8_t opcode = CHELLO_OPCODE;
     int pos = 0;
     uint32_t pkt_len = CLIENT_HELLO_SIZE;
     auto *pkt = (unsigned char *) malloc(CLIENT_HELLO_SIZE);
-    if (pkt == NULL) {
+    if (pkt == NULL) 
+    {
         cerr << "Malloc return NULL";
         exit(1);
     }
@@ -75,8 +77,10 @@ unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
     return pkt;
 }
 
-void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
-    
+void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) 
+{
+    // PACKET FORMAT: OPCODE - KEY_SIZE - SIGNATURE_SIZE - KEY - SIGNATURE
+
     crypto c = crypto();
     EVP_PKEY *my_prvkey = c.dh_keygen();
     uint32_t key_siz;
@@ -95,6 +99,7 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     memcpy(key, bptr->data, bptr->length);
     key_siz = bptr->length;
     uint sign_size = key_siz + sizeof(nounce);
+    
     unsigned char tosign[sign_size];
     int pos = 0;
     memcpy(tosign, key, key_siz);
@@ -111,7 +116,8 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     uint8_t opcode = AUTH;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint32_t) * 2 + key_siz + sgnt_size;
     auto *pkt = (unsigned char *) malloc(pkt_len);
-    if (pkt == NULL) {
+    if (pkt == NULL) 
+    {
         cerr << "Malloc return NULL";
         exit(1);
     }
@@ -120,16 +126,18 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     memcpy(pkt + pos, &opcode, sizeof(uint8_t));
     pos += sizeof(uint8_t);
 
-    uint32_t key_size_s = htonl(key_siz); //
+    uint32_t key_size_s = htonl(key_siz); //Key Size
     memcpy(pkt + pos, &key_size_s, sizeof(uint32_t));
     pos += sizeof(uint32_t);
 
-    uint32_t sgnt_size_s = htonl(sgnt_size);
+    uint32_t sgnt_size_s = htonl(sgnt_size); //Signature Size
     memcpy(pkt + pos, &sgnt_size_s, sizeof(uint32_t));
     pos += sizeof(uint32_t);
-    memcpy(pkt + pos, key, ntohl(key_size_s));
+
+    memcpy(pkt + pos, key, ntohl(key_size_s)); // Key 
     pos += (int) ntohl(key_size_s);
-    memcpy(pkt + pos, sign, ntohl(sgnt_size_s));;
+
+    memcpy(pkt + pos, sign, ntohl(sgnt_size_s));// Signature
     unsigned char *g = c.dh_sharedkey(my_prvkey, pubkey, &this->key_size);
     this->shared_key = c.key_derivation(g, this->key_size);
 
@@ -139,17 +147,18 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     free(sign);
 }
 
-client::~client() {
+client::~client() 
+{
     this->cm.close_socket();
-    if(this->shared_key!= nullptr) {
+    if(this->shared_key!= nullptr) 
+    {
         unoptimized_memset(this->shared_key, 0, this->key_size);
         free(this->shared_key);
     }
 }
 
-// Andrea Test
-
-void client::print_commands() {
+void client::print_commands() 
+{
     printf("\nPlease select a command\n");
     printf("!list --> Show all files uploaded to the server\n");
     printf("!download --> Download a file from the server\n");
@@ -159,47 +168,61 @@ void client::print_commands() {
     printf("!logout --> Disconnect from the server and close the application\n");
 }
 
-void client::handle_req() {
-    try {
+void client::handle_req() 
+{
+    try 
+    {
         printf("receiving\n");
         unsigned char *pkt = this->cm.receive_packet();
-        // Andrea test
-        // Deserializzazione
+
+        // Deserialization
         int pos = 0;
         uint8_t opcode;
 
-        memcpy(&opcode, pkt, sizeof(opcode)); // prelevo opcode
-        // opcode = ntohs(opcode);
+        memcpy(&opcode, pkt, sizeof(opcode)); // OPCode
         pos += sizeof(opcode);
 
-        if (opcode == SHELLO_OPCODE) {
+        if (opcode == SHELLO_OPCODE) 
+        {
             server_hello_handler(pkt, pos);
-        } else if (opcode == LIST) {
+        }
+        else if (opcode == LIST) 
+        {
             printf("Received List\n");
             show_list(pkt, pos);
             show_menu();
-        } else if (opcode == ACK) { // TEST
+        } 
+        else if (opcode == ACK) 
+        { 
             handle_ack(pkt);
             show_menu();
-            return; // TEST
-        } else if (opcode == LOGOUT) { // TEST
+            return;
+        } 
+        else if (opcode == LOGOUT) 
+        {
             printf("[-] Server disconnected, something went wrong.\n");
             cm.close_socket();
-            if(this->shared_key!= nullptr) {
+            if(this->shared_key!= nullptr) 
+            {
                 unoptimized_memset(this->shared_key, 0, this->key_size);
                 free(this->shared_key);
             }
             exit(1);
-        } else if (opcode == DOWNLOAD) {
+        } 
+        else if (opcode == DOWNLOAD) 
+        {
             create_downloaded_file(pkt);
             show_menu();
-        } else if (opcode == CHUNK) {
+        } 
+        else if (opcode == CHUNK) 
+        {
             char path[] = "client_file/";
-            string file_path = path;
-            file_path += this->user;
-            file_path += "/file/";
-            file_path += this->file_name;
+            string file_path = path;            // ../client_file
+            file_path += this->user;            // ../client_file/Alice
+            file_path += "/file/";              // ../client_file/Alice/file/
+            file_path += this->file_name;       // ../client_file/Alice/file/filename.extension
             char *filepath = &file_path[0];
+
             if(this->counter == UINT16_MAX - 2) //Check counter overflow
             { 
                 throw ExitException("Counter Exceeded\n");
@@ -207,46 +230,53 @@ void client::handle_req() {
             this->counter++;
             this->counter = rcv_file(pkt, filepath, this->counter, this->shared_key, &this->cm);
             show_menu();
-        } else if (opcode == UPLOAD) {
+        } 
+        else if (opcode == UPLOAD) 
+        {
             handle_ack(pkt);
             char path[] = "client_file/";
-            string file_path = path; // ../server_file/client/
-            file_path += this->user;   // ../server_file/client/Alice
-            file_path += "/file/";     // ../server_file/client/Alice/file/
-            file_path += this->file_name;     // ../server_file/client/Alice/file/filename.extension
+            string file_path = path;            // ../client_file
+            file_path += this->user;            // ../client_file/Alice
+            file_path += "/file/";              // ../client_file/Alice/file/
+            file_path += this->file_name;       // ../client_file/Alice/file/filename.extension
             char *filepath = &file_path[0];
             this->counter = send_file(filepath, opcode, this->counter, this->shared_key, &this->cm);
             show_menu();
-        } else {
+        } 
+        else 
+        {
             printf("Not a valid opcode\n");
             cm.close_socket();
-            if(this->shared_key!= nullptr) {
+            if(this->shared_key!= nullptr) 
+            {
                 unoptimized_memset(this->shared_key, 0, this->key_size);
                 free(this->shared_key);
             }
             exit(1);
         }
         free(pkt);
-    } catch (exception &e) {
+    } 
+    catch (exception &e) 
+    {
         cerr << e.what();
         exit(1);
     }
 }
 
-void client::show_menu() {
-
+void client::show_menu() 
+{
     print_commands();
 
-    char command[30];
-    //sleep(0.5);
+    char command[MAXCOMMANDSIZE];
     int ch;
     printf("Prima di while\n");
     //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
     printf("Dopo while\n");
     //setbuf(stdin, NULL);
-    char * check=fgets(command, 30, stdin);
+    char * check=fgets(command, MAXCOMMANDSIZE, stdin);
 
-    if (!strchr(command, '\n')) {
+    if (!strchr(command, '\n')) 
+    {
         printf("Error: command exceeding 30 characters\n");
         char c[2];
         while (c[0] != '\n')
@@ -258,19 +288,25 @@ void client::show_menu() {
     //scanf("%*[^\n]%1*[\n]");
     command[strcspn(command, "\n")] = 0;
     try {
-    if (nameChecker(command, COMMAND)) {
+    if (nameChecker(command, COMMAND)) 
+    {
         uint32_t size;
-        if (strcmp(command, "!list") == 0) {
+        if (strcmp(command, "!list") == 0) 
+        {
             char msg[]="PAD";
+
             if(this->counter == UINT16_MAX - 2) //Check counter overflow
             { 
                 throw ExitException("Counter Exceeded\n");
             }
             this->counter++;
+
             unsigned char* pkto = prepare_msg_packet(&size,msg,sizeof(msg),LIST,counter,this->shared_key);
             this->cm.send_packet(pkto,size);
             printf("Packet list sent\n");
-        } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
+        } 
+        else if (strcmp(command, "!download") == 0) 
+        {
             //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
             printf("prima di crt_downl_req\n");
             unsigned char *req = crt_download_request(&size, DOWNLOAD);
@@ -279,12 +315,18 @@ void client::show_menu() {
             else
             	printf("Nome file non corretto\n");*/
             cm.send_packet(req, size);
-        } else if (strcmp(command, "!upload") == 0) { // IMPLEMENT
+        } 
+        else if (strcmp(command, "!upload") == 0) 
+        {
             unsigned char *req = crt_download_request(&size, UPLOAD);
             cm.send_packet(req, size);
-        } else if (strcmp(command, "!rename") == 0) {
+        } 
+        else if (strcmp(command, "!rename") == 0) 
+        {
             rename_file();
-        } else if (strcmp(command, "!delete") == 0) {
+        } 
+        else if (strcmp(command, "!delete") == 0)
+        {
             unsigned char* req = crt_download_request(&size, DELETE);
             cm.send_packet(req, size);
           	  /*
@@ -293,7 +335,9 @@ void client::show_menu() {
             this->cm.send_packet(pkt, size);
              */
 
-        } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
+        } 
+        else if (strcmp(command, "!logout") == 0) 
+        { // IMPLEMENT
             char msg[]="LOGOUT";
             uint32_t siz;
             if(this->counter == UINT16_MAX - 2) //Check counter overflow
@@ -310,23 +354,31 @@ void client::show_menu() {
                 free(this->shared_key);
                 cm.close_socket();
                 exit(0);
-            } else {
+            } 
+            else 
+            {
 
                 printf("Command %s not found, please retry\n", command);
                 show_menu();
             }
-        } else {
+        } 
+        else 
+        {
             printf("Command format not valid, please use the format !command\n");
             show_menu();
         }
-    } catch (exception &e) {
+    }
+    catch (exception &e) 
+    {
         cerr << e.what();
         show_menu();
     }
 }
 
-unsigned char *client::prepare_list_req(uint32_t *size) {
-    // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG)
+unsigned char *client::prepare_list_req(uint32_t *size) 
+{
+    // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG
+    
     char msg[] = "PAD";
     int msg_size = sizeof(msg);
     int pos = 0;
@@ -353,11 +405,9 @@ unsigned char *client::prepare_list_req(uint32_t *size) {
     memcpy(packet + pos, &count, sizeof(uint16_t));
     pos += sizeof(uint16_t);
 
-
     uint16_t size_m = htons(msg_size + 16); //CipherText Size
     memcpy(packet + pos, &size_m, sizeof(uint16_t));
     pos += sizeof(uint16_t);
-
 
     crypto *c;
     c = new crypto(); //IV
@@ -381,8 +431,8 @@ unsigned char *client::prepare_list_req(uint32_t *size) {
     return packet;
 }
 
-void client::show_list(unsigned char *pkt, int pos) {
-
+void client::show_list(unsigned char *pkt, int pos) 
+{
     uint16_t list_size;
 
     // Deserialization
@@ -405,7 +455,7 @@ void client::show_list(unsigned char *pkt, int pos) {
     pos += sizeof(list_size);
     list_size = ntohs(list_size);
 
-    unsigned char iv[IVSIZE];
+    unsigned char iv[IVSIZE]; // IV
     memcpy(iv, pkt + pos, IVSIZE);
     pos += IVSIZE;
 
@@ -426,41 +476,42 @@ void client::show_list(unsigned char *pkt, int pos) {
 
 }
 
-unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //TEST SHOULD BE RENAMED
-    printf("Inserisci file\n");
-    char filename[31];
-    printf("prima di fgets\n");
-    fgets(filename, 31, stdin);
-    printf("dopo fgets\n");
+unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) //TEST SHOULD BE RENAMED
+{ 
+    printf("Insert the filename\n");
+    char filename[MAXFILENAMESIZE];
+    fgets(filename, MAXFILENAMESIZE, stdin);
 
-    if (!strchr(filename, '\n')) {
-        //printf("Error: filename exceeding 31 characters\n");
+    if (!strchr(filename, '\n')) 
+    {
         char c[2];
         while (c[0] != '\n')
             fgets(c, 2, stdin);
-        throw Exception("Filename exceeding 31 characters");
+        throw Exception("Filename exceeding 30 characters");
     }
 
-    for (int i = 0; i < 31; i++) {
-        if (filename[i] == '\n') {
-
+    for (int i = 0; i < MAXFILENAMESIZE; i++) 
+    {
+        if (filename[i] == '\n') 
+        {
             filename[i] = '\0';
             break;
         }
     }
 
     bool check = nameChecker(filename, FILENAME);
-    if (!check) {
-        //printf("Inserisci un nome corretto\n");
-        //return nullptr;
-        throw Exception("Inserisci un nome corretto\n");
+    if (!check) 
+    {
+        throw Exception("Insert a correct filename format\n");
     }
-    this->file_name = (char *) malloc(strlen(filename) + 1);
-    if (this->file_name == NULL) {
+    size_t filename_size = strlen(filename) + 1;
+    this->file_name = (char*) malloc(filename_size);
+    if (this->file_name == NULL) 
+    {
         cerr << "Malloc return NULL";
         exit(1);
     }
-    memcpy(this->file_name,&filename[0],strlen(filename)+1);
+    memcpy(this->file_name, &filename[0], filename_size);
     
     if(this->counter == UINT16_MAX - 2) //Check counter overflow
     { 
@@ -473,7 +524,9 @@ unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //
     return packet;
 }
 
-unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter2) {
+unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter2) 
+{
+    // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG
 
     crypto c = crypto();
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) * 2;
@@ -482,7 +535,7 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
     int pos = 0;
     int cipherlen;
     uint16_t n_counter = htons(counter2);
-    *size = aad_size + IVSIZE + ptext_size + 16;
+    *size = aad_size + IVSIZE + ptext_size + TAGSIZE;
 
     auto *pkt = (unsigned char *) malloc(*size);
     if (pkt == NULL) {
@@ -517,18 +570,20 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
 }
 
 
-void client::create_downloaded_file(unsigned char *pkt) {
-
+void client::create_downloaded_file(unsigned char *pkt) 
+{
     uint32_t ret;
     crypto c = crypto();
     int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
     uint16_t count;
     uint32_t file_size;
+
     int pos = sizeof(uint8_t);
-    memcpy(&count, pkt + pos, sizeof(uint16_t));
+
+    memcpy(&count, pkt + pos, sizeof(uint16_t)); // Counter
     pos += sizeof(uint16_t);
     count = ntohs(count);
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
+    if(this->counter == UINT16_MAX - 2) // Check counter overflow
     { 
         throw ExitException("Counter Exceeded\n");
     }
@@ -537,44 +592,46 @@ void client::create_downloaded_file(unsigned char *pkt) {
         cerr << "Counter errato";
         exit(0);
     }
-    memcpy(&file_size, pkt + pos, sizeof(uint32_t));
+
+    memcpy(&file_size, pkt + pos, sizeof(uint32_t)); // File_size
     file_size = ntohl(file_size);
     pos += sizeof(uint32_t);
-    unsigned char iv[IVSIZE];
+
+    unsigned char iv[IVSIZE]; // IV
     memcpy(iv, pkt + pos, IVSIZE);
     pos += IVSIZE;
-    unsigned char ctext[file_size];
+
+    unsigned char ctext[file_size]; // Ciphertext
     memcpy(ctext, pkt + pos, file_size);
     pos += file_size;
     unsigned char tag[TAGSIZE];
     memcpy(tag, pkt + pos, TAGSIZE);
     unsigned char ptext[file_size + 1];
-    c.decrypt_message(ctext, file_size,
-                      pkt, aad_len,
-                      tag,
-                      this->shared_key,
-                      iv,
-                      ptext);
+    c.decrypt_message(ctext, file_size, pkt, aad_len, tag,
+                      this->shared_key, iv, ptext);
+    
     ptext[file_size] = '\0';
     char path[] = "client_file/";
-    string file_path = path; // ../server_file/client/
-    file_path += this->user;   // ../server_file/client/Alice
+    string file_path = path;             // ../client_file/
+    file_path += this->user;             // ../client_file/Alice
     //printf("%s", path);
-    file_path += "/file/";     // ../server_file/client/Alice/file/
-    file_path += this->file_name;     // ../server_file/client/Alice/file/filename.extension
+    file_path += "/file/";               // ../client_file/Alice/file/
+    file_path += this->file_name;        // ../client_file//Alice/file/filename.extension
     char *filepath = &file_path[0];
+
     FILE *file = fopen(filepath, "wb");
-    if (file == nullptr) {
+    if (file == nullptr)
+    {
         printf("Errore nella fopen\n");
         exit(-1);
     }
     ret = (uint32_t) fwrite(ptext, sizeof(unsigned char), file_size, file);
-    if (ret < file_size) {
+    if (ret < file_size) 
+    {
         printf("Errore nella fwrite\n");
         exit(-1);
     }
     fclose(file);
-
 
     unoptimized_memset(ptext, 0, file_size);
 
@@ -582,37 +639,49 @@ void client::create_downloaded_file(unsigned char *pkt) {
 
 }
 
-void client::server_hello_handler(unsigned char *pkt, int pos) {
+void client::server_hello_handler(unsigned char *pkt, int pos) 
+{
+    // PACKET FORMAT: OPCODE - NONCE_SIZE - CERTIFICATE_SIZE - KEY_SIZE - SIGNATURE_SIZE - NONCE - CERTIFICATE - KEY - SIGNATURE
+
     crypto *c;
     c = new crypto();
     int ret;
-    uint16_t nonce_size;
+
+    uint16_t nonce_size; // Nonce_size
     memcpy(&nonce_size, pkt + pos, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     nonce_size = ntohs(nonce_size);
-    uint32_t cert_size;
+
+    uint32_t cert_size; // Certificate_size
     memcpy(&cert_size, pkt + pos, sizeof(uint32_t));
     pos += sizeof(uint32_t);
     cert_size = ntohl(cert_size);
-    uint32_t key_siz;
+
+    uint32_t key_siz; // Key_size
     memcpy(&key_siz, pkt + pos, sizeof(uint32_t));
     pos += sizeof(uint32_t);
     key_siz = ntohl(key_siz);
-    uint32_t sgnt_size;
+
+    uint32_t sgnt_size; // Signature_size
     memcpy(&sgnt_size, pkt + pos, sizeof(uint32_t));
     pos += sizeof(uint32_t);
     sgnt_size = ntohl(sgnt_size);
-    unsigned char snonce[nonce_size];
+
+    unsigned char snonce[nonce_size]; //Nonce
     memcpy(snonce, pkt + pos, nonce_size);
     pos += nonce_size;
-    unsigned char cert[cert_size];
+
+    unsigned char cert[cert_size]; //Certificate
     memcpy(cert, pkt + pos, cert_size);
     pos += cert_size;
-    unsigned char key[key_siz];
+
+    unsigned char key[key_siz]; //Key
     memcpy(key, pkt + pos, key_siz);
     pos += key_siz;
-    unsigned char sign[sgnt_size];
+
+    unsigned char sign[sgnt_size]; //Signature
     memcpy(sign, pkt + pos, sgnt_size);
+
     BIO *bio = BIO_new(BIO_s_mem());
     ret = BIO_write(bio, cert, cert_size);
     if (ret == 0) {
@@ -631,61 +700,75 @@ void client::server_hello_handler(unsigned char *pkt, int pos) {
     } else {
         printf("\nValid Certificate!\n");
     }
+
     pos = 0;
-    unsigned char to_verify[key_siz + nonce_size];
+    unsigned char to_verify[key_siz + nonce_size]; // Signature Verification TEST
     memcpy(to_verify, key, key_siz);
     pos += key_siz;
     memcpy(to_verify + pos, this->nonce, nonce_size);
     BIO_free(bio);
     bio = BIO_new(BIO_s_mem());
     ret = BIO_write(bio, key, key_siz);
-    if (ret == 0) {
+    if (ret == 0) 
+    {
         cerr << "errore in BIO_write";
         exit(1);
     }
     EVP_PKEY *pubkey = PEM_read_bio_PUBKEY(bio, nullptr, nullptr, nullptr);
-    if (pubkey == nullptr) {
+    if (pubkey == nullptr) 
+    {
         cerr << "PEM_read_bio_PUBKEY error";
         exit(1);
     }
     b = c->verify_sign(sign, sgnt_size, to_verify, key_siz + nonce_size, X509_get_pubkey(certificate));
     free(nonce);
-    if (!b) {
+    if (!b) 
+    {
         cerr << "signature not valid";
         exit(1);
-    } else {
+    } 
+    else 
+    {
         printf("\nValid Signature!\n");
     }
+
     X509_free(certificate);
     BIO_free(bio);
     auth(snonce, pubkey);
-
 }
 
-void client::handle_ack(unsigned char *pkt) {
+void client::handle_ack(unsigned char *pkt) 
+{
+    // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG
+
     int pos = sizeof(uint8_t);
+    
     if(this->counter == UINT16_MAX - 2) //Check counter overflow
     { 
         throw ExitException("Counter Exceeded\n");
     }
-    this->counter++;
+    this->counter++; 
     uint16_t count;
-    memcpy(&count, pkt + pos, sizeof(uint16_t));
+    memcpy(&count, pkt + pos, sizeof(uint16_t)); //Counter
     pos += sizeof(uint16_t);
     count = ntohs(count);
-    if (this->counter != count) {
+    if (this->counter != count) 
+    {
         cerr << "counter errato";
     }
-    uint16_t size_m;
+
+    uint16_t size_m; // CPSize
     memcpy(&size_m, pkt + pos, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     size_m = ntohs(size_m);
-    crypto *c;
+
+    crypto *c; // IV
     c = new crypto();
     unsigned char iv[IVSIZE];
     memcpy(iv, pkt + pos, IVSIZE);
     pos += IVSIZE;
-    unsigned char ct[size_m];
+
+    unsigned char ct[size_m]; //Ciphertext & Tag
     memcpy(ct, pkt + pos, size_m);
     pos += size_m;
     unsigned char tag[TAGSIZE];
@@ -695,26 +778,45 @@ void client::handle_ack(unsigned char *pkt) {
     unsigned char aad[aad_size];
     memcpy(aad, pkt, aad_size);
     c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, pt);
+
     printf("%s\n", pt);
 }
 
-void client::rename_file() {//Va testata
-
+void client::rename_file() 
+{
     cout << "Rename - Which file?\n";
-    char file_nam[11];
-    fgets(file_nam, 11, stdin);
+    char file_nam[MAXFILENAMESIZE];
+    fgets(file_nam, MAXFILENAMESIZE, stdin);
+
+    if (!strchr(file_nam, '\n')) 
+    {
+        char c[2];
+        while (c[0] != '\n')
+            fgets(c, 2, stdin);
+        throw Exception("Filename exceeding 300 characters");
+    }
 
     file_nam[strcspn(file_nam, "\n")] = 0;
 
-    if (nameChecker(file_nam, FILENAME)) {
+    if (nameChecker(file_nam, FILENAME)) 
+    {
         printf("Filename %s - ok, please specify a new filename\n", file_nam);
 
-        char new_name[11];
-        fgets(new_name, 11, stdin);
+        char new_name[MAXFILENAMESIZE];
+        fgets(new_name, MAXFILENAMESIZE, stdin);
+
+        if (!strchr(new_name, '\n')) 
+        {
+            char c[2];
+            while (c[0] != '\n')
+                fgets(c, 2, stdin);
+            throw Exception("Filename exceeding 30 characters");
+        }
 
         new_name[strcspn(new_name, "\n")] = 0;
 
-        if (nameChecker(new_name, FILENAME)) {
+        if (nameChecker(new_name, FILENAME)) 
+        {
             uint32_t size;
             unsigned char *packet = prepare_filename_packet(RENAME, &size, file_nam, new_name);
 
@@ -722,12 +824,15 @@ void client::rename_file() {//Va testata
 
             printf("Rename request for file %s - sent\n waiting for response...\n", file_nam);
 
-        } else {
-
+        } 
+        else 
+        {
             printf("Filename %s - not accepted, please use filename.extension format\n", new_name);
         }
 
-    } else {
+    } 
+    else 
+    {
         printf("Filename %s - not accepted, please use filename.extension format\n", file_nam);
     }
 
