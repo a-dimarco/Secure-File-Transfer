@@ -88,7 +88,6 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     {
         if(!a)
         {
-            cerr << "DELETE - FILE NOT FOUND\n";
             char msg[] = "DELETE - FILE NOT FOUND\n";
             unsigned char *pac;
             uint32_t siz;
@@ -110,7 +109,6 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         	return;
     	}
     	else {
-    	     printf("File non esistente\n");
     	     uint32_t size;
             char msg[] = "File non esistente";
             this->counter++;
@@ -127,6 +125,10 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
 server::~server()
 {
     cm.close_socket();
+    if(this->shared_key!= nullptr) {
+        unoptimized_memset(this->shared_key, 0, this->key_size);
+        free(this->shared_key);
+    }
 }
 
 // Andrea
@@ -185,10 +187,10 @@ void server::handle_req()
         } else if (opcode == LOGOUT) { // IMPLEMENT
             printf("[-] Client disconnected :(\n");
             cm.close_socket();
-
-            unoptimized_memset(this->shared_key, 0, this->key_size);
-
-            free(this->shared_key);
+            if(this->shared_key!= nullptr) {
+                unoptimized_memset(this->shared_key, 0, this->key_size);
+                free(this->shared_key);
+            }
             exit(0);
         } else if (opcode == ACK) {
         } else if (opcode == CHELLO_OPCODE) {
@@ -196,8 +198,7 @@ void server::handle_req()
         } else if (opcode == AUTH) {
             auth(pkt, pos);
         } else {
-            printf("Not a valid opcode\n");
-            return;
+            throw Exception("Not a valid opcode")
         }
 
         return;
@@ -214,6 +215,10 @@ void server::handle_req()
         packet = prepare_msg_packet(&size, (char *)e.what(), sizeof(e.what()), ACK, counter, this->shared_key);
         cm.send_packet(packet, size);
         cm.close_socket();
+        if(this->shared_key!= nullptr) {
+            unoptimized_memset(this->shared_key, 0, this->key_size);
+            free(this->shared_key);
+        }
         exit(1);
     }
 }
@@ -319,7 +324,7 @@ void server::handle_list(unsigned char* pkt){
     pos += sizeof(uint16_t);
     count = ntohs(count);
     if (this->counter != count) {
-        cerr << "counter errato";
+        throw Exception("Counter Sbagliato");
     }
     uint16_t size_m;
     memcpy(&size_m, pkt + pos, sizeof(uint16_t));
@@ -346,81 +351,6 @@ void server::handle_list(unsigned char* pkt){
 }
 unsigned char *server::prepare_list_packet(int *size)
 {
-    /*
-    int pos = sizeof(uint8_t);
-
-    this->counter++; // Counter
-    uint16_t count;
-    memcpy(&count, pkt + pos, sizeof(uint16_t));
-    pos += sizeof(uint16_t);
-    count = ntohs(count);
-    if (this->counter != count) {
-        cerr << "counter errato";
-    }
-
-    int iv_size2 = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    unsigned char* iv2 = (unsigned char*)malloc(iv_size2);
-    memcpy(iv2, pkt + pos, iv_size2);
-    pos += iv_size2;
-    unsigned char* ct_text=(unsigned char*)malloc(20);
-    memcpy(ct_text, pkt + pos, 20);
-    pos+=20;
-    unsigned char* tag2=(unsigned char*)malloc(16);
-    memcpy(tag2, pkt + pos, 16);
-    crypto *c = new crypto();
-    int aad_size2= sizeof(uint8_t)+sizeof(uint16_t);
-    unsigned char* pt_text=(unsigned char*)malloc(20);
-    c->decrypt_message(ct_text, 20, (unsigned char*)pkt, aad_size2, tag2, this->shared_key, iv2, iv_size2, pt_text);
-    printf("ptext %s\n",pt_text);
-    free(tag2);
-    free(iv2);
-    free(pt_text);
-    free(ct_text);
-    //fine scompatta
-
-    uint8_t opcode = LIST;
-    string temp = print_folder(SERVER_PATH);
-    int content_size=temp.length() + 1;
-    char* content = (char*)malloc(content_size);//Retrieve the list
-    strcpy(content, temp.c_str());
-    
-    int pos = 0;
-    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
-    uint16_t ct_size=content_size+16;
-    int packet_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+iv_size + ct_size + 16;
-    unsigned char* packet = (unsigned char*)malloc(packet_size);
-
-    memcpy(packet, &opcode, sizeof(uint8_t));//Opcode
-    pos += sizeof(uint8_t);
-
-    this->counter++; //Counter
-    int counter2=counter;
-    uint16_t count3=htons(counter2);
-    memcpy(packet + pos, &count3, sizeof(uint16_t));
-    pos += sizeof(uint16_t);
-    ct_size=htons(ct_size);
-    memcpy(packet + pos, &ct_size, sizeof(uint16_t));//List(CipherText) Size
-    pos += sizeof(uint16_t);
-    unsigned char* iv = (unsigned char*)malloc(EVP_CIPHER_iv_length(EVP_aes_128_gcm())); //IV
-    c->create_random_iv(iv);
-    memcpy(packet + pos, iv, iv_size);
-    pos += iv_size;
-
-    int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
-    unsigned char* ct = (unsigned char*)malloc(ntohs(ct_size));
-
-    unsigned char* tag = (unsigned char*)malloc(16); 
-    c->encrypt_packet((unsigned char *)content, content_size, (unsigned char *)packet, aad_size, this->shared_key, iv, iv_size, ct, tag);
-    memcpy(packet+pos,ct,ntohs(ct_size));
-    pos+=ntohs(ct_size);
-    memcpy(packet+pos,tag,16);
-    
-    free(ct);
-    
-    free(content);
-
-    cm.send_packet(packet, packet_size);
-    */
     uint8_t opcode = LIST;
     char s[]="server_file/client/";
     string temp = print_folder(s);
@@ -528,16 +458,13 @@ void server::delete_file() {
     free(this->file_name);
     if (ret != 0)
     {
-        cerr << "DELETE - ERROR\n";
         char msg[] = "DELETE - ERROR\n";
         unsigned char *pac;
         this->counter++;
         pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);        
-        cm.send_packet(pac, siz);
-        printf("Packet sent\n");
+        cm.send_packet(pac, siz);;
     }
     else{
-        printf("DELETE - OK\n");
         char msg[] = "DELETE - OK\n";
         unsigned char *pac;
         this->counter++;
@@ -741,7 +668,7 @@ bool server::rename_file(unsigned char* pkt, int pos) {
     pos += sizeof(uint16_t);
     count = ntohs(count);
     if (this->counter != count) {
-        cerr << "counter errato";
+        throw Exception("Wrong Counter");
     }
 
     memcpy(&old_size, pkt + pos, sizeof(old_size)); // Old_size
@@ -792,7 +719,6 @@ bool server::rename_file(unsigned char* pkt, int pos) {
             bool b = file_renamer(newfilename, filename);
             if(b)
             {
-                printf("Rename - OK\n");
                 free(ct);
                 free(newfilename);
                 free(filename);
@@ -803,7 +729,6 @@ bool server::rename_file(unsigned char* pkt, int pos) {
 
             else
             {
-                printf("Rename - Error\n");
                 free(ct);
                 free(newfilename);
                 free(filename);
@@ -815,11 +740,6 @@ bool server::rename_file(unsigned char* pkt, int pos) {
         }
         else 
         {
-            printf("file %s - Not Found.\n", filename);
-            /*unsigned char* packet;
-            uint8_t code = RENAME_NACK;
-            memcpy(packet, &code, sizeof(code));
-            cm.send_packet(packet, sizeof(code));*/
             free(ct);
             free(newfilename);
             free(filename);
@@ -830,11 +750,6 @@ bool server::rename_file(unsigned char* pkt, int pos) {
     } 
     else 
     {
-        printf("filename %s - Error. Format not valid\n", filename);
-        /*unsigned char *packet;
-        uint8_t code = RENAME_NACK;
-        memcpy(packet, &code, sizeof(code));
-        cm.send_packet(packet, sizeof(code));*/
         free(ct);
         free(newfilename);
         free(filename);
