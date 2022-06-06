@@ -2,6 +2,7 @@
 //#include "sodium.h"
 #include <sys/stat.h>
 #include <fstream>
+#include <cmath>
 //#include "sodium/randombytes.h"
 //#include "sodium/core.h"
 
@@ -218,12 +219,17 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *s
         throw Exception("File too big\n");
     }
 
-    if (counter > UINT16_MAX - file_size)
+    if (counter > UINT16_MAX - ceil(file_size/CHUNK_SIZE))
     	throw ExitException("Counter will exceed\n");
 
     if (file_size < CHUNK_SIZE) {
         unsigned char clear[file_size];
-        ret = (uint32_t) fread(clear, sizeof(unsigned char), file_size, file);
+        size_t tmp = fread(clear, sizeof(unsigned char), file_size, file);
+        if(tmp<UINT32_MAX){
+            ret=(uint32_t)tmp;
+        }else{
+            throw Exception("Something went wrong\n");
+        }
         if (ret < file_size) {
             throw Exception("Error in reading the file\n");
         }
@@ -251,7 +257,12 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *s
                 cerr << "Errore nella malloc";
             }
 
-            ret=(uint32_t)fread(fragment, sizeof(unsigned char), current_len, file);
+            size_t tmp=fread(fragment, sizeof(unsigned char), current_len, file);
+            if(tmp<UINT32_MAX){
+                ret=(uint32_t)tmp;
+            }else{
+                throw Exception("Something went wrong");
+            }
             if(ret<current_len){
                 throw Exception("Error in fread");
             }
@@ -333,8 +344,12 @@ void write_chunk(unsigned char *pkt, FILE *file, uint16_t counter, unsigned char
 
     ptext[file_size] = '\0';
 
-    ret = (uint32_t) fwrite(ptext, sizeof(unsigned char), file_size, file);
-
+    size_t tmp =fwrite(ptext, sizeof(unsigned char), file_size, file);
+    if(tmp<UINT32_MAX){
+        ret=(uint32_t)tmp;
+    }else{
+        throw Exception("Something went wrong\n");
+    }
     if (ret < file_size) {
         throw Exception("Error in fwrite\n");
     }

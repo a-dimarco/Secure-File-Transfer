@@ -55,14 +55,13 @@ unsigned char *client::crt_pkt_hello() // Creates first handshake packet
     uint16_t nonce_size = htons(sizeof(nonce));
     uint8_t opcode = CHELLO_OPCODE;
     int pos = 0;
-    uint32_t pkt_len = CLIENT_HELLO_SIZE;
     auto *pkt = (unsigned char *) malloc(CLIENT_HELLO_SIZE);
     if (pkt == NULL) 
     {
         cerr << "Malloc return NULL";
         exit(1);
     }
-    
+
     memcpy(pkt, &opcode, sizeof(uint8_t)); // Opcode
     pos += sizeof(uint8_t);
     memcpy(pkt + pos, &us_size, sizeof(uint16_t)); // Username size
@@ -268,19 +267,23 @@ void client::show_menu()
     print_commands();
 
     char command[MAXCOMMANDSIZE];
-    int ch;
     printf("Prima di while\n");
     //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
     printf("Dopo while\n");
     //setbuf(stdin, NULL);
-    char * check=fgets(command, MAXCOMMANDSIZE, stdin);
-
-    if (!strchr(command, '\n')) 
-    {
+    char *check = fgets(command, MAXCOMMANDSIZE, stdin);
+    if (check == nullptr) {
+        throw Exception("Error in fgets");
+    }
+    if (!strchr(command, '\n')) {
         printf("Error: command exceeding 30 characters\n");
         char c[2];
-        while (c[0] != '\n')
-            fgets(c, 2, stdin);
+        while (c[0] != '\n') {
+            check = fgets(c, 2, stdin);
+            if (check == nullptr) {
+                throw Exception("Error in fgets");
+            }
+        }
         show_menu();
     }
 
@@ -394,8 +397,8 @@ unsigned char *client::prepare_list_req(uint32_t *size)
     memcpy(packet, &opcode, sizeof(opcode)); //OPCode
     pos += sizeof(opcode);
 
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
 
@@ -437,8 +440,8 @@ void client::show_list(unsigned char *pkt, int pos)
 
     // Deserialization
 
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
 
@@ -476,17 +479,26 @@ void client::show_list(unsigned char *pkt, int pos)
 
 }
 
-unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) //TEST SHOULD BE RENAMED
-{ 
-    printf("Insert the filename\n");
+unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //TEST SHOULD BE RENAMED
+    printf("Inserisci file\n");
     char filename[MAXFILENAMESIZE];
-    fgets(filename, MAXFILENAMESIZE, stdin);
-
+    char *check1=fgets(filename, MAXFILENAMESIZE, stdin);
+    if(check1== nullptr)
+    {
+        throw Exception("Error in fgets");
+    }
     if (!strchr(filename, '\n')) 
     {
+        //printf("Error: filename exceeding 30 characters\n");
         char c[2];
-        while (c[0] != '\n')
-            fgets(c, 2, stdin);
+        while (c[0] != '\n') 
+        {
+            check1=fgets(c, 2, stdin);
+            if(check1== nullptr)
+            {
+                throw Exception("Error in fgets");
+            }
+        }
         throw Exception("Filename exceeding 30 characters");
     }
 
@@ -625,7 +637,15 @@ void client::create_downloaded_file(unsigned char *pkt)
         printf("Errore nella fopen\n");
         exit(-1);
     }
-    ret = (uint32_t) fwrite(ptext, sizeof(unsigned char), file_size, file);
+    size_t tmp = (uint32_t) fwrite(ptext, sizeof(unsigned char), file_size, file);
+    if(tmp<UINT32_MAX)
+    {
+        ret=(uint32_t)tmp;
+    }
+    else
+    {
+        throw Exception("Something went wrong");
+    }
     if (ret < file_size) 
     {
         printf("Errore nella fwrite\n");
@@ -867,8 +887,8 @@ unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, c
     memcpy(pkt, &opcode, sizeof(uint8_t));//opcode
     pos += sizeof(uint8_t);
 
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
 

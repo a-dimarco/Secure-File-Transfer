@@ -9,7 +9,7 @@ using namespace std;
 int sockfd;
 
 void signal_callback_handler(int flag) {
-    printf("\n[+] Process %d shutting down...\n",getpid());
+    printf("\n[+] Process %d shutting down...(Flag %d)\n",getpid(),flag);
     close(sockfd);
 // Terminate program
     exit(1);
@@ -115,7 +115,7 @@ exit(1);
         printf("[+] Server - ON\n");
     }
 
-    int cnt=0;
+    //int cnt=0;
     signal(SIGINT, signal_callback_handler);
     while (1) {
 

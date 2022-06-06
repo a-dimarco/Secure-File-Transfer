@@ -68,14 +68,20 @@ int main() {
 
     cout << "Please, type your username: ";
     char username[10];
-    fgets(username, 10, stdin);
+    char* check=fgets(username, 10, stdin);
+    if(check== nullptr){
+        throw Exception("Error in fgets");
+    }
 
     if (!strchr(username, '\n')) 
     {
         printf("Error - username exceeding 10 characters\n");
         char c[2];
         while(c[0] != '\n'){
-            fgets(c, 2, stdin);
+            check=fgets(c, 2, stdin);
+            if(check== nullptr){
+                throw Exception("Error in fgets");
+            }
         }
         return 0;
     }
