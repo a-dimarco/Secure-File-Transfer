@@ -1,6 +1,5 @@
 #include "client.h"
 #include <openssl/rand.h>
-
 using namespace std;
 
 client::client() = default;;
@@ -91,7 +90,10 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     memcpy(tosign + pos, nounce, nonce_size);
     unsigned int sgnt_size;
     //unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
-    unsigned char *sign = c.signn(tosign, sign_size, "./client_file/Alice/alice_privkey.pem", &sgnt_size);
+    string path="./client_file/";
+    path=path+this->user+"/";
+    path=path+this->user+".pem";
+    unsigned char *sign = c.signn(tosign, sign_size, path, &sgnt_size);
     uint8_t opcode = AUTH;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint32_t) * 2 + key_siz + sgnt_size;
     auto* pkt=(unsigned char *)malloc(pkt_len);
@@ -227,10 +229,9 @@ void client::show_menu() {
             this->counter++;
             unsigned char* pkto= prepare_msg_packet(&siz,msg,sizeof(msg),LOGOUT,this->counter,this->shared_key);
             cm.send_packet(pkto,siz);
-            printf("Bye!\n");
-#pragma optimize "off"
-            memset(this->shared_key,0,this->key_size);
-#pragma optimize "on"
+
+            unoptimized_memset(this->shared_key,0,this->key_size);
+
             free(this->shared_key);
             cm.close_socket();
             exit(0);
@@ -449,9 +450,9 @@ void client::create_downloaded_file(unsigned char *pkt) {
     }
     fclose(file);
 
-#pragma optimize("", off);
-    memset(ptext, 0, file_size);
-#pragma optimize("", on);
+
+    unoptimized_memset(ptext, 0, file_size);
+
     //free(this->file_name);
 
 }

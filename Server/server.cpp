@@ -1,5 +1,4 @@
 #include "server.h"
-
 using namespace std;
 //char SERVER_PATH[]="server_file/client/";
 server::server(int sock)
@@ -186,9 +185,9 @@ void server::handle_req()
         } else if (opcode == LOGOUT) { // IMPLEMENT
             printf("[-] Client disconnected :(\n");
             cm.close_socket();
-#pragma optimize("", "off");
-            memset(this->shared_key, 0, this->key_size);
-#pragma optimize("", "on");
+
+            unoptimized_memset(this->shared_key, 0, this->key_size);
+
             free(this->shared_key);
             exit(0);
         } else if (opcode == ACK) {
@@ -290,9 +289,9 @@ void server::store_file(unsigned char* pkt)
     }
     fclose(file);
 
-#pragma optimize("", off);
-    memset(ptext, 0, file_size);
-#pragma optimize("", on);
+
+    unoptimized_memset(ptext, 0, file_size);
+
     uint32_t siz;
     char msg[] = "Upload completato";
     this->counter++;

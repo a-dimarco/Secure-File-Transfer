@@ -297,11 +297,14 @@ void write_chunk(unsigned char *pkt, FILE *file, uint16_t counter, unsigned char
     if (ret < file_size) {
         throw Exception("Error in fwrite\n");
     }
-#pragma optimize("", off);
-    memset(ptext, 0, file_size);
-#pragma optimize("", on);
+
+    unoptimized_memset(ptext, 0, file_size);
 }
-
-
+#pragma GCC push_options
+#pragma GCC optimize("O0")
+void* unoptimized_memset(unsigned char* mem,int c, size_t len){
+    return memset(mem,c,len);
+}
+#pragma GCC pop_options
 
 

@@ -12,6 +12,7 @@ using namespace std;
 
 #endif // SECURE_FILE_TRANSFER_UTIL_H
 using namespace std;
+
 class Exception: public std::runtime_error
 {
 public:
@@ -26,3 +27,4 @@ unsigned char *prepare_msg_packet(uint32_t *size, char *msg, int msg_size,uint8_
 void write_chunk(unsigned char* pkt, FILE* file, uint16_t counter, unsigned char* shared_key);
 int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char* shared_key, connection_manager* cm);
 int rcv_file(unsigned char* pkt, char *filename, uint16_t counter, unsigned char* shared_key, connection_manager* cm);
+void* unoptimized_memset(unsigned char* mem,int c, size_t len);

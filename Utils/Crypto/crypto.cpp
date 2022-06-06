@@ -1,11 +1,11 @@
 #include "crypto.h"
+#include "../Util/util.h"
 #include <string.h>
 //#include "sodium.h"
 #include "sodium/randombytes.h"
 #include "sodium/core.h"
 
 using namespace std;
-
 
 void crypto::create_random_iv(unsigned char *iv)
 {
@@ -182,18 +182,18 @@ unsigned char *crypto::key_derivation(unsigned char *shared_secret, size_t size)
 
     EVP_MD_CTX_free(ctx);
 
-#pragma optimize("", off);
-    memset(shared_secret, 0, size);
+
+    unoptimized_memset(shared_secret, 0, size);
     free(shared_secret);
-#pragma optimize("", on);
 
     int session_key_size = 128;
     session_key = (unsigned char *)malloc(session_key_size);
     memcpy(session_key, digest, session_key_size);
 
-#pragma optimize("", off);
-    memset(digest, 0, EVP_MD_size(hash_type));
-#pragma optimize("", on);
+
+    unoptimized_memset(digest, 0, EVP_MD_size(hash_type));
+
+    free(digest);
 
     return session_key;
 }
