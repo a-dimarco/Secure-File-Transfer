@@ -207,6 +207,14 @@ void server::handle_req()
         //this->counter++;
         packet = prepare_msg_packet(&size, (char *)e.what(), sizeof(e.what()), ACK, counter, this->shared_key);
         cm.send_packet(packet, size);
+    }catch (ExitException &e){
+        unsigned char *packet;
+        uint32_t size;
+        //this->counter++;
+        packet = prepare_msg_packet(&size, (char *)e.what(), sizeof(e.what()), ACK, counter, this->shared_key);
+        cm.send_packet(packet, size);
+        cm.close_socket();
+        exit(1);
     }
 }
 
