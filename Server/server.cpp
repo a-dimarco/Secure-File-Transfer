@@ -176,11 +176,27 @@ void server::handle_req() {
             // store_file(pkt, opcode);
         } else if (opcode == UPLOAD2) {
             store_file(pkt);
+            uint32_t siz;
+            char msg[] = "Upload completato!\n";
+            if (this->counter == UINT16_MAX)
+                throw ExitException("Counter exceeded\n");
+            this->counter++;
+            unsigned char *pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, this->counter, this->shared_key);
+            cm.send_packet(pac, siz);
+            free(this->file_name);
         } else if (opcode == CHUNK) {
             if (this->counter == UINT16_MAX)
                 throw ExitException("Counter exceeded\n");
             this->counter++;
             this->counter = rcv_file(pkt, this->file_name, this->counter, this->shared_key, &this->cm);
+            uint32_t siz;
+            char msg[] = "Upload completato!\n";
+            if (this->counter == UINT16_MAX)
+                throw ExitException("Counter exceeded\n");
+            this->counter++;
+            unsigned char *pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, this->counter, this->shared_key);
+            cm.send_packet(pac, siz);
+            free(this->file_name);
         } else if (opcode == RENAME) {
             if (rename_file(pkt, pos)) //Rename success
             {
@@ -206,7 +222,8 @@ void server::handle_req() {
         } else if (opcode == DELETE) {
             check_file(pkt, opcode);
         } else if (opcode == LOGOUT) { // IMPLEMENT
-            printf("[-] Client disconnected :(\n");
+            check_logout(pkt);
+            printf("\n[-] Client disconnected :(\n");
             cm.close_socket();
             if (this->shared_key != nullptr) {
                 unoptimized_memset(this->shared_key, 0, this->key_size);
@@ -335,14 +352,6 @@ void server::store_file(unsigned char *pkt) {
 
     unoptimized_memset(ptext, 0, file_size);
 
-    uint32_t siz;
-    char msg[] = "Upload completato";
-    if (this->counter == UINT16_MAX)
-        throw ExitException("Counter exceeded\n");
-    this->counter++;
-    unsigned char *pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, this->counter, this->shared_key);
-    cm.send_packet(pac, siz);
-    free(this->file_name);
 }
 
 //Prepare list packet and sends it
@@ -504,7 +513,7 @@ void server::delete_file() {
             throw ExitException("Counter exceeded\n");
         this->counter++;
         pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);
-        cm.send_packet(pac, siz);;
+        cm.send_packet(pac, siz);
     } else {
         char msg[] = "DELETE - OK\n";
         unsigned char *pac;
@@ -543,7 +552,7 @@ void server::server_hello(unsigned char *nonce) {
     // get the file size:
     // (assuming no failures in fseek() and ftell())
     fseek(cacert_file, 0, SEEK_END);
-    long int clear_size = ftell(cacert_file);
+    ulong clear_size = ftell(cacert_file);
     fseek(cacert_file, 0, SEEK_SET);
 
     // read the plaintext from file:
@@ -874,4 +883,48 @@ bool server::file_renamer(char *new_name, char *old_name) {
         return true;
     }
 
+}
+
+void server::check_logout(unsigned char* pkt){
+    // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG
+
+    int pos = sizeof(uint8_t);
+
+    if(this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
+        throw ExitException("Counter Exceeded\n");
+    }
+    this->counter++;
+    uint16_t count;
+    memcpy(&count, pkt + pos, sizeof(uint16_t)); //Counter
+    pos += sizeof(uint16_t);
+    count = ntohs(count);
+    if (this->counter != count)
+    {
+        throw ExitException("Wrong counter!");
+    }
+
+    uint16_t size_m; // CPSize
+    memcpy(&size_m, pkt + pos, sizeof(uint16_t));
+    pos += sizeof(uint16_t);
+    size_m = ntohs(size_m);
+
+    crypto *c; // IV
+    c = new crypto();
+    unsigned char iv[IVSIZE];
+    memcpy(iv, pkt + pos, IVSIZE);
+    pos += IVSIZE;
+
+    unsigned char ct[size_m]; //Ciphertext & Tag
+    memcpy(ct, pkt + pos, size_m);
+    pos += size_m;
+    unsigned char tag[TAGSIZE];
+    memcpy(tag, pkt + pos, TAGSIZE);
+    int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t);
+    unsigned char pt[size_m];
+    unsigned char aad[aad_size];
+    memcpy(aad, pkt, aad_size);
+    c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, pt);
+
+    printf("%s\n", pt);
 }

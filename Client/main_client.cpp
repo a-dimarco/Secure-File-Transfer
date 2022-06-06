@@ -69,6 +69,7 @@ int main() {
     cout << "Please, type your username: ";
     char username[10];
     char* check=fgets(username, 10, stdin);
+
     if(check== nullptr){
         throw Exception("Error in fgets");
     }
@@ -87,7 +88,6 @@ int main() {
     }
 
     username[strcspn(username, "\n")] = 0;
-
 
     client cl = client(username, clientSocket);
 

@@ -5,8 +5,7 @@ using namespace std;
 
 client::client() = default;;
 
-client::client(char *username, int sock) 
-{
+client::client(char *username, int sock) {
     /*
     char addr[] = "127.0.0.1";
     // long dest_port = 49151;
@@ -14,7 +13,7 @@ client::client(char *username, int sock)
     */
     this->user = new char[USERNAMESIZE];
     // this->username = username;
-    memcpy((void *) this->user, (void *) username, sizeof(USERNAMESIZE));
+    memcpy((void *) this->user, (void *) username, USERNAMESIZE);
     //int seed=atoi(username);
     /*
     srand(time(nullptr));
@@ -25,13 +24,11 @@ client::client(char *username, int sock)
 
 }
 
-void client::send_clienthello() 
-{
+void client::send_clienthello() {
     crypto c = crypto();
 
     nonce = (unsigned char *) malloc(NONCESIZE);
-    if (nonce == NULL) 
-    {
+    if (nonce == NULL) {
         cerr << "Malloc return NULL";
         exit(1);
     }
@@ -48,16 +45,15 @@ void client::send_clienthello()
 }
 
 unsigned char *client::crt_pkt_hello() // Creates first handshake packet
-{ 
+{
     // PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
-    
+
     uint16_t us_size = htons(strlen(user) + 1);
     uint16_t nonce_size = htons(sizeof(nonce));
     uint8_t opcode = CHELLO_OPCODE;
     int pos = 0;
     auto *pkt = (unsigned char *) malloc(CLIENT_HELLO_SIZE);
-    if (pkt == NULL) 
-    {
+    if (pkt == NULL) {
         cerr << "Malloc return NULL";
         exit(1);
     }
@@ -76,8 +72,7 @@ unsigned char *client::crt_pkt_hello() // Creates first handshake packet
     return pkt;
 }
 
-void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) 
-{
+void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     // PACKET FORMAT: OPCODE - KEY_SIZE - SIGNATURE_SIZE - KEY - SIGNATURE
 
     crypto c = crypto();
@@ -98,7 +93,7 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey)
     memcpy(key, bptr->data, bptr->length);
     key_siz = bptr->length;
     uint sign_size = key_siz + sizeof(nounce);
-    
+
     unsigned char tosign[sign_size];
     int pos = 0;
     memcpy(tosign, key, key_siz);
@@ -115,8 +110,7 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey)
     uint8_t opcode = AUTH;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint32_t) * 2 + key_siz + sgnt_size;
     auto *pkt = (unsigned char *) malloc(pkt_len);
-    if (pkt == NULL) 
-    {
+    if (pkt == NULL) {
         cerr << "Malloc return NULL";
         exit(1);
     }
@@ -146,32 +140,26 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey)
     free(sign);
 }
 
-client::~client() 
-{
+client::~client() {
     this->cm.close_socket();
-    if(this->shared_key!= nullptr) 
-    {
+    if (this->shared_key != nullptr) {
         unoptimized_memset(this->shared_key, 0, this->key_size);
         free(this->shared_key);
     }
 }
 
-void client::print_commands() 
-{
+void client::print_commands() {
     printf("\nPlease select a command\n");
     printf("!list --> Show all files uploaded to the server\n");
     printf("!download --> Download a file from the server\n");
     printf("!upload --> Upload a file to the server\n");
     printf("!rename --> Rename a file stored into the server\n");
     printf("!delete --> Delete a file stored into the server\n");
-    printf("!logout --> Disconnect from the server and close the application\n");
+    printf("!logout --> Disconnect from the server and close the application\n\n");
 }
 
-void client::handle_req() 
-{
-    try 
-    {
-        printf("receiving\n");
+void client::handle_req() {
+    try {
         unsigned char *pkt = this->cm.receive_packet();
 
         // Deserialization
@@ -181,40 +169,28 @@ void client::handle_req()
         memcpy(&opcode, pkt, sizeof(opcode)); // OPCode
         pos += sizeof(opcode);
 
-        if (opcode == SHELLO_OPCODE) 
-        {
+        if (opcode == SHELLO_OPCODE) {
             server_hello_handler(pkt, pos);
-        }
-        else if (opcode == LIST) 
-        {
+        } else if (opcode == LIST) {
             printf("Received List\n");
             show_list(pkt, pos);
             show_menu();
-        } 
-        else if (opcode == ACK) 
-        { 
+        } else if (opcode == ACK) {
             handle_ack(pkt);
             show_menu();
-            return;
-        } 
-        else if (opcode == LOGOUT) 
-        {
-            printf("[-] Server disconnected, something went wrong.\n");
+        } else if (opcode == LOGOUT) {
+            handle_ack(pkt);
             cm.close_socket();
-            if(this->shared_key!= nullptr) 
-            {
+            if (this->shared_key != nullptr) {
                 unoptimized_memset(this->shared_key, 0, this->key_size);
                 free(this->shared_key);
             }
             exit(1);
-        } 
-        else if (opcode == DOWNLOAD) 
-        {
+        } else if (opcode == DOWNLOAD) {
             create_downloaded_file(pkt);
+            printf("Download finished!\n");
             show_menu();
-        } 
-        else if (opcode == CHUNK) 
-        {
+        } else if (opcode == CHUNK) {
             char path[] = "client_file/";
             string file_path = path;            // ../client_file
             file_path += this->user;            // ../client_file/Alice
@@ -222,16 +198,15 @@ void client::handle_req()
             file_path += this->file_name;       // ../client_file/Alice/file/filename.extension
             char *filepath = &file_path[0];
 
-            if(this->counter == UINT16_MAX - 2) //Check counter overflow
-            { 
+            if (this->counter == UINT16_MAX - 2) //Check counter overflow
+            {
                 throw ExitException("Counter Exceeded\n");
             }
             this->counter++;
             this->counter = rcv_file(pkt, filepath, this->counter, this->shared_key, &this->cm);
+            printf("Download finished!\n");
             show_menu();
-        } 
-        else if (opcode == UPLOAD) 
-        {
+        } else if (opcode == UPLOAD) {
             handle_ack(pkt);
             char path[] = "client_file/";
             string file_path = path;            // ../client_file
@@ -240,37 +215,42 @@ void client::handle_req()
             file_path += this->file_name;       // ../client_file/Alice/file/filename.extension
             char *filepath = &file_path[0];
             this->counter = send_file(filepath, opcode, this->counter, this->shared_key, &this->cm);
-            show_menu();
-        } 
-        else 
-        {
+        } else {
             printf("Not a valid opcode\n");
             cm.close_socket();
-            if(this->shared_key!= nullptr) 
-            {
+            if (this->shared_key != nullptr) {
                 unoptimized_memset(this->shared_key, 0, this->key_size);
                 free(this->shared_key);
             }
             exit(1);
         }
         free(pkt);
-    } 
-    catch (exception &e) 
-    {
+    }
+    catch (Exception &e) {
         cerr << e.what();
+    } catch (ExitException &e) {
+        cerr << e.what();
+        cm.close_socket();
+        if (this->shared_key != nullptr) {
+            uint32_t siz;
+            char msg[] = " ";
+            unsigned char *pac;
+            if (this->counter == UINT16_MAX)
+                throw ExitException("Counter exceeded\n");
+            this->counter++;
+            pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);
+            cm.send_packet(pac, siz);
+            unoptimized_memset(this->shared_key, 0, this->key_size);
+            free(this->shared_key);
+        }
         exit(1);
     }
 }
 
-void client::show_menu() 
-{
+void client::show_menu() {
     print_commands();
 
     char command[MAXCOMMANDSIZE];
-    printf("Prima di while\n");
-    //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
-    printf("Dopo while\n");
-    //setbuf(stdin, NULL);
     char *check = fgets(command, MAXCOMMANDSIZE, stdin);
     if (check == nullptr) {
         throw Exception("Error in fgets");
@@ -291,97 +271,78 @@ void client::show_menu()
     //scanf("%*[^\n]%1*[\n]");
     command[strcspn(command, "\n")] = 0;
     try {
-    if (nameChecker(command, COMMAND)) 
-    {
-        uint32_t size;
-        if (strcmp(command, "!list") == 0) 
-        {
-            char msg[]="PAD";
+        if (nameChecker(command, COMMAND)) {
+            uint32_t size;
+            if (strcmp(command, "!list") == 0) {
+                char msg[] = "PAD";
 
-            if(this->counter == UINT16_MAX - 2) //Check counter overflow
-            { 
-                throw ExitException("Counter Exceeded\n");
-            }
-            this->counter++;
+                if (this->counter == UINT16_MAX - 2) //Check counter overflow
+                {
+                    throw ExitException("Counter Exceeded\n");
+                }
+                this->counter++;
 
-            unsigned char* pkto = prepare_msg_packet(&size,msg,sizeof(msg),LIST,counter,this->shared_key);
-            this->cm.send_packet(pkto,size);
-            printf("Packet list sent\n");
-        } 
-        else if (strcmp(command, "!download") == 0) 
-        {
-            //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
-            printf("prima di crt_downl_req\n");
-            unsigned char *req = crt_download_request(&size, DOWNLOAD);
-            /*if (req != NULL)
-            	cm.send_packet(req, size);
-            else
-            	printf("Nome file non corretto\n");*/
-            cm.send_packet(req, size);
-        } 
-        else if (strcmp(command, "!upload") == 0) 
-        {
-            unsigned char *req = crt_download_request(&size, UPLOAD);
-            cm.send_packet(req, size);
-        } 
-        else if (strcmp(command, "!rename") == 0) 
-        {
-            rename_file();
-        } 
-        else if (strcmp(command, "!delete") == 0)
-        {
-            unsigned char* req = crt_download_request(&size, DELETE);
-            cm.send_packet(req, size);
-          	  /*
+                unsigned char *pkto = prepare_msg_packet(&size, msg, sizeof(msg), LIST, counter, this->shared_key);
+                this->cm.send_packet(pkto, size);
+            } else if (strcmp(command, "!download") == 0) {
+
+                unsigned char *req = crt_download_request(&size, DOWNLOAD);
+                /*if (req != NULL)
+                    cm.send_packet(req, size);
+                else
+                    printf("Nome file non corretto\n");*/
+                cm.send_packet(req, size);
+            } else if (strcmp(command, "!upload") == 0) {
+                unsigned char *req = crt_download_request(&size, UPLOAD);
+                cm.send_packet(req, size);
+            } else if (strcmp(command, "!rename") == 0) {
+                rename_file();
+            } else if (strcmp(command, "!delete") == 0) {
+                unsigned char *req = crt_download_request(&size, DELETE);
+                cm.send_packet(req, size);
+                /*
             char namefile[] = "a.txt";
             char *pkt = crt_pkt_remove(namefile, sizeof(namefile), &size);
             this->cm.send_packet(pkt, size);
              */
 
-        } 
-        else if (strcmp(command, "!logout") == 0) 
-        { // IMPLEMENT
-            char msg[]="LOGOUT";
-            uint32_t siz;
-            if(this->counter == UINT16_MAX - 2) //Check counter overflow
-            { 
-                throw ExitException("Counter Exceeded\n");
-            }
-            this->counter++;
-            unsigned char* pkto= prepare_msg_packet(&siz,msg,sizeof(msg),LOGOUT,this->counter,this->shared_key);
-            cm.send_packet(pkto,siz);
-            printf("Bye!\n");
+            } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
+                char msg[] = " ";
+                uint32_t siz;
+                if (this->counter == UINT16_MAX - 2) //Check counter overflow
+                {
+                    throw ExitException("Counter Exceeded\n");
+                }
+                this->counter++;
+                unsigned char *pkto = prepare_msg_packet(&siz, msg, sizeof(msg), LOGOUT, this->counter,
+                                                         this->shared_key);
+                cm.send_packet(pkto, siz);
+                printf("Bye!\n");
 
                 unoptimized_memset(this->shared_key, 0, this->key_size);
 
                 free(this->shared_key);
                 cm.close_socket();
                 exit(0);
-            } 
-            else 
-            {
+            } else {
 
                 printf("Command %s not found, please retry\n", command);
                 show_menu();
             }
-        } 
-        else 
-        {
+        } else {
             printf("Command format not valid, please use the format !command\n");
             show_menu();
         }
     }
-    catch (exception &e) 
-    {
+    catch (exception &e) {
         cerr << e.what();
         show_menu();
     }
 }
 
-unsigned char *client::prepare_list_req(uint32_t *size) 
-{
+unsigned char *client::prepare_list_req(uint32_t *size) {
     // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG
-    
+
     char msg[] = "PAD";
     int msg_size = sizeof(msg);
     int pos = 0;
@@ -434,8 +395,7 @@ unsigned char *client::prepare_list_req(uint32_t *size)
     return packet;
 }
 
-void client::show_list(unsigned char *pkt, int pos) 
-{
+void client::show_list(unsigned char *pkt, int pos) {
     uint16_t list_size;
 
     // Deserialization
@@ -482,51 +442,43 @@ void client::show_list(unsigned char *pkt, int pos)
 unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //TEST SHOULD BE RENAMED
     printf("Inserisci file\n");
     char filename[MAXFILENAMESIZE];
-    char *check1=fgets(filename, MAXFILENAMESIZE, stdin);
-    if(check1== nullptr)
-    {
+    char *check1 = fgets(filename, MAXFILENAMESIZE, stdin);
+    if (check1 == nullptr) {
         throw Exception("Error in fgets");
     }
-    if (!strchr(filename, '\n')) 
-    {
+    if (!strchr(filename, '\n')) {
         //printf("Error: filename exceeding 30 characters\n");
         char c[2];
-        while (c[0] != '\n') 
-        {
-            check1=fgets(c, 2, stdin);
-            if(check1== nullptr)
-            {
+        while (c[0] != '\n') {
+            check1 = fgets(c, 2, stdin);
+            if (check1 == nullptr) {
                 throw Exception("Error in fgets");
             }
         }
         throw Exception("Filename exceeding 30 characters");
     }
 
-    for (int i = 0; i < MAXFILENAMESIZE; i++) 
-    {
-        if (filename[i] == '\n') 
-        {
+    for (int i = 0; i < MAXFILENAMESIZE; i++) {
+        if (filename[i] == '\n') {
             filename[i] = '\0';
             break;
         }
     }
 
     bool check = nameChecker(filename, FILENAME);
-    if (!check) 
-    {
+    if (!check) {
         throw Exception("Insert a correct filename format\n");
     }
     size_t filename_size = strlen(filename) + 1;
-    this->file_name = (char*) malloc(filename_size);
-    if (this->file_name == NULL) 
-    {
+    this->file_name = (char *) malloc(filename_size);
+    if (this->file_name == NULL) {
         cerr << "Malloc return NULL";
         exit(1);
     }
     memcpy(this->file_name, &filename[0], filename_size);
-    
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
 
@@ -536,8 +488,7 @@ unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //
     return packet;
 }
 
-unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter2) 
-{
+unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter2) {
     // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG
 
     crypto c = crypto();
@@ -582,8 +533,7 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
 }
 
 
-void client::create_downloaded_file(unsigned char *pkt) 
-{
+void client::create_downloaded_file(unsigned char *pkt) {
     uint32_t ret;
     crypto c = crypto();
     int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
@@ -595,8 +545,8 @@ void client::create_downloaded_file(unsigned char *pkt)
     memcpy(&count, pkt + pos, sizeof(uint16_t)); // Counter
     pos += sizeof(uint16_t);
     count = ntohs(count);
-    if(this->counter == UINT16_MAX - 2) // Check counter overflow
-    { 
+    if (this->counter == UINT16_MAX - 2) // Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
     this->counter++;
@@ -621,7 +571,7 @@ void client::create_downloaded_file(unsigned char *pkt)
     unsigned char ptext[file_size + 1];
     c.decrypt_message(ctext, file_size, pkt, aad_len, tag,
                       this->shared_key, iv, ptext);
-    
+
     ptext[file_size] = '\0';
     char path[] = "client_file/";
     string file_path = path;             // ../client_file/
@@ -632,22 +582,17 @@ void client::create_downloaded_file(unsigned char *pkt)
     char *filepath = &file_path[0];
 
     FILE *file = fopen(filepath, "wb");
-    if (file == nullptr)
-    {
+    if (file == nullptr) {
         printf("Errore nella fopen\n");
         exit(-1);
     }
     size_t tmp = (uint32_t) fwrite(ptext, sizeof(unsigned char), file_size, file);
-    if(tmp<UINT32_MAX)
-    {
-        ret=(uint32_t)tmp;
-    }
-    else
-    {
+    if (tmp < UINT32_MAX) {
+        ret = (uint32_t) tmp;
+    } else {
         throw Exception("Something went wrong");
     }
-    if (ret < file_size) 
-    {
+    if (ret < file_size) {
         printf("Errore nella fwrite\n");
         exit(-1);
     }
@@ -659,8 +604,7 @@ void client::create_downloaded_file(unsigned char *pkt)
 
 }
 
-void client::server_hello_handler(unsigned char *pkt, int pos) 
-{
+void client::server_hello_handler(unsigned char *pkt, int pos) {
     // PACKET FORMAT: OPCODE - NONCE_SIZE - CERTIFICATE_SIZE - KEY_SIZE - SIGNATURE_SIZE - NONCE - CERTIFICATE - KEY - SIGNATURE
 
     crypto *c;
@@ -729,27 +673,22 @@ void client::server_hello_handler(unsigned char *pkt, int pos)
     BIO_free(bio);
     bio = BIO_new(BIO_s_mem());
     ret = BIO_write(bio, key, key_siz);
-    if (ret == 0) 
-    {
+    if (ret == 0) {
         cerr << "errore in BIO_write";
         exit(1);
     }
     EVP_PKEY *pubkey = PEM_read_bio_PUBKEY(bio, nullptr, nullptr, nullptr);
-    if (pubkey == nullptr) 
-    {
+    if (pubkey == nullptr) {
         cerr << "PEM_read_bio_PUBKEY error";
         exit(1);
     }
     b = c->verify_sign(sign, sgnt_size, to_verify, key_siz + nonce_size, X509_get_pubkey(certificate));
     free(nonce);
-    if (!b) 
-    {
+    if (!b) {
         cerr << "signature not valid";
         exit(1);
-    } 
-    else 
-    {
-        printf("\nValid Signature!\n");
+    } else {
+        printf("\nValid Signature!\n\n");
     }
 
     X509_free(certificate);
@@ -757,24 +696,23 @@ void client::server_hello_handler(unsigned char *pkt, int pos)
     auth(snonce, pubkey);
 }
 
-void client::handle_ack(unsigned char *pkt) 
-{
+void client::handle_ack(unsigned char *pkt) {
     // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG
 
     int pos = sizeof(uint8_t);
-    
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
-    this->counter++; 
+    this->counter++;
     uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t)); //Counter
     pos += sizeof(uint16_t);
     count = ntohs(count);
-    if (this->counter != count) 
-    {
-        cerr << "counter errato";
+    if (this->counter != count) {
+        cerr << "Wrong counter!\n";
+        exit(1);
     }
 
     uint16_t size_m; // CPSize
@@ -802,41 +740,49 @@ void client::handle_ack(unsigned char *pkt)
     printf("%s\n", pt);
 }
 
-void client::rename_file() 
-{
+void client::rename_file() {
     cout << "Rename - Which file?\n";
     char file_nam[MAXFILENAMESIZE];
-    fgets(file_nam, MAXFILENAMESIZE, stdin);
-
-    if (!strchr(file_nam, '\n')) 
-    {
+    char *check = fgets(file_nam, MAXFILENAMESIZE, stdin);
+    if (check == nullptr) {
+        throw Exception("Error in fgets");
+    }
+    if (!strchr(file_nam, '\n')) {
         char c[2];
-        while (c[0] != '\n')
-            fgets(c, 2, stdin);
+        while (c[0] != '\n') {
+            check = fgets(c, 2, stdin);
+            if (check == nullptr) {
+                throw Exception("Error in fgets");
+            }
+        }
         throw Exception("Filename exceeding 300 characters");
     }
 
     file_nam[strcspn(file_nam, "\n")] = 0;
 
-    if (nameChecker(file_nam, FILENAME)) 
-    {
+    if (nameChecker(file_nam, FILENAME)) {
         printf("Filename %s - ok, please specify a new filename\n", file_nam);
 
         char new_name[MAXFILENAMESIZE];
-        fgets(new_name, MAXFILENAMESIZE, stdin);
+        check = fgets(new_name, MAXFILENAMESIZE, stdin);
+        if (check == nullptr) {
+            throw Exception("Error in fgets");
+        }
 
-        if (!strchr(new_name, '\n')) 
-        {
+        if (!strchr(new_name, '\n')) {
             char c[2];
-            while (c[0] != '\n')
-                fgets(c, 2, stdin);
+            while (c[0] != '\n') {
+                check = fgets(c, 2, stdin);
+                if (check == nullptr) {
+                    throw Exception("Error in fgets");
+                }
+            }
             throw Exception("Filename exceeding 30 characters");
         }
 
         new_name[strcspn(new_name, "\n")] = 0;
 
-        if (nameChecker(new_name, FILENAME)) 
-        {
+        if (nameChecker(new_name, FILENAME)) {
             uint32_t size;
             unsigned char *packet = prepare_filename_packet(RENAME, &size, file_nam, new_name);
 
@@ -844,15 +790,11 @@ void client::rename_file()
 
             printf("Rename request for file %s - sent\n waiting for response...\n", file_nam);
 
-        } 
-        else 
-        {
+        } else {
             printf("Filename %s - not accepted, please use filename.extension format\n", new_name);
         }
 
-    } 
-    else 
-    {
+    } else {
         printf("Filename %s - not accepted, please use filename.extension format\n", file_nam);
     }
 
@@ -877,8 +819,7 @@ unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, c
                   ct_size + TAGSIZE;
     unsigned char *pkt = (unsigned char *) malloc(pkt_len);
     if (pkt == NULL) {
-        cerr << "Malloc return NULL";
-        exit(1);
+        throw Exception("Malloc returned NULL");
     }
     *size = pkt_len;
 
