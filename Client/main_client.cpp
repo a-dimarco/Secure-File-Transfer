@@ -67,8 +67,18 @@ int main() {
     printf("[+] Connected to the Server!\n");
 
     cout << "Please, type your username: ";
-    char username[11];
-    fgets(username, 11, stdin);
+    char username[10];
+    fgets(username, 10, stdin);
+
+    if (!strchr(username, '\n')) 
+    {
+        printf("Error - username exceeding 10 characters\n");
+        char c[2];
+        while(c[0] != '\n'){
+            fgets(c, 2, stdin);
+        }
+        return;
+    }
 
     username[strcspn(username, "\n")] = 0;
 

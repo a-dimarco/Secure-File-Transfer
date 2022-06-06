@@ -208,6 +208,18 @@ void client::show_menu() {
 
     char command[30];
     fgets(command, 30, stdin);
+
+    if (!strchr(command, '\n')) 
+    {
+        printf("Error - command exceeding 30 characters\n");
+        char c[2];
+        while(c[0] != '\n')
+        {
+            fgets(c, 2, stdin);
+        }
+        show_menu();
+    }
+
     command[strcspn(command, "\n")] = 0;
 
     if (nameChecker(command, COMMAND)) {
@@ -350,6 +362,17 @@ unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //
     printf("Inserisci file\n");
     char filename[31];
     fgets(filename, 31, stdin);
+
+    if (!strchr(filename, '\n')) 
+    {
+        printf("Error - filename exceeding 30 characters\n");
+        char c[2];
+        while(c[0] != '\n')
+        {
+            fgets(c, 2, stdin);
+        }
+        return nullptr;
+    }
 
     for(int i=0;i<31;i++) {
         if (filename[i] == '\n') {
@@ -599,6 +622,17 @@ void client::rename_file() {//Va testata
     char file_nam[11];
     fgets(file_nam, 11, stdin);
 
+    if (!strchr(file_nam, '\n')) 
+    {
+        printf("Error - filename exceeding 10 characters\n");
+        char c[2];
+        while(c[0] != '\n')
+        {
+            fgets(c, 2, stdin);
+        }
+        return;
+    }
+
     file_nam[strcspn(file_nam, "\n")] = 0;
 
     if (nameChecker(file_nam, FILENAME)) {
@@ -606,6 +640,17 @@ void client::rename_file() {//Va testata
 
         char new_name[11];
         fgets(new_name, 11, stdin);
+
+        if (!strchr(new_name, '\n')) 
+        {
+            printf("Error - new filename exceeding 10 characters\n");
+            char c[2];
+            while(c[0] != '\n')
+            {
+                fgets(c, 2, stdin);
+            }
+            return;
+        }
 
         new_name[strcspn(new_name, "\n")] = 0;
 
