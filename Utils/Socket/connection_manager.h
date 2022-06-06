@@ -1,5 +1,6 @@
 #ifndef SECURE_FILE_TRANSFER_CONNECTION_MANAGER_H
 #define SECURE_FILE_TRANSFER_CONNECTION_MANAGER_H
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -35,9 +36,6 @@
 #define NONCESIZE 8
 #define CHUNK_SIZE 1024000 //1 Mb
 
-//--FILE PATHS
-//#define SERVER_PATH "server_file/client/"
-//#define CLIENT_PATH "client_file/"
 
 //--COMMANDS
 #define FILENAME 1111
@@ -48,9 +46,9 @@
 
 using namespace std;
 
-class connection_manager
-{
+class connection_manager {
 public:
+
     connection_manager();
 
     void send_packet(unsigned char *packet, uint32_t pkt_len);
@@ -64,7 +62,8 @@ public:
     ~connection_manager();
 
 private:
+
     int sckt;
 };
 
-#endif // SECURE_FILE_TRANSFER_CONNECTION_MANAGER_H
+#endif

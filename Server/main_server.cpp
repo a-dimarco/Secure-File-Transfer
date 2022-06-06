@@ -5,6 +5,7 @@
 
 using namespace std;
 
+
 int sockfd;
 
 void signal_callback_handler(int flag) {
@@ -160,6 +161,8 @@ exit(1);
             }
 
 
+        }else{
+            close(clientSocket);
         }
     }
 

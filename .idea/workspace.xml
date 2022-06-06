@@ -41,7 +41,7 @@
     <option name="configuration" value="$PROJECT_DIR$/Server/main_server.cpp" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectApplicationVersion">
     <option name="ide" value="CLion" />
@@ -102,7 +102,7 @@
       <workItem from="1654413427494" duration="17479000" />
       <workItem from="1654438672551" duration="3270000" />
       <workItem from="1654442230502" duration="10836000" />
-      <workItem from="1654499437286" duration="10934000" />
+      <workItem from="1654499437286" duration="14086000" />
     </task>
     <servers />
   </component>

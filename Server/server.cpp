@@ -201,7 +201,7 @@ void server::handle_req()
         }
 
         return;
-    }catch(exception &e){
+    }catch(Exception &e){
         unsigned char *packet;
         uint32_t size;
         //this->counter++;

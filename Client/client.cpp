@@ -27,6 +27,10 @@ void client::send_clienthello() {
     crypto c =crypto();
 
     nonce=(unsigned char*)malloc(NONCESIZE);
+    if(nonce==NULL){
+        cerr << "Malloc return NULL";
+        exit(1);
+    }
     c.create_nonce(nonce);
     unsigned char *pkt = this->crt_pkt_hello();
     this->cm.send_packet(pkt, 23);
@@ -49,6 +53,10 @@ unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
     int pos = 0;
     uint32_t pkt_len=23;
     auto* pkt=(unsigned char*)malloc(pkt_len);
+    if(pkt==NULL){
+        cerr << "Malloc return NULL";
+        exit(1);
+    }
     memcpy(pkt, &opcode, sizeof(uint8_t));
     pos += sizeof(uint8_t);
     memcpy(pkt + pos, &us_size, sizeof(uint16_t));
@@ -97,6 +105,10 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     uint8_t opcode = AUTH;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint32_t) * 2 + key_siz + sgnt_size;
     auto* pkt=(unsigned char *)malloc(pkt_len);
+    if(pkt==NULL){
+        cerr << "Malloc return NULL";
+        exit(1);
+    }
     pos = 0;
     memcpy(pkt + pos, &opcode, sizeof(uint8_t));
     pos += sizeof(uint8_t);
@@ -254,6 +266,10 @@ unsigned char * client::prepare_list_req(uint32_t* size){
     uint8_t opcode = LIST;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+IVSIZE + msg_size+16 + TAGSIZE;
     auto* packet=(unsigned char *)malloc(pkt_len);
+    if(packet==NULL){
+        cerr << "Malloc return NULL";
+        exit(1);
+    }
     *size = pkt_len;
     memcpy(packet, &opcode, sizeof(opcode)); //OPCode
     pos += sizeof(opcode);
@@ -349,6 +365,10 @@ unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //
         return nullptr;
     }
     this->file_name=(char *)malloc(strlen(filename)+1);
+    if(this->file_name==NULL){
+        cerr << "Malloc return NULL";
+        exit(1);
+    }
     memcpy(this->file_name,&filename[0],strlen(filename)+1);
     this->counter++;
     //unsigned char *packet = crt_request_pkt(filename, (int *) size, DOWNLOAD, this->counter, this->shared_key); TEST
@@ -368,6 +388,10 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
     *size = aad_size + IVSIZE + ptext_size + 16;
 
     auto *pkt = (unsigned char *) malloc(*size);
+    if(pkt==NULL){
+        cerr << "Malloc return NULL";
+        exit(1);
+    }
     unsigned char iv[IVSIZE];
     c.create_random_iv(iv);
     unsigned char tag[TAGSIZE];
@@ -621,6 +645,10 @@ unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, c
     uint32_t ct_size=pt_size;//ct_size
     int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint16_t) + IVSIZE + ct_size + TAGSIZE;
     unsigned char* pkt=(unsigned char *)malloc(pkt_len);
+    if(pkt==NULL){
+        cerr << "Malloc return NULL";
+        exit(1);
+    }
     *size = pkt_len;
 
     int pos = 0;

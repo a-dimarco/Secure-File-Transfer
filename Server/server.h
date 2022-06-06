@@ -1,14 +1,17 @@
 #ifndef SECURE_FILE_TRANSFER_SERVER_H
 #define SECURE_FILE_TRANSFER_SERVER_H
+
 #include "../Utils/Socket/connection_manager.h"
 #include "../Utils/Util/util.h"
 
 using namespace std;
-class server
-{
+
+class server {
 public:
     server(int sock);
+
     void handle_req();
+
     ~server();
 
 private:
@@ -18,12 +21,14 @@ private:
     connection_manager cm;
     unsigned char *shared_key;
     char *file_name;
+
     void check_file(unsigned char *pkt, uint8_t opcode);
+
     EVP_PKEY *my_prvkey;
     char *logged_user;
     size_t key_size;
 
-    void check_logout(unsigned char* pkt);
+    void check_logout(unsigned char *pkt);
 
     void auth(unsigned char *pkt, int pos);
 
