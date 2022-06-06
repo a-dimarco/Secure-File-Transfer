@@ -224,6 +224,9 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *s
         throw Exception("File too big\n");
     }
 
+    if (counter > UINT16_MAX - file_size)
+    	throw ExitException("Counter will exceed\n");
+
     if (file_size < CHUNK_SIZE) {
         unsigned char clear[file_size];
         ret = (uint32_t) fread(clear, sizeof(unsigned char), file_size, file);

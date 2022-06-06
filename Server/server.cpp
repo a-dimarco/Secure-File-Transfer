@@ -13,6 +13,9 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     int pos = sizeof(uint8_t);
     uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t));
+    if (this->counter == UINT16_MAX)
+    	throw ExitException("Counter exceeded\n");
+    	
     this->counter++;
     count = ntohs(count);
 
@@ -51,6 +54,9 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     {
         uint32_t size;
         char msg[] = "Inserisci un nome corretto";
+    	if (this->counter == UINT16_MAX)
+    		throw ExitException("Counter exceeded\n");
+    	
         this->counter++;
         unsigned char* pkto = prepare_msg_packet(&size,msg,sizeof(msg),ACK,this->counter,this->shared_key);
         cm.send_packet(pkto, size);
@@ -73,6 +79,8 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         if (a) {
             uint32_t size;
             char msg[] = "File già esistente";
+            if (this->counter == UINT16_MAX)
+    		throw ExitException("Counter exceeded\n");
             this->counter++;
             unsigned char* pkto = prepare_msg_packet(&size, msg, sizeof(msg),ACK,counter,this->shared_key);
             cm.send_packet(pkto, size);
@@ -80,6 +88,8 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         }
         uint32_t size;
         char msg[] = "File not existing in the sever: OK\n";
+        if (this->counter == UINT16_MAX)
+    		throw ExitException("Counter exceeded\n");
         this->counter++;
         unsigned char *p = prepare_msg_packet(&size, msg, sizeof(msg),UPLOAD,counter,this->shared_key);
         cm.send_packet(p, size);
@@ -92,6 +102,8 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
             char msg[] = "DELETE - FILE NOT FOUND\n";
             unsigned char *pac;
             uint32_t siz;
+            if (this->counter == UINT16_MAX)
+    		throw ExitException("Counter exceeded\n");
             this->counter++;
             pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);        
             cm.send_packet(pac, siz);
@@ -113,6 +125,8 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     	     printf("File non esistente\n");
     	     uint32_t size;
             char msg[] = "File non esistente";
+            if (this->counter == UINT16_MAX)
+    		throw ExitException("Counter exceeded\n");
             this->counter++;
             unsigned char* pkto= prepare_msg_packet(&size,msg,sizeof(msg),ACK,this->counter,this->shared_key);
             cm.send_packet(pkto, size);
@@ -144,6 +158,8 @@ void server::handle_req()
         if (opcode == LIST) {
             handle_list(pkt);
             uint32_t size;
+            if (this->counter == UINT16_MAX)
+    		throw ExitException("Counter exceeded\n");
             this->counter++;
             char s[] = "server_file/client/";
             string temp = print_folder(s);
@@ -160,6 +176,8 @@ void server::handle_req()
         } else if (opcode == UPLOAD2) {
             store_file(pkt);
         } else if (opcode == CHUNK) {
+            if (this->counter == UINT16_MAX)
+    		throw ExitException("Counter exceeded\n");
             this->counter++;
             this->counter = rcv_file(pkt, this->file_name, this->counter, this->shared_key, &this->cm);
         } else if (opcode == RENAME) {
@@ -168,6 +186,8 @@ void server::handle_req()
                 unsigned char *packet;
                 uint32_t size;
                 char msg[] = "Rename - OK\n";
+                if (this->counter == UINT16_MAX)
+    			throw ExitException("Counter exceeded\n");
                 this->counter++;
                 packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);
                 cm.send_packet(packet, size);
@@ -176,6 +196,8 @@ void server::handle_req()
                 unsigned char *packet;
                 uint32_t size;
                 char msg[] = "Rename - FAIL\n";
+                if (this->counter == UINT16_MAX)
+    			throw ExitException("Counter exceeded\n");
                 this->counter++;
                 packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);
                 cm.send_packet(packet, size);
@@ -264,6 +286,8 @@ void server::store_file(unsigned char* pkt)
     memcpy(&count, pkt+pos, sizeof(uint16_t));
     pos+=sizeof(uint16_t);
     count = ntohs(count);
+    if (this->counter == UINT16_MAX)
+    			throw ExitException("Counter exceeded\n");
     this->counter++;
     if(counter!=count){
         throw Exception("Counter errato\n");
@@ -302,6 +326,8 @@ void server::store_file(unsigned char* pkt)
 
     uint32_t siz;
     char msg[] = "Upload completato";
+    if (this->counter == UINT16_MAX)
+    	throw ExitException("Counter exceeded\n");
     this->counter++;
     unsigned char *pac = prepare_msg_packet(&siz,msg,sizeof(msg),ACK,this->counter,this->shared_key);
     cm.send_packet(pac, siz);
@@ -313,6 +339,8 @@ void server::handle_list(unsigned char* pkt){
 
     //int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
     int pos = sizeof(uint8_t);
+    if (this->counter == UINT16_MAX)
+    	throw ExitException("Counter exceeded\n");
     this->counter++;
     uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t));
@@ -436,7 +464,8 @@ unsigned char *server::prepare_list_packet(int *size)
     memcpy(packet, &opcode, sizeof(opcode)); //OPCode
     pos += sizeof(opcode);
 
-
+    if (this->counter == UINT16_MAX)
+    	throw ExitException("Counter exceeded\n");
     this->counter++; //Counter
     int counter2=counter;
     uint16_t count=htons(counter2);
@@ -531,6 +560,8 @@ void server::delete_file() {
         cerr << "DELETE - ERROR\n";
         char msg[] = "DELETE - ERROR\n";
         unsigned char *pac;
+        if (this->counter == UINT16_MAX)
+    		throw ExitException("Counter exceeded\n");
         this->counter++;
         pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);        
         cm.send_packet(pac, siz);
@@ -540,6 +571,8 @@ void server::delete_file() {
         printf("DELETE - OK\n");
         char msg[] = "DELETE - OK\n";
         unsigned char *pac;
+        if (this->counter == UINT16_MAX)
+    		throw ExitException("Counter exceeded\n");
         this->counter++;
         pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, counter, this->shared_key);        
         cm.send_packet(pac, siz);
@@ -709,6 +742,8 @@ void server::auth(unsigned char* pkt, int pos) {
     this->shared_key=c->key_derivation(g,this->key_size);
     uint32_t pkt_len;
     char msg[]="Connection established";
+    if (this->counter == UINT16_MAX)
+    	throw ExitException("Counter exceeded\n");
     this->counter++;
     unsigned char* packet= prepare_msg_packet(&pkt_len,msg,sizeof(msg),ACK,counter,this->shared_key);
     cm.send_packet(packet,pkt_len);
@@ -735,6 +770,8 @@ bool server::rename_file(unsigned char* pkt, int pos) {
 
     // Deserialization
 
+    if (this->counter == UINT16_MAX)
+    	throw ExitException("Counter exceeded\n");
     this->counter++; // Counter
     uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t));
