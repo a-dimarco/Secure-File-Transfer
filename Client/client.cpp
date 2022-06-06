@@ -577,7 +577,12 @@ void client::create_downloaded_file(unsigned char *pkt) {
         printf("Errore nella fopen\n");
         exit(-1);
     }
-    ret = (uint32_t) fwrite(ptext, sizeof(unsigned char), file_size, file);
+    size_t tmp = (uint32_t) fwrite(ptext, sizeof(unsigned char), file_size, file);
+    if(tmp<UINT32_MAX){
+        ret=(uint32_t)tmp;
+    }else{
+        throw Exception("Something went wrong");
+    }
     if (ret < file_size) {
         printf("Errore nella fwrite\n");
         exit(-1);
