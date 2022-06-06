@@ -37,6 +37,8 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     int cipherlen = name_size;
 
     unsigned char* ct = (unsigned char*)malloc(cipherlen);
+    if (ct == NULL)
+    	throw Exception("Malloc returned NULL\n");
 
     memcpy(ct, pkt + pos, name_size);
     pos += name_size;
@@ -47,6 +49,8 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     memcpy(tag, pkt + pos, TAGSIZE);
     crypto *c = new crypto();
     unsigned char* pt = (unsigned char*)malloc(name_size);
+    if (pt == NULL)
+    	throw Exception("Malloc returned NULL\n");
 
     c->decrypt_message(ct, cipherlen, pkt, aad_size, tag, this->shared_key, iv, pt);
     bool b = nameChecker((char *)pt, FILENAME);
@@ -73,6 +77,8 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
         file_path += (char*)pt; // ../server_file/client/Alice/file/filename.extension
         size_t len = file_path.length() + 1;
         this->file_name=(char *)malloc(len);
+        if (this->file_name == NULL)
+    		throw Exception("Malloc returned NULL\n");
         memcpy(this->file_name,&file_path[0],len);
     }
     if(opcode==UPLOAD) {
@@ -108,6 +114,8 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
             cm.send_packet(pac, siz);
         }else {
             this->file_name = (char *) malloc(name_size);
+            if (this->file_name == NULL)
+    		throw Exception("Malloc returned NULL\n");
             memcpy(file_name, pt, name_size - 1);
             memcpy(file_name + name_size - 1, "\0", 1);
             delete_file();
@@ -256,6 +264,10 @@ void server::client_hello_handler(unsigned char* pkt, int pos)
     pos += sizeof(us_size);
     us_size = ntohs(us_size);
     this->logged_user = (char*)malloc(us_size);
+    if (this->logged_user == NULL) {
+    	cerr << "Malloc returned NULL\n";
+    	exit(1);
+    }
     memcpy(&nonce_size, pkt + pos, sizeof(nonce_size)); // prelevo nonce_size e inizializzo la variabile che dovrà contenerlo
     pos += sizeof(nonce_size);
     nonce_size = ntohs(nonce_size);
@@ -364,13 +376,19 @@ void server::handle_list(unsigned char* pkt){
     memcpy(iv, pkt + pos, IVSIZE);
     pos += IVSIZE;
     unsigned char* ct=(unsigned char*)malloc(size_m);
+    if (ct == NULL)
+    	throw Exception("Malloc returned NULL\n");
     memcpy(ct, pkt + pos, size_m);
     pos += size_m;
     unsigned char tag[TAGSIZE];
     memcpy(tag, pkt + pos, TAGSIZE);
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t);
     unsigned char* pt=(unsigned char*)malloc(size_m);
+    if (pt == NULL)
+    	throw Exception("Malloc returned NULL\n");
     unsigned char* aad=(unsigned char*)malloc(aad_size);
+    if (aad == NULL)
+    	throw Exception("Malloc returned NULL\n");
     memcpy(aad, pkt, aad_size);
     c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, pt);
     free(aad);
@@ -384,12 +402,16 @@ unsigned char *server::prepare_list_packet(int *size)
     string temp = print_folder(s);
     int msg_size=temp.length() + 1;
     char* msg = (char*)malloc(msg_size);//Retrieve the list
+    if (msg == NULL)
+    	throw Exception("Malloc returned NULL\n");
     strcpy(msg, temp.c_str());
     int pos = 0;
     //int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm()); TEST
     uint32_t ct_size=msg_size;
     int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+IVSIZE + ct_size + 16;
     unsigned char* packet=(unsigned char *)malloc(pkt_len);
+    if (packet == NULL)
+    	throw Exception("Malloc returned NULL\n");
     *size = pkt_len;
     memcpy(packet, &opcode, sizeof(opcode)); //OPCode
     pos += sizeof(opcode);
@@ -518,6 +540,10 @@ void server::server_hello(unsigned char* nonce) {
     uint8_t opcode=SHELLO_OPCODE;
     crypto *c=new crypto();
     this->snonce=(unsigned char*)malloc(NONCESIZE);//TEST
+    if (this->snonce == NULL) {
+    	cerr << "Malloc returned NULL\n";
+    	exit(1);
+    }
     c->create_nonce(snonce);
 
     string cacert_file_name = "./server_file/server/Server_cert.pem";
@@ -534,7 +560,10 @@ void server::server_hello(unsigned char* nonce) {
 
     // read the plaintext from file:
     unsigned char* cert = (unsigned char*)malloc(clear_size);
-    if(!cert) { throw Exception("Malloc returned null\n"); }
+    if(!cert) { 
+    	cerr << "Malloc returned NULL\n";
+    	exit(1); 
+    }
     int ret = fread(cert, 1, clear_size, cacert_file);
     if(ret < clear_size) { throw Exception("Error while reading file\n"); }
     fclose(cacert_file);
@@ -555,12 +584,21 @@ void server::server_hello(unsigned char* nonce) {
     BIO_get_mem_ptr(bio, &bptr);
     BIO_set_close(bio, BIO_NOCLOSE); /* So BIO_free() leaves BUF_MEM alone */
     char* key = (char*)malloc(bptr->length);
+    if (key == NULL) { 
+    	cerr << "Malloc returned NULL\n";
+    	exit(1); 
+    }
     memcpy(key,bptr->data,bptr->length);
     BIO_free(bio);
     key_siz=bptr->length;
 
     int sign_size=key_siz+sizeof(nonce);
     unsigned char* tosign=(unsigned char*)malloc(sign_size);
+    if (tosign == NULL)
+    { 
+    	cerr << "Malloc returned NULL\n";
+    	exit(1); 
+    }
     int pos=0;
     memcpy(tosign,key,key_siz);
     pos+=key_siz;
@@ -572,6 +610,11 @@ void server::server_hello(unsigned char* nonce) {
     unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
     uint32_t pkt_len=sizeof(opcode)+sizeof(uint16_t)+sizeof(uint32_t)*3+nonce_size+key_siz+cert_size+(sgnt_size);
     unsigned char* pkt = (unsigned char*)malloc(pkt_len);
+    if (pkt == NULL)
+    { 
+    	cerr << "Malloc returned NULL\n";
+    	exit(1); 
+    }
 
     pos=0;
     memcpy(pkt,&opcode,sizeof(opcode));
@@ -625,10 +668,18 @@ void server::auth(unsigned char* pkt, int pos) {
 
     sgnt_size= ntohl(sgnt_size);
     unsigned char* key = (unsigned char*)malloc(key_siz);
+    if (key == NULL) { 
+    	cerr << "Malloc returned NULL\n";
+    	exit(1); 
+    }
     memcpy(key,pkt+pos,key_siz);
     pos+=key_siz;
 
     unsigned char* sign = (unsigned char*)malloc(sgnt_size);
+    if (sign == NULL) { 
+    	cerr << "Malloc returned NULL\n";
+    	exit(1); 
+    }
     memcpy(sign,pkt+pos,sgnt_size);
 
     BIO* bio= BIO_new(BIO_s_mem());
@@ -643,6 +694,10 @@ void server::auth(unsigned char* pkt, int pos) {
     }
 
     unsigned char* to_verify = (unsigned char*)malloc(key_siz+8);
+    if (to_verify == NULL) { 
+    	cerr << "Malloc returned NULL\n";
+    	exit(1); 
+    }
     pos=0;
     memcpy(to_verify+pos,key,key_siz);
 
@@ -713,17 +768,23 @@ bool server::rename_file(unsigned char* pkt, int pos) {
     old_size = ntohs(old_size);
     int old_sizer = old_size+1;
     char* filename = (char*)malloc(old_sizer);
+    if (!filename)
+    	throw Exception("Malloc returned null\n");
 
     memcpy(&new_size, pkt + pos, sizeof(new_size)); // New_size
     pos += sizeof(new_size);
     new_size = ntohs(new_size);
     int new_sizer = new_size + 1;
     char* newfilename = (char*)malloc(new_sizer);
+    if (!newfilename)
+    	throw Exception("Malloc returned null\n");
 
     memcpy(&cipher_size, pkt + pos, sizeof(cipher_size)); // Cipher_size
     pos += sizeof(cipher_size);
     cipher_size = ntohl(cipher_size);
     unsigned char* ct = (unsigned char*)malloc(cipher_size);
+    if (!ct)
+    	throw Exception("Malloc returned null\n");
 
     crypto c = crypto(); // IV
     unsigned char iv[IVSIZE];
@@ -736,7 +797,11 @@ bool server::rename_file(unsigned char* pkt, int pos) {
     memcpy(tag, pkt + pos, TAGSIZE);
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t);
     unsigned char* pt = (unsigned char*)malloc(cipher_size);
+    if (!pt)
+    	throw Exception("Malloc returned null\n");
     unsigned char* aad = (unsigned char*)malloc(aad_size);
+    if (!aad)
+    	throw Exception("Malloc returned null\n");
     memcpy(aad, pkt, aad_size);
     c.decrypt_message(ct, cipher_size, aad, aad_size, tag, this->shared_key, iv, pt);
 
