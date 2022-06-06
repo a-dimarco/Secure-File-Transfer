@@ -552,8 +552,9 @@ void server::server_hello(unsigned char *nonce) {
     	cerr << "Malloc returned NULL\n";
     	exit(1); 
     }
-    int ret = fread(cert, 1, clear_size, cacert_file);
-    if (ret < clear_size) { throw Exception("Error while reading file\n"); }
+    int ret;
+    size_t tmp = fread(cert, 1, clear_size, cacert_file);
+    if (tmp < clear_size) { throw Exception("Error while reading file\n"); }
     fclose(cacert_file);
     uint32_t cert_size;
     if (clear_size < UINT32_MAX) {
