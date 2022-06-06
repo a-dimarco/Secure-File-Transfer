@@ -49,6 +49,7 @@
 using namespace std;
 
 class connection_manager {
+
 public:
 
     connection_manager();

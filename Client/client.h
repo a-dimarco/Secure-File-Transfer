@@ -7,7 +7,9 @@
 using namespace std;
 
 class client {
+
 public:
+
     client();
 
     explicit client(char *usernmame, int sock);
@@ -19,6 +21,7 @@ public:
     void handle_req();
 
 private:
+
     unsigned char *nonce{};
     char *user{};
     char *file_name{};
@@ -65,7 +68,7 @@ private:
 
     static void print_commands();
 
-    unsigned char *crt_download_request(uint32_t *size, uint8_t opcode);
+    unsigned char *crt_generic_req(uint32_t *size, uint8_t opcode);
 
     unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter);
 
