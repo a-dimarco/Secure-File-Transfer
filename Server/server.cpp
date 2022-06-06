@@ -47,7 +47,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     crypto *c = new crypto();
     unsigned char* pt = (unsigned char*)malloc(name_size);
 
-    c->decrypt_message(ct, cipherlen, pkt, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
+    c->decrypt_message(ct, cipherlen, pkt, aad_size, tag, this->shared_key, iv, pt);
     bool b = nameChecker((char *)pt, FILENAME);
     if (!b)
     {
@@ -201,9 +201,9 @@ void server::handle_req()
     { // IMPLEMENT
         printf("[-] Client disconnected :(\n");
         cm.close_socket();
-#pragma optimize "off"
+#pragma optimize("","off");
         memset(this->shared_key,0,this->key_size);
-#pragma optimize "on"
+#pragma optimize("","on");
         free(this->shared_key);
         exit(0);
     }
@@ -293,7 +293,7 @@ void server::store_file(unsigned char* pkt)
                       pkt, aad_len,
                       tag,
                       this->shared_key,
-                      iv, IVSIZE,
+                      iv,
                       ptext);
     ptext[file_size]='\0';
     FILE *file = fopen(this->file_name, "wb");
@@ -350,7 +350,7 @@ void server::handle_list(unsigned char* pkt){
     unsigned char* pt=(unsigned char*)malloc(size_m);
     unsigned char* aad=(unsigned char*)malloc(aad_size);
     memcpy(aad, pkt, aad_size);
-    c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
+    c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, pt);
     free(aad);
     free(ct);
     free(pt);
@@ -470,7 +470,7 @@ unsigned char *server::prepare_list_packet(int *size)
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
     unsigned char ct[ct_size];
     unsigned char tag[TAGSIZE];
-    c->encrypt_packet((unsigned char *)msg, msg_size, (unsigned char *)packet, aad_size, this->shared_key, iv, IVSIZE, ct, tag);
+    c->encrypt_packet((unsigned char *)msg, msg_size, (unsigned char *)packet, aad_size, this->shared_key, iv, ct, tag);
     memcpy(packet+pos,ct,ct_size);
     pos+=ct_size;
     memcpy(packet+pos,tag,TAGSIZE);
@@ -789,7 +789,7 @@ bool server::rename_file(unsigned char* pkt, int pos) {
     unsigned char* pt = (unsigned char*)malloc(cipher_size);
     unsigned char* aad = (unsigned char*)malloc(aad_size);
     memcpy(aad, pkt, aad_size);
-    c.decrypt_message(ct, cipher_size, aad, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
+    c.decrypt_message(ct, cipher_size, aad, aad_size, tag, this->shared_key, iv, pt);
 
     string temp = (char*)pt;
     string old = temp.substr(0, old_size);

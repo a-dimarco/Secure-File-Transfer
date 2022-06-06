@@ -218,10 +218,10 @@ void client::show_menu() {
 
         } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
             char msg[]="LOGOUT";
-            uint32_t size;
+            uint32_t siz;
             this->counter++;
-            unsigned char* pkto= prepare_msg_packet(&size,msg,sizeof(msg),LOGOUT,this->counter,this->shared_key);
-            cm.send_packet(pkto,size);
+            unsigned char* pkto= prepare_msg_packet(&siz,msg,sizeof(msg),LOGOUT,this->counter,this->shared_key);
+            cm.send_packet(pkto,siz);
             printf("Bye!\n");
 #pragma optimize "off"
             memset(this->shared_key,0,this->key_size);
@@ -276,7 +276,7 @@ unsigned char * client::prepare_list_req(uint32_t* size){
     int ct_size=ntohs(size_m);
     unsigned char ct[ct_size];
     unsigned char tag[TAGSIZE];
-    c->encrypt_packet((unsigned char *)msg, ct_size-16, (unsigned char *)packet, aad_size, this->shared_key, iv, IVSIZE, ct, tag);
+    c->encrypt_packet((unsigned char *)msg, ct_size-16, (unsigned char *)packet, aad_size, this->shared_key, iv, ct, tag);
     memcpy(packet+pos,ct,ct_size);
     pos+=ct_size;
     memcpy(packet+pos,tag,16);
@@ -314,7 +314,7 @@ void client::show_list(unsigned char *pkt, int pos) {
     unsigned char tag[TAGSIZE]; //tag
     memcpy(tag, pkt + pos, TAGSIZE);
 
-    c.decrypt_message(ct, list_size, (unsigned char*)pkt, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
+    c.decrypt_message(ct, list_size, (unsigned char*)pkt, aad_size, tag, this->shared_key, iv,  pt);
 
     // Fine Deserializzazione
 
@@ -376,7 +376,7 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
 
 
     cipherlen = c.encrypt_packet((unsigned char *) filename, strlen(filename) + 1,
-                                 (unsigned char *) pkt, aad_size, shared_key, iv, IVSIZE,
+                                 (unsigned char *) pkt, aad_size, shared_key, iv,
                                  (unsigned char *) pkt + pos, tag);
 
     pos += cipherlen;
@@ -420,7 +420,7 @@ void client::create_downloaded_file(unsigned char *pkt) {
                        pkt, aad_len,
                        tag,
                        this->shared_key,
-                       iv, IVSIZE,
+                       iv,
                        ptext);
     ptext[file_size]='\0';
     char path[]="client_file/";
@@ -557,7 +557,7 @@ void client::handle_ack(unsigned char *pkt) {
     unsigned char pt[size_m];
     unsigned char aad[aad_size];
     memcpy(aad, pkt, aad_size);
-    c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, IVSIZE, pt);
+    c->decrypt_message(ct, size_m, aad, aad_size, tag, this->shared_key, iv, pt);
     printf("%s\n", pt);
 }
 
@@ -645,7 +645,7 @@ unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, c
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+ sizeof(uint16_t); //CipherText & Tag
     unsigned char ct[ct_size];
     unsigned char tag[TAGSIZE];
-    c->encrypt_packet((unsigned char *)pt, pt_size, (unsigned char *)pkt, aad_size, this->shared_key, iv, IVSIZE, ct, tag);
+    c->encrypt_packet((unsigned char *)pt, pt_size, (unsigned char *)pkt, aad_size, this->shared_key, iv, ct, tag);
     
     memcpy(pkt+pos,ct,ct_size);
     pos+=ct_size;

@@ -43,7 +43,7 @@ prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int 
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
     unsigned char ct[ct_size];
     unsigned char tag[16];
-    c->encrypt_packet((unsigned char *) msg, msg_size, (unsigned char *) packet, aad_size, shared_key, iv, 12, ct, tag);
+    c->encrypt_packet((unsigned char *) msg, msg_size, (unsigned char *) packet, aad_size, shared_key, iv, ct, tag);
     memcpy(packet + pos, ct, ct_size);
     pos += ct_size;
     memcpy(packet + pos, tag, 16);
@@ -73,7 +73,7 @@ unsigned char *crt_file_pkt(uint32_t clear_size, unsigned char *clear, uint32_t 
     c.create_random_iv(iv);
     unsigned char ciphertext[clear_size];
     unsigned char tag[TAGSIZE];
-    c.encrypt_packet(clear, clear_size, final_packet, aad_size, shared_key, iv, IVSIZE, ciphertext, tag);
+    c.encrypt_packet(clear, clear_size, final_packet, aad_size, shared_key, iv, ciphertext, tag);
     memcpy(final_packet + pos1, iv, IVSIZE);
     pos1 += IVSIZE;
     memcpy(final_packet + pos1, ciphertext, clear_size);
@@ -166,7 +166,7 @@ unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16
 
 
     cipherlen = c.encrypt_packet((unsigned char *) filename, strlen(filename) + 1,
-                                 (unsigned char *) pkt, aad_size, shared_key, iv, iv_size,
+                                 (unsigned char *) pkt, aad_size, shared_key, iv,
                                  (unsigned char *) pkt + pos, tag);
 
     pos += cipherlen;
@@ -294,7 +294,7 @@ void write_chunk(unsigned char *pkt, FILE *file, uint16_t counter, unsigned char
                       pkt, aad_len,
                       tag,
                       shared_key,
-                      iv, IVSIZE,
+                      iv,
                       ptext);
     ptext[file_size] = '\0';
     ret = fwrite(ptext, sizeof(unsigned char), file_size, file);

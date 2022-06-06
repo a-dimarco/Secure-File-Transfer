@@ -6,21 +6,18 @@
 
 using namespace std;
 
-unsigned char *crypto::get_key()
-{
-    return this->shared_key;
-}
 
 void crypto::create_random_iv(unsigned char *iv)
 {
-    /*RAND_poll();
-    RAND_bytes(iv, EVP_CIPHER_iv_length(EVP_aes_128_gcm()));*/
+    RAND_poll();
+    RAND_bytes(iv, IVSIZE);
+    /*
     int ret = sodium_init();
     if (ret < 0)
     {
         cerr << "error";
     }
-    randombytes_buf(iv, IVSIZE);
+    randombytes_buf(iv, IVSIZE);*/
 }
 
 /*unsigned char *crypto::create_nonce() {
@@ -32,16 +29,17 @@ void crypto::create_random_iv(unsigned char *iv)
 
 void crypto::create_nonce(unsigned char *p)
 {
-    // RAND_poll();
-    // unsigned char nonce[8];
-    // RAND_bytes(p, 8);
+    RAND_poll();
+    RAND_bytes(p, NONCESIZE);
+
     // return nonce;
+    /*
     int ret = sodium_init();
     if (ret < 0)
     {
         cerr << "error";
     }
-    randombytes_buf(p, NONCESIZE);
+    randombytes_buf(p, NONCESIZE);*/
 }
 
 EVP_PKEY *crypto::dh_params_gen()
@@ -200,89 +198,10 @@ unsigned char *crypto::key_derivation(unsigned char *shared_secret, size_t size)
     return session_key;
 }
 
-int crypto::encrypt_message(FILE *file, int plaintext_len,
-                            unsigned char *aad, int aad_len,
-                            unsigned char *key,
-                            unsigned char *iv, int iv_len,
-                            unsigned char *ciphertext,
-                            unsigned char *tag)
-{
-    EVP_CIPHER_CTX *ctx;
-    int len = 0;
-    int ciphertext_len = 0;
-    int encrypted_len = 0;
-    int fragment_size = 1024;
-    int current_len, ret;
-    unsigned char *fragment;
-
-    // Create and initialise the context
-    if (!(ctx = EVP_CIPHER_CTX_new()))
-    {
-        printf("Errore nella encrypt_msg\n");
-        exit(-1);
-    }
-    // Initialise the encryption operation.
-    if (1 != EVP_EncryptInit(ctx, EVP_aes_128_gcm(), key, iv))
-    {
-        printf("Errore nella encrypt_msg\n");
-        exit(-1);
-    }
-
-    // Provide any AAD data. This can be called zero or more times as required
-    if (1 != EVP_EncryptUpdate(ctx, NULL, &len, aad, aad_len))
-    {
-        printf("Errore nella encrypt_msg\n");
-        exit(-1);
-    }
-
-    while (encrypted_len < plaintext_len)
-    {
-
-        current_len = (plaintext_len - encrypted_len < fragment_size) ? plaintext_len - encrypted_len : fragment_size;
-
-        fragment = (unsigned char *)malloc(current_len);
-
-        ret = fread(fragment, sizeof(unsigned char), current_len, file);
-        if (ret < current_len)
-        {
-            printf("Error fread\n");
-            exit(1);
-        }
-
-        if (1 != EVP_EncryptUpdate(ctx, ciphertext + ciphertext_len, &len, fragment, current_len))
-        {
-            printf("Errore nella encrypt_msg\n");
-            exit(-1);
-        }
-        ciphertext_len += len;
-
-        free(fragment);
-        encrypted_len += current_len;
-    };
-
-    // Finalize Encryption
-    if (1 != EVP_EncryptFinal(ctx, ciphertext + ciphertext_len, &len))
-    {
-        printf("Errore nella encrypt_msg\n");
-        exit(-1);
-    }
-    ciphertext_len += len;
-    /* Get the tag */
-    if (1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, 16, tag))
-    {
-        printf("Errore nella encrypt_msg\n");
-        exit(-1);
-    }
-
-    /* Clean up */
-    EVP_CIPHER_CTX_free(ctx);
-    return ciphertext_len;
-}
-
 int crypto::encrypt_packet(unsigned char *plaintext, int plaintext_len,
                            unsigned char *aad, int aad_len,
                            unsigned char *key,
-                           unsigned char *iv, int iv_len,
+                           unsigned char *iv,
                            unsigned char *ciphertext,
                            unsigned char *tag)
 {
@@ -339,7 +258,7 @@ int crypto::decrypt_message(unsigned char *ciphertext, int ciphertext_len,
                             unsigned char *aad, int aad_len,
                             unsigned char *tag,
                             unsigned char *key,
-                            unsigned char *iv, int iv_len,
+                            unsigned char *iv,
                             unsigned char *plaintext)
 {
     EVP_CIPHER_CTX *ctx;
@@ -625,7 +544,4 @@ unsigned char *crypto::signn(unsigned char *clear_buf, long int clear_size, stri
 
     return sgnt_buf;
 
-    // deallocate buffers:
-    free(clear_buf);
-    free(sgnt_buf);
 }

@@ -55,27 +55,13 @@ public:
 
     void send_packet(unsigned char *packet, uint32_t pkt_len);
 
-    void listening(int queue_size);
-
-    int accepting();
-
     void close_socket();
 
-    void close_socket(int sock);
-
-    connection_manager(char *addr, long port);
-
     connection_manager(int sock);
-
-    void connection(char *addr, long port);
 
     unsigned char *receive_packet();
 
     ~connection_manager();
-
-    // Andrea
-
-    // uint8_t receive_opcode();
 
 private:
     int sckt;
