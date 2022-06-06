@@ -47,20 +47,19 @@ void client::send_clienthello() {
 }
 
 unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
-    
+
     // PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
 
     uint16_t us_size = htons(strlen(user) + 1);
     uint16_t nonce_size = htons(sizeof(nonce));
     uint8_t opcode = CHELLO_OPCODE;
     int pos = 0;
-    uint32_t pkt_len = CLIENT_HELLO_SIZE;
     auto *pkt = (unsigned char *) malloc(CLIENT_HELLO_SIZE);
     if (pkt == NULL) {
         cerr << "Malloc return NULL";
         exit(1);
     }
-    
+
     memcpy(pkt, &opcode, sizeof(uint8_t)); // Opcode
     pos += sizeof(uint8_t);
     memcpy(pkt + pos, &us_size, sizeof(uint16_t)); // Username size
@@ -76,7 +75,7 @@ unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
 }
 
 void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
-    
+
     crypto c = crypto();
     EVP_PKEY *my_prvkey = c.dh_keygen();
     uint32_t key_siz;
@@ -141,7 +140,7 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
 
 client::~client() {
     this->cm.close_socket();
-    if(this->shared_key!= nullptr) {
+    if (this->shared_key != nullptr) {
         unoptimized_memset(this->shared_key, 0, this->key_size);
         free(this->shared_key);
     }
@@ -185,7 +184,7 @@ void client::handle_req() {
         } else if (opcode == LOGOUT) { // TEST
             printf("[-] Server disconnected, something went wrong.\n");
             cm.close_socket();
-            if(this->shared_key!= nullptr) {
+            if (this->shared_key != nullptr) {
                 unoptimized_memset(this->shared_key, 0, this->key_size);
                 free(this->shared_key);
             }
@@ -200,8 +199,8 @@ void client::handle_req() {
             file_path += "/file/";
             file_path += this->file_name;
             char *filepath = &file_path[0];
-            if(this->counter == UINT16_MAX - 2) //Check counter overflow
-            { 
+            if (this->counter == UINT16_MAX - 2) //Check counter overflow
+            {
                 throw ExitException("Counter Exceeded\n");
             }
             this->counter++;
@@ -220,7 +219,7 @@ void client::handle_req() {
         } else {
             printf("Not a valid opcode\n");
             cm.close_socket();
-            if(this->shared_key!= nullptr) {
+            if (this->shared_key != nullptr) {
                 unoptimized_memset(this->shared_key, 0, this->key_size);
                 free(this->shared_key);
             }
@@ -239,18 +238,23 @@ void client::show_menu() {
 
     char command[30];
     //sleep(0.5);
-    int ch;
     printf("Prima di while\n");
     //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
     printf("Dopo while\n");
     //setbuf(stdin, NULL);
-    char * check=fgets(command, 30, stdin);
-
+    char *check = fgets(command, 30, stdin);
+    if (check == nullptr) {
+        throw Exception("Error in fgets");
+    }
     if (!strchr(command, '\n')) {
         printf("Error: command exceeding 30 characters\n");
         char c[2];
-        while (c[0] != '\n')
-            fgets(c, 2, stdin);
+        while (c[0] != '\n') {
+            check = fgets(c, 2, stdin);
+            if (check == nullptr) {
+                throw Exception("Error in fgets");
+            }
+        }
         show_menu();
     }
 
@@ -258,52 +262,53 @@ void client::show_menu() {
     //scanf("%*[^\n]%1*[\n]");
     command[strcspn(command, "\n")] = 0;
     try {
-    if (nameChecker(command, COMMAND)) {
-        uint32_t size;
-        if (strcmp(command, "!list") == 0) {
-            char msg[]="PAD";
-            if(this->counter == UINT16_MAX - 2) //Check counter overflow
-            { 
-                throw ExitException("Counter Exceeded\n");
-            }
-            this->counter++;
-            unsigned char* pkto = prepare_msg_packet(&size,msg,sizeof(msg),LIST,counter,this->shared_key);
-            this->cm.send_packet(pkto,size);
-            printf("Packet list sent\n");
-        } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
-            //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
-            printf("prima di crt_downl_req\n");
-            unsigned char *req = crt_download_request(&size, DOWNLOAD);
-            /*if (req != NULL)
-            	cm.send_packet(req, size);
-            else
-            	printf("Nome file non corretto\n");*/
-            cm.send_packet(req, size);
-        } else if (strcmp(command, "!upload") == 0) { // IMPLEMENT
-            unsigned char *req = crt_download_request(&size, UPLOAD);
-            cm.send_packet(req, size);
-        } else if (strcmp(command, "!rename") == 0) {
-            rename_file();
-        } else if (strcmp(command, "!delete") == 0) {
-            unsigned char* req = crt_download_request(&size, DELETE);
-            cm.send_packet(req, size);
-          	  /*
+        if (nameChecker(command, COMMAND)) {
+            uint32_t size;
+            if (strcmp(command, "!list") == 0) {
+                char msg[] = "PAD";
+                if (this->counter == UINT16_MAX - 2) //Check counter overflow
+                {
+                    throw ExitException("Counter Exceeded\n");
+                }
+                this->counter++;
+                unsigned char *pkto = prepare_msg_packet(&size, msg, sizeof(msg), LIST, counter, this->shared_key);
+                this->cm.send_packet(pkto, size);
+                printf("Packet list sent\n");
+            } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
+                //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
+                printf("prima di crt_downl_req\n");
+                unsigned char *req = crt_download_request(&size, DOWNLOAD);
+                /*if (req != NULL)
+                    cm.send_packet(req, size);
+                else
+                    printf("Nome file non corretto\n");*/
+                cm.send_packet(req, size);
+            } else if (strcmp(command, "!upload") == 0) { // IMPLEMENT
+                unsigned char *req = crt_download_request(&size, UPLOAD);
+                cm.send_packet(req, size);
+            } else if (strcmp(command, "!rename") == 0) {
+                rename_file();
+            } else if (strcmp(command, "!delete") == 0) {
+                unsigned char *req = crt_download_request(&size, DELETE);
+                cm.send_packet(req, size);
+                /*
             char namefile[] = "a.txt";
             char *pkt = crt_pkt_remove(namefile, sizeof(namefile), &size);
             this->cm.send_packet(pkt, size);
              */
 
-        } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
-            char msg[]="LOGOUT";
-            uint32_t siz;
-            if(this->counter == UINT16_MAX - 2) //Check counter overflow
-            { 
-                throw ExitException("Counter Exceeded\n");
-            }
-            this->counter++;
-            unsigned char* pkto= prepare_msg_packet(&siz,msg,sizeof(msg),LOGOUT,this->counter,this->shared_key);
-            cm.send_packet(pkto,siz);
-            printf("Bye!\n");
+            } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
+                char msg[] = "LOGOUT";
+                uint32_t siz;
+                if (this->counter == UINT16_MAX - 2) //Check counter overflow
+                {
+                    throw ExitException("Counter Exceeded\n");
+                }
+                this->counter++;
+                unsigned char *pkto = prepare_msg_packet(&siz, msg, sizeof(msg), LOGOUT, this->counter,
+                                                         this->shared_key);
+                cm.send_packet(pkto, siz);
+                printf("Bye!\n");
 
                 unoptimized_memset(this->shared_key, 0, this->key_size);
 
@@ -342,8 +347,8 @@ unsigned char *client::prepare_list_req(uint32_t *size) {
     memcpy(packet, &opcode, sizeof(opcode)); //OPCode
     pos += sizeof(opcode);
 
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
 
@@ -387,8 +392,8 @@ void client::show_list(unsigned char *pkt, int pos) {
 
     // Deserialization
 
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
 
@@ -429,15 +434,19 @@ void client::show_list(unsigned char *pkt, int pos) {
 unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //TEST SHOULD BE RENAMED
     printf("Inserisci file\n");
     char filename[31];
-    printf("prima di fgets\n");
-    fgets(filename, 31, stdin);
-    printf("dopo fgets\n");
-
+    char *check1=fgets(filename, 31, stdin);
+    if(check1== nullptr){
+        throw Exception("Error in fgets");
+    }
     if (!strchr(filename, '\n')) {
         //printf("Error: filename exceeding 31 characters\n");
         char c[2];
-        while (c[0] != '\n')
-            fgets(c, 2, stdin);
+        while (c[0] != '\n') {
+            check1=fgets(c, 2, stdin);
+            if(check1== nullptr){
+                throw Exception("Error in fgets");
+            }
+        }
         throw Exception("Filename exceeding 31 characters");
     }
 
@@ -460,10 +469,10 @@ unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //
         cerr << "Malloc return NULL";
         exit(1);
     }
-    memcpy(this->file_name,&filename[0],strlen(filename)+1);
-    
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+    memcpy(this->file_name, &filename[0], strlen(filename) + 1);
+
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
 
@@ -528,8 +537,8 @@ void client::create_downloaded_file(unsigned char *pkt) {
     memcpy(&count, pkt + pos, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     count = ntohs(count);
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
     this->counter++;
@@ -664,8 +673,8 @@ void client::server_hello_handler(unsigned char *pkt, int pos) {
 
 void client::handle_ack(unsigned char *pkt) {
     int pos = sizeof(uint8_t);
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
     this->counter++;
@@ -702,7 +711,10 @@ void client::rename_file() {//Va testata
 
     cout << "Rename - Which file?\n";
     char file_nam[11];
-    fgets(file_nam, 11, stdin);
+    char * check=fgets(file_nam, 11, stdin);
+    if(check== nullptr){
+        throw Exception("Error in fgets");
+    }
 
     file_nam[strcspn(file_nam, "\n")] = 0;
 
@@ -710,7 +722,10 @@ void client::rename_file() {//Va testata
         printf("Filename %s - ok, please specify a new filename\n", file_nam);
 
         char new_name[11];
-        fgets(new_name, 11, stdin);
+        check=fgets(new_name, 11, stdin);
+        if(check== nullptr){
+            throw Exception("Error in fgets");
+        }
 
         new_name[strcspn(new_name, "\n")] = 0;
 
@@ -762,8 +777,8 @@ unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, c
     memcpy(pkt, &opcode, sizeof(uint8_t));//opcode
     pos += sizeof(uint8_t);
 
-    if(this->counter == UINT16_MAX - 2) //Check counter overflow
-    { 
+    if (this->counter == UINT16_MAX - 2) //Check counter overflow
+    {
         throw ExitException("Counter Exceeded\n");
     }
 
