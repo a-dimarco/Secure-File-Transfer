@@ -188,7 +188,7 @@ void client::handle_req() {
             create_downloaded_file(pkt);
             show_menu();
         } else if (opcode == CHUNK) {
-            char path[g] = "client_file/";
+            char path[] = "client_file/";
             string file_path = path;
             file_path += this->user;
             file_path += "/file/";
