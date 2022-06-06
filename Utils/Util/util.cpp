@@ -12,7 +12,7 @@ unsigned char *
 prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int counter2, unsigned char *shared_key) {
     // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG)
     int pos = 0;
-    uint16_t ct_size = msg_size + 16;
+    uint16_t ct_size = msg_size;
     int pkt_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t) + IVSIZE + ct_size + TAGSIZE;
     unsigned char *packet = (unsigned char *) malloc(pkt_len);
     *size = pkt_len;
@@ -20,7 +20,7 @@ prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int 
     memcpy(packet, &opcode, sizeof(opcode)); //OPCode
     pos += sizeof(opcode);
 
-    uint16_t count = htons(counter2);
+    uint16_t count = htons(counter2); //Counter
     memcpy(packet + pos, &count, sizeof(uint16_t));
     pos += sizeof(uint16_t);
 
@@ -36,17 +36,17 @@ prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int 
     if (ret < 0) {
         cerr << "error";
     }
-    randombytes_buf(iv, 12);
-    memcpy(packet + pos, iv, 12);
-    pos += 12;
+    randombytes_buf(iv, IVSIZE);
+    memcpy(packet + pos, iv, IVSIZE);
+    pos += IVSIZE;
 
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t); //CipherText & Tag
     unsigned char ct[ct_size];
-    unsigned char tag[16];
+    unsigned char tag[TAGSIZE];
     c->encrypt_packet((unsigned char *) msg, msg_size, (unsigned char *) packet, aad_size, shared_key, iv, ct, tag);
     memcpy(packet + pos, ct, ct_size);
     pos += ct_size;
-    memcpy(packet + pos, tag, 16);
+    memcpy(packet + pos, tag, TAGSIZE);
     return packet;
 }
 

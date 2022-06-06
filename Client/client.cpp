@@ -196,8 +196,9 @@ void client::show_menu() {
         if (strcmp(command, "!list") == 0) {
             char msg[]="PAD";
             this->counter++;
-            unsigned char* pkto= prepare_msg_packet(&size,msg,sizeof(msg),LIST,counter,this->shared_key);
+            unsigned char* pkto = prepare_msg_packet(&size,msg,sizeof(msg),LIST,counter,this->shared_key);
             this->cm.send_packet(pkto,size);
+            printf("Packet list sent\n");
         } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
             unsigned char *req = crt_download_request(&size, DOWNLOAD);
             cm.send_packet(req, size);
