@@ -220,7 +220,7 @@ void server::handle_req()
         } else if (opcode == AUTH) {
             auth(pkt, pos);
         } else {
-            throw Exception("Not a valid opcode")
+            throw Exception("Not a valid opcode");
         }
 
         return;

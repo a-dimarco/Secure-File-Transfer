@@ -244,7 +244,7 @@ void client::show_menu() {
     //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
     printf("Dopo while\n");
     //setbuf(stdin, NULL);
-    fgets(command, 30, stdin);
+    char * check=fgets(command, 30, stdin);
 
     if (!strchr(command, '\n')) {
         printf("Error: command exceeding 30 characters\n");
