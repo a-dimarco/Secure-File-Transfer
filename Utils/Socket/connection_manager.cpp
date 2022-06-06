@@ -1,6 +1,7 @@
 #include "connection_manager.h"
 #include <iostream>
 #include "../Util/util.h"
+
 using namespace std;
 
 connection_manager::connection_manager() {}
@@ -37,7 +38,7 @@ unsigned char *connection_manager::receive_packet() {
         throw Exception("Packet len <= 0");
     }
     pkt = (unsigned char *) malloc(pkt_len + 1);
-    if(pkt==NULL){
+    if (pkt == NULL) {
         throw Exception("Error in receiving the size of the packet\n");
     }
     while (received < pkt_len) { ;

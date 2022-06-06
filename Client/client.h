@@ -3,10 +3,10 @@
 
 #include "../Utils/Socket/connection_manager.h"
 #include "../Utils/Util/util.h"
+
 using namespace std;
 
-class client
-{
+class client {
 public:
     client();
 
