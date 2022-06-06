@@ -77,7 +77,7 @@ int main() {
         while(c[0] != '\n'){
             fgets(c, 2, stdin);
         }
-        return;
+        return 0;
     }
 
     username[strcspn(username, "\n")] = 0;
