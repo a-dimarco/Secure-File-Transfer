@@ -13,8 +13,7 @@ prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int 
     int pkt_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t) + IVSIZE + ct_size + TAGSIZE;
     unsigned char *packet = (unsigned char *) malloc(pkt_len);
     if(packet==NULL){
-        cerr << "Malloc return NULL";
-        exit(1);
+        throw ExitException("Malloc returned null");
     }
     *size = pkt_len;
 
@@ -133,9 +132,7 @@ bool file_opener(char *filename, char *username) {
 
     DIR *dir;
     dir = opendir(path);
-    if (dir) {
-        printf("Directory - OK\n");
-    } else {
+    if (!dir) {
         throw Exception("Directory doesn't exist\n");
     }
 
@@ -148,11 +145,9 @@ bool file_opener(char *filename, char *username) {
     source = fopen(filepath, "rb");
 
     if (source == NULL) {
-        printf("File not found\n");
 
         return false;
     } else {
-        printf("File found\n");
         fclose(source);
 
         return true;
@@ -164,12 +159,11 @@ unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16
     crypto c = crypto();
 
     int aad_size = sizeof(uint8_t) + sizeof(uint16_t) * 2;
-    int iv_size = EVP_CIPHER_iv_length(EVP_aes_128_gcm());
     uint16_t ptext_size = htons(strlen(filename) + 1);
     int pos = 0;
     int cipherlen;
     uint16_t n_counter = htons(counter);
-    *size = aad_size + iv_size + ptext_size + 2 * 16;
+    *size = aad_size + IVSIZE + ptext_size + 2 * 16;
 
     unsigned char *pkt = (unsigned char *) malloc(*size);
     if(pkt==NULL){
@@ -177,7 +171,7 @@ unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16
         exit(1);
     }
 
-    unsigned char iv[EVP_CIPHER_iv_length(EVP_aes_128_gcm())];
+    unsigned char iv[IVSIZE];
     c.create_random_iv(iv);
 
     unsigned char tag[TAGSIZE];
@@ -191,8 +185,8 @@ unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16
     memcpy(pkt + pos, &ptext_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
 
-    memcpy(pkt + pos, iv, iv_size);
-    pos += iv_size;
+    memcpy(pkt + pos, iv, IVSIZE);
+    pos += IVSIZE;
 
     cipherlen = c.encrypt_packet((unsigned char *) filename, strlen(filename) + 1,
                                  (unsigned char *) pkt, aad_size, shared_key, iv,
