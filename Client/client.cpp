@@ -47,6 +47,7 @@ void client::send_clienthello() {
 }
 
 unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
+    
     // PACKET FORMAT: OPCODE - USERNAME_SIZE - NONCE_SIZE - USERNAME - NONCE
 
     uint16_t us_size = htons(strlen(user) + 1);
@@ -60,21 +61,22 @@ unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
     	exit(1);
     }
     
-    memcpy(pkt, &opcode, sizeof(uint8_t));
+    memcpy(pkt, &opcode, sizeof(uint8_t)); // Opcode
     pos += sizeof(uint8_t);
-    memcpy(pkt + pos, &us_size, sizeof(uint16_t));
+    memcpy(pkt + pos, &us_size, sizeof(uint16_t)); // Username size
     pos += sizeof(uint16_t);
-    memcpy(pkt + pos, &nonce_size, sizeof(uint16_t));
+    memcpy(pkt + pos, &nonce_size, sizeof(uint16_t)); // Nonce size
     pos += sizeof(uint16_t);
-    memcpy(pkt + pos, user, strlen(user) + 1);
+    memcpy(pkt + pos, user, strlen(user) + 1); // Username
     // pos += sizeof(user);
     pos += strlen(user) + 1;
-    memcpy(pkt + pos, nonce, NONCESIZE);
+    memcpy(pkt + pos, nonce, NONCESIZE); // Nonce
     //free(nounce);
     return pkt;
 }
 
 void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
+    
     crypto c = crypto();
     EVP_PKEY *my_prvkey = c.dh_keygen();
     uint32_t key_siz;
@@ -101,23 +103,29 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     memcpy(tosign + pos, nounce, nonce_size);
     unsigned int sgnt_size;
     //unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
+    
     string path="client_file/";
     path=path+this->user+"/";
     path=path+this->user+".pem";
     unsigned char *sign = c.signn(tosign, sign_size, path, &sgnt_size);
+
     uint8_t opcode = AUTH;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint32_t) * 2 + key_siz + sgnt_size;
+    
     auto* pkt=(unsigned char *)malloc(pkt_len);
     if (pkt == NULL) {
     	cerr << "Malloc return NULL";
     	exit(1);
     }
-    pos = 0;
+
+    pos = 0; //OPCode
     memcpy(pkt + pos, &opcode, sizeof(uint8_t));
     pos += sizeof(uint8_t);
-    uint32_t key_size_s = htonl(key_siz);
+
+    uint32_t key_size_s = htonl(key_siz); //
     memcpy(pkt + pos, &key_size_s, sizeof(uint32_t));
     pos += sizeof(uint32_t);
+
     uint32_t sgnt_size_s = htonl(sgnt_size);
     memcpy(pkt + pos, &sgnt_size_s, sizeof(uint32_t));
     pos += sizeof(uint32_t);
@@ -180,6 +188,10 @@ void client::handle_req() {
             file_path += "/file/";
             file_path += this->file_name;
             char *filepath = &file_path[0];
+            if(this->counter == UINT16_MAX - 2) //Check counter overflow
+            { 
+                throw ExitException("Counter Exceeded\n");
+            }
             this->counter++;
             this->counter = rcv_file(pkt, filepath, this->counter, this->shared_key, &this->cm);
             show_menu();
@@ -234,6 +246,10 @@ void client::show_menu() {
         uint32_t size;
         if (strcmp(command, "!list") == 0) {
             char msg[]="PAD";
+            if(this->counter == UINT16_MAX - 2) //Check counter overflow
+            { 
+                throw ExitException("Counter Exceeded\n");
+            }
             this->counter++;
             unsigned char* pkto = prepare_msg_packet(&size,msg,sizeof(msg),LIST,counter,this->shared_key);
             this->cm.send_packet(pkto,size);
@@ -264,6 +280,10 @@ void client::show_menu() {
         } else if (strcmp(command, "!logout") == 0) { // IMPLEMENT
             char msg[]="LOGOUT";
             uint32_t siz;
+            if(this->counter == UINT16_MAX - 2) //Check counter overflow
+            { 
+                throw ExitException("Counter Exceeded\n");
+            }
             this->counter++;
             unsigned char* pkto= prepare_msg_packet(&siz,msg,sizeof(msg),LOGOUT,this->counter,this->shared_key);
             cm.send_packet(pkto,siz);
@@ -306,6 +326,11 @@ unsigned char * client::prepare_list_req(uint32_t* size){
     memcpy(packet, &opcode, sizeof(opcode)); //OPCode
     pos += sizeof(opcode);
 
+    if(this->counter == UINT16_MAX - 2) //Check counter overflow
+    { 
+        throw ExitException("Counter Exceeded\n");
+    }
+
     this->counter++; //Counter
     int counter2=counter;
     uint16_t count=htons(counter2);
@@ -342,7 +367,12 @@ void client::show_list(unsigned char *pkt, int pos) {
 
     uint16_t list_size;
 
-    // Deserializzazione
+    // Deserialization
+
+    if(this->counter == UINT16_MAX - 2) //Check counter overflow
+    { 
+        throw ExitException("Counter Exceeded\n");
+    }
 
     this->counter++; // Counter
     uint16_t count;
@@ -372,7 +402,7 @@ void client::show_list(unsigned char *pkt, int pos) {
 
     c.decrypt_message(ct, list_size, (unsigned char*)pkt, aad_size, tag, this->shared_key, iv,  pt);
 
-    // Fine Deserializzazione
+    // End Deserialization
 
     printf("\nAvailable files:\n%s", pt);
 
@@ -413,6 +443,12 @@ unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //
     	exit(1);
     }
     memcpy(this->file_name,&filename[0],strlen(filename)+1);
+    
+    if(this->counter == UINT16_MAX - 2) //Check counter overflow
+    { 
+        throw ExitException("Counter Exceeded\n");
+    }
+
     this->counter++;
     //unsigned char *packet = crt_request_pkt(filename, (int *) size, DOWNLOAD, this->counter, this->shared_key); TEST
     unsigned char *packet = crt_request_pkt(filename, (int *) size, opcode, this->counter);
@@ -474,6 +510,10 @@ void client::create_downloaded_file(unsigned char *pkt) {
     memcpy(&count, pkt+pos, sizeof(uint16_t));
     pos+=sizeof(uint16_t);
     count = ntohs(count);
+    if(this->counter == UINT16_MAX - 2) //Check counter overflow
+    { 
+        throw ExitException("Counter Exceeded\n");
+    }
     this->counter++;
     if(counter!=count){
         cerr<<"Counter errato";
@@ -606,6 +646,10 @@ void client::server_hello_handler(unsigned char *pkt, int pos) {
 
 void client::handle_ack(unsigned char *pkt) {
     int pos = sizeof(uint8_t);
+    if(this->counter == UINT16_MAX - 2) //Check counter overflow
+    { 
+        throw ExitException("Counter Exceeded\n");
+    }
     this->counter++;
     uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t));
@@ -698,6 +742,11 @@ unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, c
 
     memcpy(pkt, &opcode, sizeof(uint8_t));//opcode
     pos += sizeof(uint8_t);
+
+    if(this->counter == UINT16_MAX - 2) //Check counter overflow
+    { 
+        throw ExitException("Counter Exceeded\n");
+    }
 
     this->counter++; //Counter
     int counter2=counter;
