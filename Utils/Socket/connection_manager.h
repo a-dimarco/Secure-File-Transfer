@@ -34,6 +34,7 @@
 #define IVSIZE 12
 #define TAGSIZE 16
 #define NONCESIZE 8
+#define USERNAMESIZE 10
 #define CHUNK_SIZE 1024000 //1 Mb
 
 

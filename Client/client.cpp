@@ -11,7 +11,7 @@ client::client(char *username, int sock) {
     // long dest_port = 49151;
     long dest_port = 6666;
     */
-    this->user = new char[10];
+    this->user = new char[USERNAMESIZE];
     // this->username = username;
     memcpy((void *) this->user, (void *) username, sizeof(username));
     //int seed=atoi(username);
@@ -35,7 +35,7 @@ void client::send_clienthello() {
     
     c.create_nonce(nonce);
     unsigned char *pkt = this->crt_pkt_hello();
-    this->cm.send_packet(pkt, 23);
+    this->cm.send_packet(pkt, CLIENT_HELLO_SIZE);
 
     /*if(this->cm->receive_ack()){
         char * test = new char[10];//TEST -> messa per non far andare il loop il client
@@ -53,8 +53,8 @@ unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
     uint16_t nonce_size = htons(sizeof(nonce));
     uint8_t opcode = CHELLO_OPCODE;
     int pos = 0;
-    uint32_t pkt_len=23;
-    auto* pkt=(unsigned char*)malloc(pkt_len);
+    uint32_t pkt_len=CLIENT_HELLO_SIZE;
+    auto* pkt=(unsigned char*)malloc(CLIENT_HELLO_SIZE);
     if (pkt == NULL) {
     	cerr << "Malloc return NULL";
     	exit(1);
