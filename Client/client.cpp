@@ -257,6 +257,7 @@ void client::handle_req() {
     catch (Exception &e) {
 
         cerr << e.what();
+        show_menu();
 
     } catch (ExitException &e) {
 
@@ -377,9 +378,9 @@ void client::show_menu() {
             show_menu();
         }
     }
-        /* Exception Handler */
+    /* Exception Handler */
     catch (exception &e) {
-
+        
         cerr << e.what();
         show_menu();
     }
