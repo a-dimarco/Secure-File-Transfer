@@ -1,5 +1,6 @@
 #include "client.h"
 #include <openssl/rand.h>
+
 using namespace std;
 
 client::client() = default;;
@@ -27,10 +28,11 @@ void client::send_clienthello() {
     crypto c =crypto();
 
     nonce=(unsigned char*)malloc(NONCESIZE);
-    if(nonce==NULL){
-        cerr << "Malloc return NULL";
-        exit(1);
+    if (nonce == NULL) {
+    	cerr << "Malloc return NULL";
+    	exit(1);
     }
+    
     c.create_nonce(nonce);
     unsigned char *pkt = this->crt_pkt_hello();
     this->cm.send_packet(pkt, 23);
@@ -53,10 +55,11 @@ unsigned char *client::crt_pkt_hello() { // Creates first handshake packet
     int pos = 0;
     uint32_t pkt_len=23;
     auto* pkt=(unsigned char*)malloc(pkt_len);
-    if(pkt==NULL){
-        cerr << "Malloc return NULL";
-        exit(1);
+    if (pkt == NULL) {
+    	cerr << "Malloc return NULL";
+    	exit(1);
     }
+    
     memcpy(pkt, &opcode, sizeof(uint8_t));
     pos += sizeof(uint8_t);
     memcpy(pkt + pos, &us_size, sizeof(uint16_t));
@@ -98,16 +101,16 @@ void client::auth(unsigned char *nounce, EVP_PKEY *pubkey) {
     memcpy(tosign + pos, nounce, nonce_size);
     unsigned int sgnt_size;
     //unsigned char* sign=c->signn(tosign,sign_size,"./server_file/server/Server_key.pem",&sgnt_size);
-    string path="./client_file/";
+    string path="client_file/";
     path=path+this->user+"/";
     path=path+this->user+".pem";
     unsigned char *sign = c.signn(tosign, sign_size, path, &sgnt_size);
     uint8_t opcode = AUTH;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint32_t) * 2 + key_siz + sgnt_size;
     auto* pkt=(unsigned char *)malloc(pkt_len);
-    if(pkt==NULL){
-        cerr << "Malloc return NULL";
-        exit(1);
+    if (pkt == NULL) {
+    	cerr << "Malloc return NULL";
+    	exit(1);
     }
     pos = 0;
     memcpy(pkt + pos, &opcode, sizeof(uint8_t));
@@ -207,21 +210,26 @@ void client::show_menu() {
     print_commands();
 
     char command[30];
+    //sleep(0.5);
+    int ch;
+    printf("Prima di while\n");
+    //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
+    printf("Dopo while\n");
+    //setbuf(stdin, NULL);
     fgets(command, 30, stdin);
-
-    if (!strchr(command, '\n')) 
-    {
-        printf("Error - command exceeding 30 characters\n");
-        char c[2];
-        while(c[0] != '\n')
-        {
-            fgets(c, 2, stdin);
-        }
-        show_menu();
+    
+    if (!strchr(command, '\n')) {
+    	printf("Error: command exceeding 30 characters\n");
+    	char c[2];
+    	while(c[0] != '\n')
+    		fgets(c, 2, stdin);
+    	show_menu();
     }
-
+    
+   // fflush(stdin);
+    //scanf("%*[^\n]%1*[\n]");
     command[strcspn(command, "\n")] = 0;
-
+    try {
     if (nameChecker(command, COMMAND)) {
         uint32_t size;
         if (strcmp(command, "!list") == 0) {
@@ -231,7 +239,13 @@ void client::show_menu() {
             this->cm.send_packet(pkto,size);
             printf("Packet list sent\n");
         } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
+            //while ((ch = fgetc(stdin)) != EOF && ch != '\n') {printf("loop\n");}
+            printf("prima di crt_downl_req\n");
             unsigned char *req = crt_download_request(&size, DOWNLOAD);
+            /*if (req != NULL)
+            	cm.send_packet(req, size);
+            else
+            	printf("Nome file non corretto\n");*/
             cm.send_packet(req, size);
         } else if (strcmp(command, "!upload") == 0) { // IMPLEMENT
             unsigned char *req = crt_download_request(&size, UPLOAD);
@@ -241,7 +255,7 @@ void client::show_menu() {
         } else if (strcmp(command, "!delete") == 0) {
             unsigned char* req = crt_download_request(&size, DELETE);
             cm.send_packet(req, size);
-            /*
+          	  /*
             char namefile[] = "a.txt";
             char *pkt = crt_pkt_remove(namefile, sizeof(namefile), &size);
             this->cm.send_packet(pkt, size);
@@ -253,6 +267,7 @@ void client::show_menu() {
             this->counter++;
             unsigned char* pkto= prepare_msg_packet(&siz,msg,sizeof(msg),LOGOUT,this->counter,this->shared_key);
             cm.send_packet(pkto,siz);
+            printf("Bye!\n");
 
             unoptimized_memset(this->shared_key,0,this->key_size);
 
@@ -268,6 +283,10 @@ void client::show_menu() {
         printf("Command format not valid, please use the format !command\n");
         show_menu();
     }
+    }catch(exception &e){
+        cerr << e.what();
+        show_menu();
+    }
 }
 
 unsigned char * client::prepare_list_req(uint32_t* size){
@@ -278,10 +297,11 @@ unsigned char * client::prepare_list_req(uint32_t* size){
     uint8_t opcode = LIST;
     uint32_t pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t)+IVSIZE + msg_size+16 + TAGSIZE;
     auto* packet=(unsigned char *)malloc(pkt_len);
-    if(packet==NULL){
-        cerr << "Malloc return NULL";
-        exit(1);
+    if (packet == NULL) {
+    	cerr << "Malloc return NULL";
+    	exit(1);
     }
+    
     *size = pkt_len;
     memcpy(packet, &opcode, sizeof(opcode)); //OPCode
     pos += sizeof(opcode);
@@ -361,19 +381,18 @@ void client::show_list(unsigned char *pkt, int pos) {
 unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //TEST SHOULD BE RENAMED
     printf("Inserisci file\n");
     char filename[31];
+    printf("prima di fgets\n");
     fgets(filename, 31, stdin);
-
-    if (!strchr(filename, '\n')) 
-    {
-        printf("Error - filename exceeding 30 characters\n");
-        char c[2];
-        while(c[0] != '\n')
-        {
-            fgets(c, 2, stdin);
-        }
-        return nullptr;
+    printf("dopo fgets\n");
+    
+    if (!strchr(filename, '\n')) {
+    	//printf("Error: filename exceeding 31 characters\n");
+    	char c[2];
+    	while(c[0] != '\n')
+    		fgets(c, 2, stdin);
+    	throw Exception("Filename exceeding 31 characters");
     }
-
+    
     for(int i=0;i<31;i++) {
         if (filename[i] == '\n') {
 
@@ -384,13 +403,14 @@ unsigned char *client::crt_download_request(uint32_t *size, uint8_t opcode) { //
 
     bool check = nameChecker(filename, FILENAME);
     if (!check) {
-        printf("Inserisci un nome corretto\n");
-        return nullptr;
+        //printf("Inserisci un nome corretto\n");
+        //return nullptr;
+        throw Exception("Inserisci un nome corretto\n");
     }
     this->file_name=(char *)malloc(strlen(filename)+1);
-    if(this->file_name==NULL){
-        cerr << "Malloc return NULL";
-        exit(1);
+    if (this->file_name == NULL) {
+    	cerr << "Malloc return NULL";
+    	exit(1);
     }
     memcpy(this->file_name,&filename[0],strlen(filename)+1);
     this->counter++;
@@ -411,9 +431,9 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
     *size = aad_size + IVSIZE + ptext_size + 16;
 
     auto *pkt = (unsigned char *) malloc(*size);
-    if(pkt==NULL){
-        cerr << "Malloc return NULL";
-        exit(1);
+    if (pkt == NULL) {
+    	cerr << "Malloc return NULL";
+    	exit(1);
     }
     unsigned char iv[IVSIZE];
     c.create_random_iv(iv);
@@ -622,17 +642,6 @@ void client::rename_file() {//Va testata
     char file_nam[11];
     fgets(file_nam, 11, stdin);
 
-    if (!strchr(file_nam, '\n')) 
-    {
-        printf("Error - filename exceeding 10 characters\n");
-        char c[2];
-        while(c[0] != '\n')
-        {
-            fgets(c, 2, stdin);
-        }
-        return;
-    }
-
     file_nam[strcspn(file_nam, "\n")] = 0;
 
     if (nameChecker(file_nam, FILENAME)) {
@@ -640,17 +649,6 @@ void client::rename_file() {//Va testata
 
         char new_name[11];
         fgets(new_name, 11, stdin);
-
-        if (!strchr(new_name, '\n')) 
-        {
-            printf("Error - new filename exceeding 10 characters\n");
-            char c[2];
-            while(c[0] != '\n')
-            {
-                fgets(c, 2, stdin);
-            }
-            return;
-        }
 
         new_name[strcspn(new_name, "\n")] = 0;
 
@@ -690,9 +688,9 @@ unsigned char *client::prepare_filename_packet(uint8_t opcode, uint32_t *size, c
     uint32_t ct_size=pt_size;//ct_size
     int pkt_len = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint16_t) + IVSIZE + ct_size + TAGSIZE;
     unsigned char* pkt=(unsigned char *)malloc(pkt_len);
-    if(pkt==NULL){
-        cerr << "Malloc return NULL";
-        exit(1);
+    if (pkt == NULL) {
+    	cerr << "Malloc return NULL";
+    	exit(1);
     }
     *size = pkt_len;
 

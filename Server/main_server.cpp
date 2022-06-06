@@ -161,9 +161,10 @@ exit(1);
             }
 
 
-        }else{
+        }/*else{
             close(clientSocket);
         }
+        */
     }
 
 
