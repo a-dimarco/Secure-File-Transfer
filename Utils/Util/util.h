@@ -11,6 +11,14 @@ using namespace std;
 #define SECURE_FILE_TRANSFER_UTIL_H
 
 #endif // SECURE_FILE_TRANSFER_UTIL_H
+using namespace std;
+class Exception: public std::runtime_error
+{
+public:
+    Exception(std::string const& msg):
+            std::runtime_error(msg)
+    {}
+};
 unsigned char *crt_file_pkt(uint32_t clear_size,unsigned char* clear,uint32_t *size, uint8_t opcode, uint16_t counter, unsigned char* shared_key);
 bool nameChecker(char *name, int mode);
 bool file_opener(char *filename, char *username);

@@ -21,7 +21,7 @@ void connection_manager::close_socket()
 unsigned char *connection_manager::receive_packet()
 {
     unsigned char *pkt;
-    int pkt_len;
+    uint32_t pkt_len;
     uint32_t pkt_len_n;
     uint32_t received = 0;
     ssize_t ret;

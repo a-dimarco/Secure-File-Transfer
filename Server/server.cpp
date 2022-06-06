@@ -20,8 +20,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     pos += sizeof(uint16_t);
     if (count != this->counter)
     {
-        cerr << "Probable replay attack";
-        exit(-1);
+        throw Exception("Counter errato\n");
     }
     uint16_t name_size;
     memcpy(&name_size, pkt + pos, sizeof(uint16_t));
@@ -81,7 +80,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
             return;
         }
         uint32_t size;
-        char msg[] = "Check eseguito correttamente";
+        char msg[] = "File not existing in the sever: OK\n";
         this->counter++;
         unsigned char *p = prepare_msg_packet(&size, msg, sizeof(msg),UPLOAD,counter,this->shared_key);
         cm.send_packet(p, size);
@@ -115,6 +114,7 @@ void server::check_file(unsigned char* pkt, uint8_t opcode)
     	     printf("File non esistente\n");
     	     uint32_t size;
             char msg[] = "File non esistente";
+            this->counter++;
             unsigned char* pkto= prepare_msg_packet(&size,msg,sizeof(msg),ACK,this->counter,this->shared_key);
             cm.send_packet(pkto, size);
             return;
@@ -134,96 +134,81 @@ server::~server()
 
 void server::handle_req()
 {
-    unsigned char* pkt = cm.receive_packet();
-    int pos = 0;
-    uint8_t opcode;
-    memcpy(&opcode, pkt, sizeof(uint8_t));
-    pos += sizeof(uint8_t);
-    // Opcode Handle
+    try {
+        unsigned char *pkt = cm.receive_packet();
+        int pos = 0;
+        uint8_t opcode;
+        memcpy(&opcode, pkt, sizeof(uint8_t));
+        pos += sizeof(uint8_t);
+        // Opcode Handle
 
-    if (opcode == LIST)
-    {
-        handle_list(pkt);
-        uint32_t size;
-        this->counter++;
-        char s[]="server_file/client/";
-        string temp = print_folder(s);
-        int msg_size=temp.length() + 1;
-        char msg[msg_size];//Retrieve the list
-        strcpy(msg, temp.c_str());
-        unsigned char* pkto= prepare_msg_packet(&size,msg,msg_size,LIST,this->counter,this->shared_key);
-        this->cm.send_packet(pkto,size);
-    }
-    else if (opcode == DOWNLOAD)
-    { // IMPLEMENT
-    	check_file(pkt, opcode);
-    }
-    else if (opcode == UPLOAD)
-    { // IMPLEMENT+
-        check_file(pkt, opcode);
-        // store_file(pkt, opcode);
-    }
-    else if (opcode == UPLOAD2)
-    {
-        store_file(pkt);
-    }
-    else if (opcode == CHUNK)
-    {
-        this->counter++;
-        this->counter= rcv_file(pkt,this->file_name,this->counter,this->shared_key,&this->cm);
-    }
-    else if (opcode == RENAME)
-    {
-        if(rename_file(pkt, pos)) //Rename success
-        {
-            unsigned char *packet;
+        if (opcode == LIST) {
+            handle_list(pkt);
             uint32_t size;
-            char msg[] = "Rename - OK\n";
             this->counter++;
-            packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);        
-            cm.send_packet(packet, size);
-        }
-        else //Rename failure
-        {
-            unsigned char *packet;
-            uint32_t size;
-            char msg[] = "Rename - FAIL\n";
+            char s[] = "server_file/client/";
+            string temp = print_folder(s);
+            int msg_size = temp.length() + 1;
+            char msg[msg_size];//Retrieve the list
+            strcpy(msg, temp.c_str());
+            unsigned char *pkto = prepare_msg_packet(&size, msg, msg_size, LIST, this->counter, this->shared_key);
+            this->cm.send_packet(pkto, size);
+        } else if (opcode == DOWNLOAD) { // IMPLEMENT
+            check_file(pkt, opcode);
+        } else if (opcode == UPLOAD) { // IMPLEMENT+
+            check_file(pkt, opcode);
+            // store_file(pkt, opcode);
+        } else if (opcode == UPLOAD2) {
+            store_file(pkt);
+        } else if (opcode == CHUNK) {
             this->counter++;
-            packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);        
-            cm.send_packet(packet, size);
+            this->counter = rcv_file(pkt, this->file_name, this->counter, this->shared_key, &this->cm);
+        } else if (opcode == RENAME) {
+            if (rename_file(pkt, pos)) //Rename success
+            {
+                unsigned char *packet;
+                uint32_t size;
+                char msg[] = "Rename - OK\n";
+                this->counter++;
+                packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);
+                cm.send_packet(packet, size);
+            } else //Rename failure
+            {
+                unsigned char *packet;
+                uint32_t size;
+                char msg[] = "Rename - FAIL\n";
+                this->counter++;
+                packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);
+                cm.send_packet(packet, size);
+            }
+        } else if (opcode == DELETE) {
+            check_file(pkt, opcode);
+        } else if (opcode == LOGOUT) { // IMPLEMENT
+            printf("[-] Client disconnected :(\n");
+            cm.close_socket();
+#pragma optimize("", "off");
+            memset(this->shared_key, 0, this->key_size);
+#pragma optimize("", "on");
+            free(this->shared_key);
+            exit(0);
+        } else if (opcode == ACK) {
+        } else if (opcode == CHELLO_OPCODE) {
+            client_hello_handler(pkt, pos);
+        } else if (opcode == AUTH) {
+            auth(pkt, pos);
+        } else {
+            printf("Not a valid opcode\n");
+            return;
         }
-    }
-    else if (opcode == DELETE)
-    {
-        check_file(pkt, opcode);
-    }
-    else if (opcode == LOGOUT)
-    { // IMPLEMENT
-        printf("[-] Client disconnected :(\n");
-        cm.close_socket();
-#pragma optimize("","off");
-        memset(this->shared_key,0,this->key_size);
-#pragma optimize("","on");
-        free(this->shared_key);
-        exit(0);
-    }
-    else if (opcode == ACK)
-    {
-    }
-    else if (opcode == CHELLO_OPCODE)
-    {
-        client_hello_handler(pkt, pos);
-    }
-    else if (opcode== AUTH){
-        auth(pkt,pos);
-    }
-    else
-    {
-        printf("Not a valid opcode\n");
+
         return;
+    }catch(exception &e){
+        unsigned char *packet;
+        uint32_t size;
+        //this->counter++;
+        packet = prepare_msg_packet(&size, (char *)e.what(), sizeof(e.what()), ACK, counter, this->shared_key);
+        cm.send_packet(packet, size);
     }
-
-    return;
 }
 
 void server::client_hello_handler(unsigned char* pkt, int pos)
@@ -263,7 +248,7 @@ unsigned char *server::crt_pkt_download(char *file, uint32_t *size)
 
 void server::store_file(unsigned char* pkt)
 {
-    int ret;
+    uint32_t ret;
     crypto c= crypto();
     int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
     uint16_t count;
@@ -274,8 +259,7 @@ void server::store_file(unsigned char* pkt)
     count = ntohs(count);
     this->counter++;
     if(counter!=count){
-        cerr<<"Counter errato";
-        exit(0);
+        throw Exception("Counter errato\n");
     }
     memcpy(&file_size, pkt+pos, sizeof(uint32_t));
     file_size = ntohl(file_size);
@@ -298,13 +282,11 @@ void server::store_file(unsigned char* pkt)
     ptext[file_size]='\0';
     FILE *file = fopen(this->file_name, "wb");
     if (file == nullptr) {
-        printf("Errore nella fopen\n");
-        exit(-1);
+        throw Exception("Error in fopen\n");
     }
-    ret = fwrite(ptext, sizeof(unsigned char), file_size, file);
+    ret =(uint32_t) fwrite(ptext, sizeof(unsigned char), file_size, file);
     if (ret < file_size) {
-        printf("Errore nella fwrite\n");
-        exit(-1);
+        throw Exception("Error in fwrite\n");
     }
     fclose(file);
 
@@ -497,7 +479,7 @@ string server::print_folder(char *path)
     dir = opendir(path);
     if (!dir)
     {
-        exit(-1);
+        throw Exception("Directory not exists\n");
     }
 
     // print all the files and directories within directory
@@ -575,7 +557,7 @@ void server::server_hello(unsigned char* nonce) {
 
     // open the file to sign:
     FILE *cacert_file = fopen(cacert_file_name.c_str(), "r");
-    if(!cacert_file) { cerr << "Error: cannot open file '" << cacert_file_name << "' (file does not exist?)\n"; exit(1); }
+    if(!cacert_file) { throw Exception("Cannot open CA cert file\n");; }
 
     // get the file size:
     // (assuming no failures in fseek() and ftell())
@@ -585,9 +567,9 @@ void server::server_hello(unsigned char* nonce) {
 
     // read the plaintext from file:
     unsigned char* cert = (unsigned char*)malloc(clear_size);
-    if(!cert) { cerr << "Error: malloc returned NULL (file too big?)\n"; exit(1); }
+    if(!cert) { throw Exception("Malloc returned null\n"); }
     int ret = fread(cert, 1, clear_size, cacert_file);
-    if(ret < clear_size) { cerr << "Error while reading file '" << cacert_file_name << "'\n"; exit(1); }
+    if(ret < clear_size) { throw Exception("Error while reading file\n"); }
     fclose(cacert_file);
 
     uint32_t cert_size=(uint32_t)clear_size;
@@ -599,8 +581,7 @@ void server::server_hello(unsigned char* nonce) {
     BIO* bio=BIO_new(BIO_s_mem());
     ret= PEM_write_bio_PUBKEY(bio, my_prvkey);
     if (ret == 0) {
-        cerr << "Error: PEM_write_bio_PUBKEY returned " << ret << "\n";
-        exit(1);
+        throw Exception("Error in PEM_write_bio_PUBKEY\n");
     }
 
     BUF_MEM *bptr;
@@ -686,14 +667,12 @@ void server::auth(unsigned char* pkt, int pos) {
     BIO* bio= BIO_new(BIO_s_mem());
     ret=BIO_write(bio, key, key_siz);
     if(ret==0){
-        cerr << "errore in BIO_write";
-        exit(1);
+        throw Exception("Error in Bio_write\n");;
     }
 
     EVP_PKEY* pubkey=PEM_read_bio_PUBKEY( bio, NULL, NULL, NULL);
     if(pubkey==NULL){
-        cerr<<"PEM_read_bio_PUBKEY error";
-        exit(1);
+        throw Exception("Error in PEM_read_bio_PUBKEY\n");
     }
 
     unsigned char* to_verify = (unsigned char*)malloc(key_siz+8);
@@ -701,7 +680,7 @@ void server::auth(unsigned char* pkt, int pos) {
     memcpy(to_verify+pos,key,key_siz);
 
     pos+=key_siz;
-    memcpy(to_verify+pos,this->snonce,sizeof(snonce));
+    memcpy(to_verify+pos,this->snonce,NONCESIZE);
 
     string newnamepath = "server_file/client/"; //    ../server_file/client/
     newnamepath += logged_user; //          ../server_file/client/username
@@ -716,8 +695,7 @@ void server::auth(unsigned char* pkt, int pos) {
     EVP_PKEY* user_pk= PEM_read_PUBKEY(file,NULL,NULL,NULL);
     bool b=c->verify_sign(sign,sgnt_size,to_verify,key_siz+8,user_pk);
     if(!b){
-        cerr << "signature not valid";
-        exit(1);
+        throw Exception("Signature not valid\n");
     }
     EVP_PKEY_free(user_pk);
     unsigned char* g=c->dh_sharedkey(this->my_prvkey,pubkey,&this->key_size);

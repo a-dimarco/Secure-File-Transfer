@@ -1,12 +1,9 @@
 #include "util.h"
-#include "sodium.h"
+//#include "sodium.h"
 #include <sys/stat.h>
 #include <fstream>
-#include "sodium/randombytes.h"
-#include "sodium/core.h"
-
-using namespace std;
-
+//#include "sodium/randombytes.h"
+//#include "sodium/core.h"
 
 unsigned char *
 prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int counter2, unsigned char *shared_key) {
@@ -28,15 +25,16 @@ prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int 
     memcpy(packet + pos, &ct_size, sizeof(uint16_t));
     pos += sizeof(uint16_t);
     ct_size = ntohs(ct_size);
-    int ret;
     crypto *c = new crypto(); //IV
     unsigned char iv[IVSIZE];
-
+    /*
     ret = sodium_init();
     if (ret < 0) {
         cerr << "error";
     }
     randombytes_buf(iv, IVSIZE);
+     */
+    c->create_random_iv(iv);
     memcpy(packet + pos, iv, IVSIZE);
     pos += IVSIZE;
 
@@ -114,8 +112,7 @@ bool file_opener(char *filename, char *username) {
     if (dir) {
         printf("Directory - OK\n");
     } else {
-        printf("Directory NOT found\n");
-        exit(-1);
+        throw Exception("Directory doesn't exist\n");
     }
 
     closedir(dir);
@@ -175,12 +172,11 @@ unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16
 }
 
 int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *shared_key, connection_manager *cm) {
-    int ret;
+    uint32_t ret;
     FILE *file;
     file = fopen(filename, "rb");
     if (file == NULL) {
-        printf("Errore nell'apertura del file\n");
-        exit(-1);
+        throw Exception("Error in fopen\n");
     }
     /*
     ret=fseek(file, 0L, SEEK_END);
@@ -194,13 +190,16 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *s
     if (stat(filename, &st) != 0) {
         return 0;
     }
-    size_t file_size = st.st_size;
+    uint64_t file_size = st.st_size;
+    if(file_size>UINT32_MAX){
+        throw Exception("File too big\n");
+    }
+
     if (file_size < CHUNK_SIZE) {
         unsigned char clear[file_size];
-        ret = fread(clear, sizeof(unsigned char), file_size, file);
+        ret = (uint32_t)fread(clear, sizeof(unsigned char), file_size, file);
         if (ret < file_size) {
-            cerr << "error in reading the file";
-            exit(1);
+            throw Exception("Error in reading the file\n");
         }
         uint32_t size;
         uint32_t file_siz = (uint32_t) file_size;
@@ -240,8 +239,7 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *s
 int rcv_file(unsigned char *pkt, char *filename, uint16_t counter, unsigned char *shared_key, connection_manager *cm) {
     FILE *file = fopen(filename, "wb");
     if (file == nullptr) {
-        printf("Errore nella fopen\n");
-        exit(-1);
+        throw Exception("Error in fopen\n");
     }
     write_chunk(pkt, file, counter, shared_key);
     uint8_t opcode = CHUNK;
@@ -260,12 +258,11 @@ int rcv_file(unsigned char *pkt, char *filename, uint16_t counter, unsigned char
 
     }
     fclose(file);
-    free(filename);
     return counter;
 }
 
 void write_chunk(unsigned char *pkt, FILE *file, uint16_t counter, unsigned char *shared_key) {
-    int ret;
+    uint32_t ret;
     crypto c = crypto();
     int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
     uint16_t count;
@@ -275,8 +272,7 @@ void write_chunk(unsigned char *pkt, FILE *file, uint16_t counter, unsigned char
     pos += sizeof(uint16_t);
     count = ntohs(count);
     if (counter != count) {
-        cerr << "Counter errato";
-        exit(0);
+        throw Exception("Wrong counter \n");
     }
     memcpy(&file_size, pkt + pos, sizeof(uint32_t));
     file_size = ntohl(file_size);
@@ -297,10 +293,9 @@ void write_chunk(unsigned char *pkt, FILE *file, uint16_t counter, unsigned char
                       iv,
                       ptext);
     ptext[file_size] = '\0';
-    ret = fwrite(ptext, sizeof(unsigned char), file_size, file);
+    ret = (uint32_t )fwrite(ptext, sizeof(unsigned char), file_size, file);
     if (ret < file_size) {
-        printf("Errore nella fwrite\n");
-        exit(-1);
+        throw Exception("Error in fwrite\n");
     }
 #pragma optimize("", off);
     memset(ptext, 0, file_size);

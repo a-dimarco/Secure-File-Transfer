@@ -122,7 +122,6 @@ client::~client() { this->cm.close_socket(); }
 
 void client::print_commands() {
     printf("\nPlease select a command\n");
-    printf("!help --> Show all available actions\n");
     printf("!list --> Show all files uploaded to the server\n");
     printf("!download --> Download a file from the server\n");
     printf("!upload --> Upload a file to the server\n");
@@ -132,55 +131,61 @@ void client::print_commands() {
 }
 
 void client::handle_req() {
-    unsigned char* pkt=this->cm.receive_packet();
-    // Andrea test
-    // Deserializzazione
-    int pos = 0;
-    uint8_t opcode;
+    try {
+        printf("receiving\n");
+        unsigned char *pkt = this->cm.receive_packet();
+        // Andrea test
+        // Deserializzazione
+        int pos = 0;
+        uint8_t opcode;
 
-    memcpy(&opcode, pkt, sizeof(opcode)); // prelevo opcode
-    // opcode = ntohs(opcode);
-    pos += sizeof(opcode);
+        memcpy(&opcode, pkt, sizeof(opcode)); // prelevo opcode
+        // opcode = ntohs(opcode);
+        pos += sizeof(opcode);
 
-    if (opcode == SHELLO_OPCODE) {
-        server_hello_handler(pkt, pos);
-    } else if (opcode == LIST) {
-        printf("Received List\n");
-        show_list(pkt, pos);
-        show_menu();
-    } else if (opcode == ACK) { // TEST
-        handle_ack(pkt);
-        show_menu();
-        return; // TEST
-    } else if (opcode == DOWNLOAD) {
-        create_downloaded_file(pkt);
-        show_menu();
-    }else if (opcode == CHUNK) {
-        char path[]="client_file/";
-        string file_path = path;
-        file_path += this->user;
-        file_path += "/file/";
-        file_path += this->file_name;
-        char *filepath = &file_path[0];
-        this->counter++;
-        this->counter=rcv_file(pkt,filepath,this->counter,this->shared_key,&this->cm);
-        show_menu();
-    } else if (opcode == UPLOAD) {
-        handle_ack(pkt);
-        char path[]="client_file/";
-        string file_path = path; // ../server_file/client/
-        file_path += this->user;   // ../server_file/client/Alice
-        file_path += "/file/";     // ../server_file/client/Alice/file/
-        file_path += this->file_name;     // ../server_file/client/Alice/file/filename.extension
-        char *filepath = &file_path[0];
-        this->counter=send_file(filepath,opcode,this->counter,this->shared_key,&this->cm);
-        show_menu();
-    } else {
-        printf("Not a valid opcode\n");
-        cm.close_socket(); // TEST
-        exit(1);            // TEST
+        if (opcode == SHELLO_OPCODE) {
+            server_hello_handler(pkt, pos);
+        } else if (opcode == LIST) {
+            printf("Received List\n");
+            show_list(pkt, pos);
+            show_menu();
+        } else if (opcode == ACK) { // TEST
+            handle_ack(pkt);
+            show_menu();
+            return; // TEST
+        } else if (opcode == DOWNLOAD) {
+            create_downloaded_file(pkt);
+            show_menu();
+        } else if (opcode == CHUNK) {
+            char path[] = "client_file/";
+            string file_path = path;
+            file_path += this->user;
+            file_path += "/file/";
+            file_path += this->file_name;
+            char *filepath = &file_path[0];
+            this->counter++;
+            this->counter = rcv_file(pkt, filepath, this->counter, this->shared_key, &this->cm);
+            show_menu();
+        } else if (opcode == UPLOAD) {
+            handle_ack(pkt);
+            char path[] = "client_file/";
+            string file_path = path; // ../server_file/client/
+            file_path += this->user;   // ../server_file/client/Alice
+            file_path += "/file/";     // ../server_file/client/Alice/file/
+            file_path += this->file_name;     // ../server_file/client/Alice/file/filename.extension
+            char *filepath = &file_path[0];
+            this->counter = send_file(filepath, opcode, this->counter, this->shared_key, &this->cm);
+            show_menu();
+        } else {
+            printf("Not a valid opcode\n");
+            cm.close_socket(); // TEST
+            exit(1);            // TEST
+        }
+        free(pkt);
+    }catch(exception &e){
+        cerr << e.what();
+        exit(1);
     }
-    free(pkt);
 }
 
 void client::show_menu() {
@@ -202,7 +207,6 @@ void client::show_menu() {
         } else if (strcmp(command, "!download") == 0) { // IMPLEMENT
             unsigned char *req = crt_download_request(&size, DOWNLOAD);
             cm.send_packet(req, size);
-
         } else if (strcmp(command, "!upload") == 0) { // IMPLEMENT
             unsigned char *req = crt_download_request(&size, UPLOAD);
             cm.send_packet(req, size);
@@ -233,9 +237,11 @@ void client::show_menu() {
         } else {
 
             printf("Command %s not found, please retry\n", command);
+            show_menu();
         }
     } else {
         printf("Command format not valid, please use the format !command\n");
+        show_menu();
     }
 }
 
@@ -391,7 +397,7 @@ unsigned char *client::crt_request_pkt(char *filename, int *size, uint8_t opcode
 
 void client::create_downloaded_file(unsigned char *pkt) {
 
-    int ret;
+    uint32_t ret;
     crypto c= crypto();
     int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
     uint16_t count;
@@ -436,7 +442,7 @@ void client::create_downloaded_file(unsigned char *pkt) {
         printf("Errore nella fopen\n");
         exit(-1);
     }
-    ret = fwrite(ptext, sizeof(unsigned char), file_size, file);
+    ret =(uint32_t) fwrite(ptext, sizeof(unsigned char), file_size, file);
     if (ret < file_size) {
         printf("Errore nella fwrite\n");
         exit(-1);
@@ -446,7 +452,7 @@ void client::create_downloaded_file(unsigned char *pkt) {
 #pragma optimize("", off);
     memset(ptext, 0, file_size);
 #pragma optimize("", on);
-    free(this->file_name);
+    //free(this->file_name);
 
 }
 
