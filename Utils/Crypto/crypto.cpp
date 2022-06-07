@@ -2,8 +2,8 @@
 #include "../Util/util.h"
 #include <string.h>
 //#include "sodium.h"
-#include "sodium/randombytes.h"
-#include "sodium/core.h"
+//#include "sodium/randombytes.h"
+//#include "sodium/core.h"
 
 using namespace std;
 
@@ -427,7 +427,7 @@ crypto::signn(unsigned char *clear_buf, long int clear_size, string prvkey_file_
     EVP_PKEY *prvkey = PEM_read_PrivateKey(prvkey_file, NULL, NULL, NULL);
     fclose(prvkey_file);
     if (!prvkey) {
-        throw Exception("Error in fopen");
+        throw ExitException("\nPassword errata!");
     }
 
     // declare some useful variables:
