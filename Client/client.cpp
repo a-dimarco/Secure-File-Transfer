@@ -340,7 +340,7 @@ void client::show_menu()
 
         } 
         else if (strcmp(command, "!logout") == 0) 
-        { // IMPLEMENT
+        {   // // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG
             char msg[]="LOGOUT";
             uint32_t siz;
             if(this->counter == UINT16_MAX - 2) //Check counter overflow
