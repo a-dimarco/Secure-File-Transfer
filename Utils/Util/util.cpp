@@ -13,7 +13,7 @@ prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int 
     uint16_t ct_size = msg_size;
     int pkt_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint16_t) + IVSIZE + ct_size + TAGSIZE;
     unsigned char *packet = (unsigned char *) malloc(pkt_len);
-    if(packet==NULL){
+    if (packet == NULL) {
         throw ExitException("Malloc returned null");
     }
     *size = pkt_len;
@@ -71,7 +71,7 @@ unsigned char *crt_file_pkt(uint32_t clear_size, unsigned char *clear, uint32_t 
     uint32_t pkt_len = aad_size + IVSIZE + clear_size + TAGSIZE;
 
     unsigned char *final_packet = (unsigned char *) malloc(pkt_len);
-    if(final_packet==NULL){
+    if (final_packet == NULL) {
         cerr << "Malloc return NULL";
         exit(1);
     }
@@ -167,7 +167,7 @@ unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16
     *size = aad_size + IVSIZE + ptext_size + 2 * 16;
 
     unsigned char *pkt = (unsigned char *) malloc(*size);
-    if(pkt==NULL){
+    if (pkt == NULL) {
         cerr << "Malloc return NULL";
         exit(1);
     }
@@ -219,15 +219,15 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *s
         throw Exception("File too big\n");
     }
 
-    if (counter > UINT16_MAX - ceil(file_size/CHUNK_SIZE))
-    	throw ExitException("Counter will exceed\n");
+    if (counter > UINT16_MAX - ceil(file_size / CHUNK_SIZE))
+        throw ExitException("Counter will exceed\n");
 
     if (file_size < CHUNK_SIZE) {
         unsigned char clear[file_size];
         size_t tmp = fread(clear, sizeof(unsigned char), file_size, file);
-        if(tmp<UINT32_MAX){
-            ret=(uint32_t)tmp;
-        }else{
+        if (tmp < UINT32_MAX) {
+            ret = (uint32_t) tmp;
+        } else {
             throw Exception("Something went wrong\n");
         }
         if (ret < file_size) {
@@ -257,13 +257,13 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *s
                 cerr << "Errore nella malloc";
             }
 
-            size_t tmp=fread(fragment, sizeof(unsigned char), current_len, file);
-            if(tmp<UINT32_MAX){
-                ret=(uint32_t)tmp;
-            }else{
+            size_t tmp = fread(fragment, sizeof(unsigned char), current_len, file);
+            if (tmp < UINT32_MAX) {
+                ret = (uint32_t) tmp;
+            } else {
                 throw Exception("Something went wrong");
             }
-            if(ret<current_len){
+            if (ret < current_len) {
                 throw Exception("Error in fread");
             }
             counter++;
@@ -344,10 +344,10 @@ void write_chunk(unsigned char *pkt, FILE *file, uint16_t counter, unsigned char
 
     ptext[file_size] = '\0';
 
-    size_t tmp =fwrite(ptext, sizeof(unsigned char), file_size, file);
-    if(tmp<UINT32_MAX){
-        ret=(uint32_t)tmp;
-    }else{
+    size_t tmp = fwrite(ptext, sizeof(unsigned char), file_size, file);
+    if (tmp < UINT32_MAX) {
+        ret = (uint32_t) tmp;
+    } else {
         throw Exception("Something went wrong\n");
     }
     if (ret < file_size) {
