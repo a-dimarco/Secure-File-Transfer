@@ -872,12 +872,12 @@ void client::rename_file() {
 
         } else {
 
-            printf("Filename %s - not accepted, please use filename.extension format\n", new_name);
+            throw Exception("Filename not accepted, please use filename.extension format\n");
         }
 
     } else {
 
-        printf("Filename %s - not accepted, please use filename.extension format\n", file_nam);
+        throw Exception("Filename not accepted, please use filename.extension format\n");
 
     }
 
