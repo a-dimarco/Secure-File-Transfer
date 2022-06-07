@@ -1,6 +1,0 @@
-make --dry-run --always-make --keep-going --print-directory
-make: Entering directory '/home/mirawara/CLionProjects/Secure-File-Transfer'
-g++ -Wall -Wextra -Wformat-security -fPIE -Wstrict-overflow=5 -o client_app Client/main_client.cpp Client/client.cpp Utils/Socket/connection_manager.cpp Utils/Crypto/crypto.cpp Utils/Util/util.cpp -lcrypto
-g++ -Wall -Wextra -Wformat-security -fPIE -Wstrict-overflow=5 -o server_app Server/main_server.cpp Server/server.cpp Utils/Socket/connection_manager.cpp Utils/Crypto/crypto.cpp Utils/Util/util.cpp -lcrypto
-make: Leaving directory '/home/mirawara/CLionProjects/Secure-File-Transfer'
- 
