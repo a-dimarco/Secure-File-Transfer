@@ -28,6 +28,8 @@
 #define UPLOAD2 17
 #define CHUNK 18
 #define FINAL_CHUNK 19
+#define DELETE_Y 20
+#define DELETE_N 21
 
 //--VARIABLE SIZES
 #define CHUNK_SIZE 1024000 //1 Mb

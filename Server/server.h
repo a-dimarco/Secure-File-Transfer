@@ -28,7 +28,7 @@ private:
     char *logged_user;
     size_t key_size;
 
-    void check_logout(unsigned char *pkt);
+    void check_msg(unsigned char *pkt);
 
     void auth(unsigned char *pkt, int pos);
 

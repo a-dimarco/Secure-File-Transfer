@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Jun  6 11:00:05 2022
+# Make data base, printed on Tue Jun  7 01:07:53 2022
 
 # Variables
 
@@ -89,7 +89,7 @@ PATH = /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/ubuntu:@/tmp/.ICE-unix/1495,unix/ubuntu:/tmp/.ICE-unix/1495
+SESSION_MANAGER = local/ubuntu:@/tmp/.ICE-unix/1584,unix/ubuntu:/tmp/.ICE-unix/1584
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -119,7 +119,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2973
+GIO_LAUNCHED_DESKTOP_FILE_PID = 3206
 # automatic
 %F = $(notdir $%)
 # environment
@@ -135,7 +135,7 @@ PWD = /home/mirawara/CLionProjects/Secure-File-Transfer
 # environment
 XDG_SEAT = seat0
 # environment
-SSH_AGENT_PID = 1572
+SSH_AGENT_PID = 1661
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -191,7 +191,7 @@ SHLVL = 1
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-a202bde4-3433-411a-abc7-b3ea31c45ae1.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-6ec564bd-17a6-4311-b9e8-4b3ea14265f7.sock
 # environment
 XDG_SESSION_ID = 2
 # environment
@@ -278,7 +278,7 @@ LC_ADDRESS = it_IT.UTF-8
 LANG = C
 # environment
  
-VSCODE_PID = 3021
+VSCODE_PID = 3255
 # variable set hash-table stats:
 # Load=134/1024=13%, Rehash=0, Collisions=24/162=15%
 
@@ -337,7 +337,7 @@ client: Client/main_client.cpp
 # Not a target:
 Client/main_client.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-06-06 10:34:19.743697456
+#  Last modified 2022-06-06 11:30:16.641831009
 #  File has been updated.
 #  Successfully updated.
 
@@ -357,7 +357,7 @@ server: Server/main_server.cpp
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-06-06 08:14:57.942318789
+#  Last modified 2022-06-06 11:21:55.949706848
 #  File has been updated.
 #  Successfully updated.
 
@@ -387,6 +387,6 @@ Server/main_server.cpp:
 # strcache performance: lookups = 34 / hit rate = 32%
 # hash-table stats:
 # Load=23/8192=0%, Rehash=0, Collisions=4/34=12%
-# Finished Make data base on Mon Jun  6 11:00:05 2022
+# Finished Make data base on Tue Jun  7 01:07:53 2022
 
  

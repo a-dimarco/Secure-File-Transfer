@@ -1,4 +1,5 @@
 #include "client.h"
+#include <stdio.h>
 #include <openssl/rand.h>
 
 using namespace std;
@@ -195,6 +196,41 @@ void client::handle_req() {
             handle_ack(pkt);
             show_menu();
 
+        } else if (opcode == DELETE) {
+            handle_ack(pkt);
+            cout << "'Yes' to delete \n";
+            char command[5];
+            char *check = fgets(command, 5, stdin);
+            if (check == nullptr) {
+                throw Exception("Error in fgets");
+            }
+            if (!strchr(command, '\n')) {
+                printf("Error: command exceeding character limit\n");
+                char c[2];
+                while (c[0] != '\n') {
+                    check = fgets(c, 2, stdin);
+                    if (check == nullptr) {
+                        throw Exception("Error in fgets");
+                    }
+                }
+            }
+            command[strcspn(command, "\n")] = 0;
+            uint32_t size;
+            if (this->counter == UINT16_MAX - 2) //Check counter overflow
+            {
+                throw ExitException("Counter Exceeded\n");
+            }
+            this->counter++;
+            char msg[] = " ";
+            if (strcmp(command, "Yes") == 0) {
+                unsigned char *pkto = prepare_msg_packet(&size, msg, sizeof(msg), DELETE_Y, counter, this->shared_key);
+                cm.send_packet(pkto, size);
+
+            } else {
+                unsigned char *pkto = prepare_msg_packet(&size, msg, sizeof(msg), DELETE_N, counter, this->shared_key);
+                cm.send_packet(pkto, size);
+            }
+
         } else if (opcode == LOGOUT) {
 
             handle_ack(pkt);
@@ -253,7 +289,7 @@ void client::handle_req() {
         /* Clean packet */
         free(pkt);
     }
-        /* Exception handler */
+/* Exception handler */
     catch (Exception &e) {
 
         cerr << e.what();
@@ -278,6 +314,7 @@ void client::handle_req() {
         }
         exit(1);
     }
+
 }
 
 /* Main menù */
@@ -378,9 +415,9 @@ void client::show_menu() {
             show_menu();
         }
     }
-    /* Exception Handler */
+        /* Exception Handler */
     catch (exception &e) {
-        
+
         cerr << e.what();
         show_menu();
     }
@@ -464,6 +501,17 @@ unsigned char *client::crt_generic_req(uint32_t *size, uint8_t opcode) {
         throw Exception("Insert a correct filename format\n");
     }
     size_t filename_size = strlen(filename) + 1;
+
+    if (opcode == DOWNLOAD) {
+        FILE *f;
+        string path = "client_file/";
+        path = path + this->user + "/file/" + filename;
+        f = fopen(path.c_str(), "rb");
+        if (f) {
+            fclose(f);
+            throw Exception("File already existing in your folder!\n");
+        }
+    }
 
     /* Private variable because it has to keep it for
      * the next request */

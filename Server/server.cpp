@@ -15,7 +15,7 @@ void server::check_file(unsigned char *pkt, uint8_t opcode) {
     int pos = sizeof(uint8_t);
     uint16_t count;
     memcpy(&count, pkt + pos, sizeof(uint16_t));
-    
+
     //Prevents the counter overflow
     if (this->counter == UINT16_MAX)
         throw ExitException("Counter exceeded\n");
@@ -24,7 +24,7 @@ void server::check_file(unsigned char *pkt, uint8_t opcode) {
     count = ntohs(count);
 
     pos += sizeof(uint16_t);
-    
+
     //Checks whether the received counter is the expected one
     if (count != this->counter) {
         throw Exception("Counter Error\n");
@@ -56,7 +56,7 @@ void server::check_file(unsigned char *pkt, uint8_t opcode) {
         throw Exception("Malloc returned NULL\n");
 
     c->decrypt_message(ct, cipherlen, pkt, aad_size, tag, this->shared_key, iv, pt);
-    
+
     //Checks the format of the received file name
     bool b = nameChecker((char *) pt, FILENAME);
     if (!b) {
@@ -70,13 +70,13 @@ void server::check_file(unsigned char *pkt, uint8_t opcode) {
         cm.send_packet(pkto, size);
         return;
     }
-    
+
     //If a == true, the requested file exists in the correct folder
     bool a;
     a = file_opener((char *) pt, this->logged_user);
     if (a or (opcode == UPLOAD)) {
 
-	//Creates the relative path of the file
+        //Creates the relative path of the file
         char path[] = "server_file/client/";
         string file_path = path; // ../server_file/client/
         file_path += this->logged_user;   // ../server_file/client/Alice
@@ -129,7 +129,16 @@ void server::check_file(unsigned char *pkt, uint8_t opcode) {
                 throw Exception("Malloc returned NULL\n");
             memcpy(file_name, pt, name_size - 1);
             memcpy(file_name + name_size - 1, "\0", 1);
-            delete_file();
+            char msg[] = "Are you sure?\n";
+            unsigned char *pac;
+            uint32_t siz;
+            if (this->counter == UINT16_MAX)
+                throw ExitException("Counter exceeded\n");
+            this->counter++;
+            //An ACK packet is sent to notify the client
+            pac = prepare_msg_packet(&siz, msg, sizeof(msg), DELETE, counter, this->shared_key);
+            cm.send_packet(pac, siz);
+            //delete_file();
         }
     } else if (opcode == DOWNLOAD) {
         if (a) {
@@ -187,11 +196,11 @@ void server::handle_req() {
             strcpy(msg, temp.c_str());
             unsigned char *pkto = prepare_msg_packet(&size, msg, msg_size, LIST, this->counter, this->shared_key);
             this->cm.send_packet(pkto, size);
-        } else if (opcode == DOWNLOAD) { 
+        } else if (opcode == DOWNLOAD) {
             check_file(pkt, opcode);
-        } else if (opcode == UPLOAD) { 
+        } else if (opcode == UPLOAD) {
             check_file(pkt, opcode);
-        //UPLOAD2 ==> packet containing a little file
+            //UPLOAD2 ==> packet containing a little file
         } else if (opcode == UPLOAD2) {
             //Stores the file
             store_file(pkt);
@@ -204,7 +213,7 @@ void server::handle_req() {
             unsigned char *pac = prepare_msg_packet(&siz, msg, sizeof(msg), ACK, this->counter, this->shared_key);
             cm.send_packet(pac, siz);
             free(this->file_name);
-        //CHUNK ==> packet containing a chunk of a big file
+            //CHUNK ==> packet containing a chunk of a big file
         } else if (opcode == CHUNK) {
             if (this->counter == UINT16_MAX)
                 throw ExitException("Counter exceeded\n");
@@ -221,9 +230,8 @@ void server::handle_req() {
             cm.send_packet(pac, siz);
             free(this->file_name);
         } else if (opcode == RENAME) {
-            if (rename_file(pkt, pos)) 
-            {
-       	 //Rename success
+            if (rename_file(pkt, pos)) {
+                //Rename success
                 unsigned char *packet;
                 uint32_t size;
                 char msg[] = "Rename - OK\n";
@@ -232,9 +240,8 @@ void server::handle_req() {
                 this->counter++;
                 packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);
                 cm.send_packet(packet, size);
-            } else 
-            {
-            	 //Rename failure
+            } else {
+                //Rename failure
                 unsigned char *packet;
                 uint32_t size;
                 char msg[] = "Rename - FAIL\n";
@@ -246,9 +253,24 @@ void server::handle_req() {
             }
         } else if (opcode == DELETE) {
             check_file(pkt, opcode);
+        } else if (opcode == DELETE_Y) {
+            check_msg(pkt);
+            delete_file();
+        } else if (opcode == DELETE_N) {
+            check_msg(pkt);
+            free(this->file_name);
+            unsigned char *packet;
+            uint32_t size;
+            char msg[] = "Operation aborted!\n";
+            if (this->counter == UINT16_MAX)
+                throw ExitException("Counter exceeded\n");
+            this->counter++;
+            packet = prepare_msg_packet(&size, msg, sizeof(msg), ACK, counter, this->shared_key);
+            cm.send_packet(packet, size);
+
         } else if (opcode == LOGOUT) { // IMPLEMENT
             //Decrypts and verifies the packet
-            check_logout(pkt);
+            check_msg(pkt);
             printf("\n[-] Client disconnected :(\n");
             //Close the connection with the client, freeing also the shared session key
             cm.close_socket();
@@ -268,14 +290,14 @@ void server::handle_req() {
 
         return;
     } catch (Exception &e) {
-    	//Unexpected behaviour for which the server shutdown is not needed
+        //Unexpected behaviour for which the server shutdown is not needed
         unsigned char *packet;
         uint32_t size;
         //Client is notified with an ACK packet
         packet = prepare_msg_packet(&size, (char *) e.what(), sizeof(e.what()), ACK, counter, this->shared_key);
         cm.send_packet(packet, size);
     } catch (ExitException &e) {
-    	//Unexpected behaviour for which the server shutdown is needed
+        //Unexpected behaviour for which the server shutdown is needed
         unsigned char *packet;
         uint32_t size;
         //Client is notified with an ack packet
@@ -323,7 +345,7 @@ void server::client_hello_handler(unsigned char *pkt, int pos) {
 void server::store_file(unsigned char *pkt) {
     uint32_t ret;
     crypto c = crypto();
-    
+
     //Deserializes the packet
     int aad_len = sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
     uint16_t count;
@@ -350,7 +372,7 @@ void server::store_file(unsigned char *pkt) {
     unsigned char tag[TAGSIZE];
     memcpy(tag, pkt + pos, TAGSIZE);
     unsigned char ptext[file_size + 1];
-    
+
     //Devrypts and verifies the packet
     c.decrypt_message(ctext, file_size,
                       pkt, aad_len,
@@ -427,7 +449,7 @@ void server::handle_list(unsigned char *pkt) {
 unsigned char *server::prepare_list_packet(int *size) {
     uint8_t opcode = LIST;
     char s[] = "server_file/client/";
-    
+
     //Retrieves the list
     string temp = print_folder(s);
     int msg_size = temp.length() + 1;
@@ -562,7 +584,7 @@ void server::server_hello(unsigned char *nonce) {
 
     uint8_t opcode = SHELLO_OPCODE;
     crypto *c = new crypto();
-    
+
     //Generates the server nonce
     this->snonce = (unsigned char *) malloc(NONCESIZE);//TEST
     if (this->snonce == NULL) {
@@ -680,7 +702,7 @@ void server::server_hello(unsigned char *nonce) {
     pos += key_siz;
 
     memcpy(pkt + pos, sign, ntohl(sgnt_size_s));
-    
+
     //Sends the server_hello packet
     cm.send_packet(pkt, pkt_len);
     free(tosign);
@@ -694,7 +716,7 @@ void server::auth(unsigned char *pkt, int pos) {
 
     int ret;
     crypto *c = new crypto();
-    
+
     //Deserializes the AUTH packet coming from the client
     uint32_t key_siz;
     memcpy(&key_siz, pkt + pos, sizeof(uint32_t));
@@ -757,14 +779,14 @@ void server::auth(unsigned char *pkt, int pos) {
     FILE *file;
     file = fopen(path, "rb");
     EVP_PKEY *user_pk = PEM_read_PUBKEY(file, NULL, NULL, NULL);
-    
+
     //Verifies the digital signature made by the client
     bool b = c->verify_sign(sign, sgnt_size, to_verify, key_siz + 8, user_pk);
     if (!b) {
         throw Exception("Signature not valid\n");
     }
     EVP_PKEY_free(user_pk);
-    
+
     //Derives the shared session key
     unsigned char *g = c->dh_sharedkey(this->my_prvkey, pubkey, &this->key_size);
     this->shared_key = c->key_derivation(g, this->key_size);
@@ -927,7 +949,7 @@ bool server::file_renamer(char *new_name, char *old_name) {
 
 }
 
-void server::check_logout(unsigned char *pkt) {
+void server::check_msg(unsigned char *pkt) {
     // PACKET FORMAT: OPCODE - COUNTER - CPSIZE - IV - CIPHERTEXT - TAG
 
     int pos = sizeof(uint8_t);
