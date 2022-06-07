@@ -6,6 +6,7 @@
 //#include "sodium/randombytes.h"
 //#include "sodium/core.h"
 
+/* Prepare a classic packet with a message inside */
 unsigned char *
 prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int counter2, unsigned char *shared_key) {
 
@@ -37,14 +38,6 @@ prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int 
     memcpy(packet + pos, iv, IVSIZE);
     pos += IVSIZE;
 
-    /*
-    ret = sodium_init();
-    if (ret < 0) {
-        cerr << "error";
-    }
-    randombytes_buf(iv, IVSIZE);
-     */
-
     int aad_size = sizeof(opcode) + sizeof(uint16_t) + sizeof(uint16_t);
     unsigned char ct[ct_size];
     unsigned char tag[TAGSIZE];
@@ -59,6 +52,7 @@ prepare_msg_packet(uint32_t *size, char *msg, int msg_size, uint8_t opcode, int 
     return packet;
 }
 
+/* Creates a packet with file bytes inside */
 unsigned char *crt_file_pkt(uint32_t clear_size, unsigned char *clear, uint32_t *size, uint8_t opcode, uint16_t counter,
                             unsigned char *shared_key) {
     if (opcode == UPLOAD) {
@@ -106,6 +100,7 @@ unsigned char *crt_file_pkt(uint32_t clear_size, unsigned char *clear, uint32_t 
     return final_packet;
 }
 
+/* Checks if the command or filename is in the correct format */
 bool nameChecker(char *name, int mode) {
 
     bool ret;
@@ -121,6 +116,7 @@ bool nameChecker(char *name, int mode) {
     return ret;
 }
 
+/* Checks the existence of a file */
 bool file_opener(char *filename, char *username) {
 
     char *path;
@@ -155,6 +151,7 @@ bool file_opener(char *filename, char *username) {
     }
 }
 
+/* Creates a generic request for a file */
 unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16_t counter, unsigned char *shared_key) {
 
     crypto c = crypto();
@@ -199,6 +196,7 @@ unsigned char *crt_request_pkt(char *filename, int *size, uint8_t opcode, uint16
     return pkt;
 }
 
+/* Sends an entire file */
 int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *shared_key, connection_manager *cm) {
 
     uint32_t ret;
@@ -279,6 +277,7 @@ int send_file(char *filename, uint8_t opcode, uint16_t counter, unsigned char *s
     return counter;
 }
 
+/* Receives an entire file */
 int rcv_file(unsigned char *pkt, char *filename, uint16_t counter, unsigned char *shared_key, connection_manager *cm) {
 
     FILE *file = fopen(filename, "wb");
@@ -307,7 +306,7 @@ int rcv_file(unsigned char *pkt, char *filename, uint16_t counter, unsigned char
     return counter;
 }
 
-
+/* Write only a single chunk of the file */
 void write_chunk(unsigned char *pkt, FILE *file, uint16_t counter, unsigned char *shared_key) {
     uint32_t ret;
     crypto c = crypto();
@@ -357,6 +356,7 @@ void write_chunk(unsigned char *pkt, FILE *file, uint16_t counter, unsigned char
     unoptimized_memset(ptext, 0, file_size);
 }
 
+/* Unoptimized memset => not ignored by the compiler */
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 

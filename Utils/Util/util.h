@@ -16,12 +16,14 @@ using namespace std;
 
 using namespace std;
 
+/* Exception with no exit */
 class Exception : public std::runtime_error {
 public:
     Exception(std::string const &msg) :
             std::runtime_error(msg) {}
 };
 
+/* Exception that will close the app */
 class ExitException : public std::runtime_error {
 public:
     ExitException(std::string const &msg) :

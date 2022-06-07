@@ -7,9 +7,19 @@
 
 using namespace std;
 
+/* Creates a random IV */
 void crypto::create_random_iv(unsigned char *iv) {
-    RAND_poll();
-    RAND_bytes(iv, IVSIZE);
+    int ret;
+
+    ret = RAND_poll();
+    if (ret < 0) {
+        throw Exception("Error in RAND Poll");
+    }
+
+    ret = RAND_bytes(iv, IVSIZE);
+    if (ret < 0) {
+        throw Exception("Error in RAND bytes");
+    }
     /*
     int ret = sodium_init();
     if (ret < 0)
@@ -19,10 +29,20 @@ void crypto::create_random_iv(unsigned char *iv) {
     randombytes_buf(iv, IVSIZE);*/
 }
 
-
+/* Creates a random NONCE */
 void crypto::create_nonce(unsigned char *p) {
-    RAND_poll();
+
+    int ret;
+
+    ret = RAND_poll();
+    if (ret < 0) {
+        throw Exception("Error in RAND Poll");
+    }
+
     RAND_bytes(p, NONCESIZE);
+    if (ret < 0) {
+        throw Exception("Error in RAND bytes");
+    }
 
     /*
     int ret = sodium_init();
@@ -33,6 +53,7 @@ void crypto::create_nonce(unsigned char *p) {
     randombytes_buf(p, NONCESIZE);*/
 }
 
+/* Generates ECDH parameters */
 EVP_PKEY *crypto::dh_params_gen() {
 
     /*
@@ -43,24 +64,31 @@ EVP_PKEY *crypto::dh_params_gen() {
 
     EVP_PKEY *dh_params = NULL;
     EVP_PKEY_CTX *pctx;
+
     pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
+
     if (pctx == NULL) {
         throw Exception("Error in params gen");
     }
     if (1 != EVP_PKEY_paramgen_init(pctx)) {
         throw Exception("Error in params gen");
     }
+    /* Specific curve */
     if (1 != EVP_PKEY_CTX_set_ec_paramgen_curve_nid(pctx, NID_X9_62_prime256v1)) {
         throw Exception("Error in params gen");
     }
     if (1 != EVP_PKEY_paramgen(pctx, &dh_params)) {
         throw Exception("Error in params gen");
     }
+
+    /* Clean up (the params are cleaned after) */
     EVP_PKEY_CTX_free(pctx);
     return dh_params;
 }
 
+/* Generates the DH private key */
 EVP_PKEY *crypto::dh_keygen() {
+
     EVP_PKEY *dh_params = this->dh_params_gen();
     EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(dh_params, NULL);
     EVP_PKEY *my_prvkey = NULL;
@@ -70,12 +98,17 @@ EVP_PKEY *crypto::dh_keygen() {
     if (1 != EVP_PKEY_keygen(ctx, &my_prvkey)) {
         throw Exception("Key generation failed");
     };
+
+    /* Clean up */
     EVP_PKEY_CTX_free(ctx);
     EVP_PKEY_free(dh_params);
+
     return my_prvkey;
 }
 
+/* Generates the DH shared key g^ab */
 unsigned char *crypto::dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, size_t *size) {
+
     EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(my_key, NULL);
 
     if (1 != EVP_PKEY_derive_init(ctx)) {
@@ -102,21 +135,21 @@ unsigned char *crypto::dh_sharedkey(EVP_PKEY *my_key, EVP_PKEY *other_pubkey, si
         throw Exception("Error in key derivation");
     }
 
+    /* Clean up */
     EVP_PKEY_CTX_free(ctx);
-
     EVP_PKEY_free(my_key);
+
     *size = secretlen;
 
     return secret;
 }
 
+/* Derives the session key from the shared key */
 unsigned char *crypto::key_derivation(unsigned char *shared_secret, size_t size) {
 
     const EVP_MD *hash_type = EVP_sha256();
-
     unsigned char *session_key;
     unsigned char *digest;
-
     unsigned int digestlen;
 
     digest = (unsigned char *) malloc(EVP_MD_size(hash_type));
@@ -139,38 +172,42 @@ unsigned char *crypto::key_derivation(unsigned char *shared_secret, size_t size)
 
     EVP_MD_CTX_free(ctx);
 
-
+    /* Clean up the shared secret */
     unoptimized_memset(shared_secret, 0, size);
     free(shared_secret);
 
     int session_key_size = 128;
+
     session_key = (unsigned char *) malloc(session_key_size);
     if (session_key == NULL) {
         throw Exception("Malloc returned NULL");;
     }
     memcpy(session_key, digest, session_key_size);
 
-
+    /* Clean up digest */
     unoptimized_memset(digest, 0, EVP_MD_size(hash_type));
-
     free(digest);
 
     return session_key;
 }
 
+/* Encryption of the message */
 int crypto::encrypt_packet(unsigned char *plaintext, int plaintext_len,
                            unsigned char *aad, int aad_len,
                            unsigned char *key,
                            unsigned char *iv,
                            unsigned char *ciphertext,
                            unsigned char *tag) {
+
     EVP_CIPHER_CTX *ctx;
     int len = 0;
     int ciphertext_len = 0;
+
     // Create and initialise the context
     if (!(ctx = EVP_CIPHER_CTX_new())) {
         throw Exception("Encryption error");
     }
+
     // Initialise the encryption operation.
     if (1 != EVP_EncryptInit(ctx, EVP_aes_128_gcm(), key, iv)) {
         throw Exception("Encryption error");
@@ -185,11 +222,13 @@ int crypto::encrypt_packet(unsigned char *plaintext, int plaintext_len,
         throw Exception("Encryption error");
     }
     ciphertext_len = len;
+
     // Finalize Encryption
     if (1 != EVP_EncryptFinal(ctx, ciphertext + len, &len)) {
         throw Exception("Encryption error");
     }
     ciphertext_len += len;
+
     /* Get the tag */
     if (1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, 16, tag)) {
         throw Exception("Encryption error");
@@ -218,15 +257,17 @@ int crypto::decrypt_message(unsigned char *ciphertext, int ciphertext_len,
     if (!(ctx = EVP_CIPHER_CTX_new())) {
         throw Exception("Decryption error");
     }
+
     if (!EVP_DecryptInit(ctx, EVP_aes_128_gcm(), key, iv)) {
         throw Exception("Decryption error");
     }
+
     // Provide any AAD data.
     if (!EVP_DecryptUpdate(ctx, NULL, &len, aad, aad_len)) {
         throw Exception("Decryption error");
     }
-    // Provide the message to be decrypted, and obtain the plaintext output.
 
+    // Provide the message to be decrypted, and obtain the plaintext output.
     while (decrypted_len < ciphertext_len) {
 
         current_len = (ciphertext_len - decrypted_len < fragment_size) ? ciphertext_len - decrypted_len : fragment_size;
@@ -237,14 +278,14 @@ int crypto::decrypt_message(unsigned char *ciphertext, int ciphertext_len,
         plaintext_len += len;
         decrypted_len += current_len;
     }
-    /* Set expected tag value. Works in OpenSSL 1.0.1d and later */
+
+    /* Set expected tag value. */
     if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, 16, tag)) {
         throw Exception("Decryption error");
     }
+
     /*
-     * Finalise the decryption. A positive return value indicates success,
-     * anything else is a failure - the plaintext is not trustworthy.
-     */
+     * Finalise the decryption. */
     ret = EVP_DecryptFinal(ctx, plaintext + plaintext_len, &len);
 
     /* Clean up */
@@ -260,31 +301,34 @@ int crypto::decrypt_message(unsigned char *ciphertext, int ciphertext_len,
     }
 }
 
+/* Verifies the certificate */
 bool crypto::verify_cert(X509 *cert) {
     int ret; // used for return values
 
     // load the CA's certificate:
-    // string cacert_file_name = "/home/studenti/Documents/GitHub/Secure-File-Transfer/server_file/server/SecureFileTransfer_cert.pem";
-    char cacert_file_name[] = "./server_file/server/SecureFileTransfer_cert.pem";
+    char cacert_file_name[] = "./client_file/CA/SecureFileTransfer_cert.pem";
 
     FILE *cacert_file = fopen(cacert_file_name, "r");
     if (!cacert_file) {
 
         throw Exception("Cannot open CA cert");
     }
+
     X509 *cacert = PEM_read_X509(cacert_file, NULL, NULL, NULL);
+
     fclose(cacert_file);
     if (!cacert) {
         throw Exception("Error in PEM_read_X509");
     }
 
     // load the CRL:
-    string crl_file_name = "./server_file/server/SecureFileTransfer_crl.pem";
+    string crl_file_name = "./client_file/CA/SecureFileTransfer_crl.pem";
     FILE *crl_file = fopen(crl_file_name.c_str(), "r");
     if (!crl_file) {
 
         throw Exception("Cannot open CRL pem file");
     }
+
     X509_CRL *crl = PEM_read_X509_CRL(crl_file, NULL, NULL, NULL);
     fclose(crl_file);
     if (!crl) {
@@ -319,10 +363,13 @@ bool crypto::verify_cert(X509 *cert) {
         throw Exception("Error in X509_STORE_CTX_init");
     }
     ret = X509_verify_cert(certvfy_ctx);
+
+    /* Clean up */
     X509_STORE_free(store);
     X509_free(cacert);
     X509_CRL_free(crl);
     X509_STORE_CTX_free(certvfy_ctx);
+
     if (ret != 1) {
         return false;
     } else {
@@ -331,41 +378,52 @@ bool crypto::verify_cert(X509 *cert) {
 
 }
 
+/* Verifies the signature */
 bool crypto::verify_sign(unsigned char *sgnt_buf, long int sgnt_size, unsigned char *clear_buf,
                          long int clear_size, EVP_PKEY *pk) {
+
     int ret;
+
     const EVP_MD *md = EVP_sha256();
     EVP_MD_CTX *md_ctx = EVP_MD_CTX_new();
     if (!md_ctx) {
         throw Exception("Error in EVP_MD_CTX_new");
     }
+
     ret = EVP_VerifyInit(md_ctx, md);
     if (ret == 0) {
         throw Exception("Error in EVP_VerifyInit");
     }
+
     ret = EVP_VerifyUpdate(md_ctx, clear_buf, clear_size);
     if (ret == 0) {
         throw Exception("Error in EVP_VerifyUpdate");
     }
-    ret = EVP_VerifyFinal(md_ctx, sgnt_buf, sgnt_size, pk);
 
+    ret = EVP_VerifyFinal(md_ctx, sgnt_buf, sgnt_size, pk);
     if (ret == -1) {
         return false;
     } else if (ret == 0) {
         return false;
     }
+
+    /* Clean up */
     EVP_MD_CTX_free(md_ctx);
+
     return true;
 }
 
+/* Signature generation */
 unsigned char *
 crypto::signn(unsigned char *clear_buf, long int clear_size, string prvkey_file_name, unsigned int *sgnt_size) {
+
     int ret; // used for return values
 
     FILE *prvkey_file = fopen(prvkey_file_name.c_str(), "r");
     if (!prvkey_file) {
         throw Exception("Error in open private key file");
     }
+
     EVP_PKEY *prvkey = PEM_read_PrivateKey(prvkey_file, NULL, NULL, NULL);
     fclose(prvkey_file);
     if (!prvkey) {
@@ -399,6 +457,7 @@ crypto::signn(unsigned char *clear_buf, long int clear_size, string prvkey_file_
     if (ret == 0) {
         throw Exception("Error in EVP_SignUpdate");
     }
+
     unsigned int prv;
     ret = EVP_SignFinal(md_ctx, sgnt_buf, &prv, prvkey);
     if (ret == 0) {
@@ -406,6 +465,8 @@ crypto::signn(unsigned char *clear_buf, long int clear_size, string prvkey_file_
     }
 
     *sgnt_size = prv;
+
+    /* Clean up */
     EVP_MD_CTX_free(md_ctx);
     EVP_PKEY_free(prvkey);
 

@@ -7,7 +7,9 @@
 using namespace std;
 
 class server {
+
 public:
+
     server(int sock);
 
     void handle_req();
@@ -15,6 +17,7 @@ public:
     ~server();
 
 private:
+
     int socket;
     unsigned char *snonce;
     uint16_t counter;

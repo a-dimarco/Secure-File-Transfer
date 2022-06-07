@@ -16,6 +16,7 @@
 using namespace std;
 
 class crypto {
+
 public:
 
     int decrypt_message(unsigned char *ciphertext, int ciphertext_len,
